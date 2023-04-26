@@ -16,7 +16,6 @@ host = 0
 
 def getHost():
     host = input("Enter Server IP")
-    return host
 
 def socketLoop(): 
     ready = 0xFF
@@ -50,7 +49,7 @@ def socketLoop():
 
 def main():
     
-    host = getHost()
+    getHost()
     socketLoop()
 
     
