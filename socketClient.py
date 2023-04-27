@@ -23,39 +23,45 @@ def getHost():
     host = "192.168.1.65"
     #host = input("Enter Server IP: ")
     print("Host IP: {host}")
-
+ 
 def socketLoop(): 
-    ##ready = struct.pack("=h", 256)
-    # try:
-    #     sock.send(ready)
-    # except:
-    #     # recreate the socket and reconnect
-    #     #sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    #     sock.connect(host)
-    #     sock.send(ready)
+    print()
+    print("socketLoop")
+    dataTx = struct.pack("=h", 255)
+    #try:
+    sock.send(dataTx);
+    #except:
+    #    sock.connect((host, port))
+    #    print("Socket Reconnected")
+    #    sock.send(255);
+   
+    dataRx = sock.recv(2)
+    print(f'dataRx: {dataRx}')
+    #sock.close()
+
         
-    dataCount = 0
-    dataX = struct.pack("=h", 0)
-    dataY = struct.pack("=h", 0)
-    dataZ = struct.pack("=h", 0)
+    # dataCount = 0
+    # dataX = struct.pack("=h", 0)
+    # dataY = struct.pack("=h", 0)
+    # dataZ = struct.pack("=h", 0)
     
     #print(f'data: {data}') 
-    match dataCount:
-        case 0:
-            dataX = sock.recv(1) << 4
-        case 1:
-            dataX = dataX + (sock.recv(1) >> 4)
-        case 2:
-            dataY = sock.recv(1) << 4
-        case 3:
-            dataY = dataY + (sock.recv(1) >> 4)
-        case 4:
-            dataZ = sock.recv(1) << 4
-        case 5:
-            dataZ = dataZ + (sock.recv(1) >> 4)  
-        case _:
-            print(f'dataCount Error: {dataCount}')  
-            dataCount = 0
+    # match dataCount:
+    #     case 0:
+    #         dataX = sock.recv(1) << 4
+    #     case 1:
+    #         dataX = dataX + (sock.recv(1) >> 4)
+    #     case 2:
+    #         dataY = sock.recv(1) << 4
+    #     case 3:
+    #         dataY = dataY + (sock.recv(1) >> 4)
+    #     case 4:
+    #         dataZ = sock.recv(1) << 4
+    #     case 5:
+    #         dataZ = dataZ + (sock.recv(1) >> 4)  
+    #     case _:
+    #         print(f'dataCount Error: {dataCount}')  
+    #         dataCount = 0
 
     # if dataCount < 5:
     #     dataCount += dataCount
@@ -71,10 +77,13 @@ def socketLoop():
     #         data[data/2] = data[data/2] + dataByte
     #     print(data)    
     #     dataCount += 1
-        
-    AcclData = np.r_[dataX,dataY,dataZ]
+    #print("dataX: {dataX}")
+    #print("dataY: {dataX}")
+    #print("dataZ: {dataX}")
 
-    socketLoop()
+    # AcclData = np.r_[dataX,dataY,dataZ]
+
+    #socketLoop()
 
     sock.close()
 
@@ -83,6 +92,7 @@ def main():
     
     #getHost()
     sock.connect((host, port))
+    print("Connected to server")
     socketLoop()
 
     
