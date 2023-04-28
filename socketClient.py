@@ -27,7 +27,7 @@ def getHost():
 def socketLoop(): 
     print()
     print("socketLoop")
-    dataTx = struct.pack("=h", 255)
+    dataTx = struct.pack("=i", 255)
     #try:
     sock.send(dataTx);
     #except:
@@ -35,7 +35,7 @@ def socketLoop():
     #    print("Socket Reconnected")
     #    sock.send(255);
    
-    dataRx = sock.recv(2)
+    dataRx = sock.recv(4)
     print(f'dataRx: {dataRx}')
     #sock.close()
 
