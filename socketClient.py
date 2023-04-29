@@ -34,9 +34,18 @@ def socketLoop():
     #    sock.connect((host, port))
     #    print("Socket Reconnected")
     #    sock.send(255);
-   
-    dataRx = sock.recv(4)
-    print(f'dataRx: {dataRx}')
+    print(f'sockname: {sock.getsockname()}')
+    print(f'sockpeer: {sock.getpeername()}')
+    y = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    a = 0
+    while a < 18:
+        y[a] = sock.recv(1)
+        #print(f'x: {x}');
+        a += 1
+    
+    #y = bytearray(18)
+    #sock.recv_into(y, 18)
+    print(f'y: {y}');
     #sock.close()
 
         
