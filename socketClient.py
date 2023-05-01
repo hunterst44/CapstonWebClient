@@ -10,13 +10,14 @@
 
 import socket  
 import numpy as np
-import struct             
+import struct
+import time             
  
 sock = socket.socket()
 port = 80             
 
 AcclData = np.array([ [0,0,0] ])
-host = "192.168.1.65"
+host = "192.168.1.74"
 port = 80
 
 def getHost():
@@ -46,53 +47,12 @@ def socketLoop():
     #y = bytearray(18)
     #sock.recv_into(y, 18)
     print(f'y: {y}');
+    print(f'y[0]: {y[0]}');
+    if y[0] != 0:
+        #time.sleep(0.001)
+        socketLoop()
+
     #sock.close()
-
-        
-    # dataCount = 0
-    # dataX = struct.pack("=h", 0)
-    # dataY = struct.pack("=h", 0)
-    # dataZ = struct.pack("=h", 0)
-    
-    #print(f'data: {data}') 
-    # match dataCount:
-    #     case 0:
-    #         dataX = sock.recv(1) << 4
-    #     case 1:
-    #         dataX = dataX + (sock.recv(1) >> 4)
-    #     case 2:
-    #         dataY = sock.recv(1) << 4
-    #     case 3:
-    #         dataY = dataY + (sock.recv(1) >> 4)
-    #     case 4:
-    #         dataZ = sock.recv(1) << 4
-    #     case 5:
-    #         dataZ = dataZ + (sock.recv(1) >> 4)  
-    #     case _:
-    #         print(f'dataCount Error: {dataCount}')  
-    #         dataCount = 0
-
-    # if dataCount < 5:
-    #     dataCount += dataCount
-    # else:
-    #     dataCount = 0
-
-    # while dataCount < 6:
-    #     if dataCount % 2:                    #dataCount is odd, so it is the Hi end of the data
-    #         dataByte = sock.recv(1)
-    #         data[data/2] = dataByte << 4
-    #     else: 
-    #         dataByte = sock.recv(1)
-    #         data[data/2] = data[data/2] + dataByte
-    #     print(data)    
-    #     dataCount += 1
-    #print("dataX: {dataX}")
-    #print("dataY: {dataX}")
-    #print("dataZ: {dataX}")
-
-    # AcclData = np.r_[dataX,dataY,dataZ]
-
-    #socketLoop()
 
     sock.close()
 
