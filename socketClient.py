@@ -29,7 +29,7 @@ def getHost():
 def socketLoop(): 
     print()
     print("socketLoop")
-    global packetSize
+    global packetSize                        #Only needed for testing - production code will run continiously
     print(f'packetSize: {packetSize}' )
     
     sock = socket.socket()
@@ -63,7 +63,7 @@ def socketLoop():
     # print(f'y[0]: {y[0]}');
     sock.close()
 
-    if packetSize < 5:
+    if packetSize < 5:             #Only needed for testing - production code will run continiously
         packetSize += 1
         time.sleep(2)
         socketLoop()
