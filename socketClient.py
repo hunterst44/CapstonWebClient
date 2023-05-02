@@ -13,12 +13,13 @@ import numpy as np
 import struct
 import time             
  
-sock = socket.socket()
-port = 80             
+# sock = socket.socket()
+host = "192.168.1.74"
+port = 80    
+packetSize = 0        
 
 AcclData = np.array([ [0,0,0] ])
-host = "192.168.1.74"
-port = 80
+
 
 def getHost():
     host = "192.168.1.65"
@@ -28,6 +29,10 @@ def getHost():
 def socketLoop(): 
     print()
     print("socketLoop")
+    global packetSize
+    print(f'packetSize: {packetSize}' )
+    
+    sock = socket.socket()
     sock.connect((host, port))
     print("Connected to server")
     dataTx = struct.pack("=i", 255)
@@ -40,20 +45,32 @@ def socketLoop():
     print(f'sockname: {sock.getsockname()}')
     print(f'sockpeer: {sock.getpeername()}')
     y = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    #time.sleep(0.01)
+    #y = sock.recv(18)
     a = 0
     while a < 18:
-        y[a] = sock.recv(1)
-        #print(f'x: {x}');
+        try:
+            y[a] = sock.recv(1)
+        except ConnectionError:
+            print(f"Unable to reach client with socket: Retrying")
+            socketLoop()
+        print(f'y[a]: {y[a]}');
         a += 1
     
     #y = bytearray(18)
     #sock.recv_into(y, 18)
     print(f'y: {y}');
-    print(f'y[0]: {y[0]}');
+    # print(f'y[0]: {y[0]}');
     sock.close()
-    if y[0] != 0:
-        #time.sleep(0.001)
+
+    if packetSize < 5:
+        packetSize += 1
+        time.sleep(2)
         socketLoop()
+    else:
+        #sock.close()
+        print("Packet Done")
+        packetSize = 0
 
 def main():
     
