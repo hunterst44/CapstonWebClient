@@ -28,6 +28,8 @@ def getHost():
 def socketLoop(): 
     print()
     print("socketLoop")
+    sock.connect((host, port))
+    print("Connected to server")
     dataTx = struct.pack("=i", 255)
     #try:
     sock.send(dataTx);
@@ -48,20 +50,14 @@ def socketLoop():
     #sock.recv_into(y, 18)
     print(f'y: {y}');
     print(f'y[0]: {y[0]}');
+    sock.close()
     if y[0] != 0:
         #time.sleep(0.001)
         socketLoop()
 
-    #sock.close()
-
-    sock.close()
-
-
 def main():
     
     #getHost()
-    sock.connect((host, port))
-    print("Connected to server")
     socketLoop()
 
     
