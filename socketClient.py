@@ -12,7 +12,8 @@ import socket
 import numpy as np
 import struct
 import time
-from threading import Thread           
+from threading import Thread
+import matplotlib.pyplot as plt           
  
 # sock = socket.socket()
 host = "192.168.1.74"
@@ -28,17 +29,123 @@ def getHost():
     print("Host IP: {host}")
 
 def processData(binaryData):
-    Acc1Data[len(Acc1Data)] = []
-    Acc1Data[len(Acc1Data)][0] = (binaryData[0] << 8) + binaryData[1]                                                     #XAcc
-    Acc1Data[len(Acc1Data)][1] = (binaryData[2] << 8) + binaryData[3]                                                     #YAcc
-    Acc1Data[len(Acc1Data)][4] = (binaryData[2] << 8) + binaryData[5]                                                     #ZACC
-    Acc1Data[len(Acc1Data)][5] = (binaryData[6] << 24) + (binaryData[7] << 16) + (binaryData[8] << 8) + binaryData[9]     #XT
-    Acc1Data[len(Acc1Data)][6] = (binaryData[10] << 24) + (binaryData[11] << 16) + (binaryData[12] << 8) + binaryData[13] #YT
-    Acc1Data[len(Acc1Data)][7] = (binaryData[14] << 24) + (binaryData[15] << 16) + (binaryData[16] << 8) + binaryData[17] #ZT
+    print()
+    print("processData(binaryData)")
+    print(f'binaryData: {binaryData}')
     
-    print(f'Acc1Data: {Acc1Data}')
+    #Parse binary data and recombine into ints
+    #X Axis
+    XAcc = struct.unpack("=b", binaryData[0])
+    #print(f'XAcc Raw: {XAcc}')
+    XAcc = XAcc[0] << 8
+    #print(f'XAcc Shift: {XAcc}')
+    XAcc1 = struct.unpack("=b", binaryData[1])
+    XAcc = XAcc + XAcc1[0]
+    print(f'XAcc Final: {XAcc}')
+
+    #Y Axis
+    YAcc = struct.unpack("=b", binaryData[2])
+    #print(f'XAcc Raw: {XAcc}')
+    YAcc = YAcc[0] << 8
+    #print(f'YAcc Shift: {YAcc}')
+    YAcc1 = struct.unpack("=b", binaryData[3])
+    YAcc = YAcc + YAcc1[0]
+    print(f'YAcc Final: {YAcc}')
+
+    #Z Axis
+    ZAcc = struct.unpack("=b", binaryData[4])
+    #print(f'XAcc Raw: {XAcc}')
+    ZAcc = ZAcc[0] << 8
+    #print(f'ZAcc Shift: {ZAcc}')
+    ZAcc1 = struct.unpack("=b", binaryData[5])
+    ZAcc = ZAcc + ZAcc1[0]
+    print(f'ZAcc Final: {ZAcc}')
+
+    #X Time
+    XT = struct.unpack("=B", binaryData[6])
+    if XT != 0:
+        XT = XT[0] << 32
+    XT2 = struct.unpack("=B", binaryData[7])
+    if XT2 != 0:
+        XT = XT + (XT2[0] << 16)
+    XT3 = struct.unpack("=B", binaryData[8])
+    if XT3 != 0:
+        XT = XT + (XT3[0] << 16)
+    XT4 = struct.unpack("=B", binaryData[9])
+    XT = (XT + XT4[0])
+    print(f'XT: {XT}')
+
+    #Y Time
+    YT = struct.unpack("=B", binaryData[10])
+    if YT != 0:
+        YT = YT[0] << 32
+    YT2 = struct.unpack("=B", binaryData[11])
+    if YT2 != 0:
+        YT = YT + (YT2[0] << 16)
+    YT3 = struct.unpack("=B", binaryData[12])
+    if YT3 != 0:
+        YT = YT + (YT3[0] << 16)
+    YT4 = struct.unpack("=B", binaryData[13])
+    YT = (YT + YT4[0])
+    print(f'YT: {YT}')
+
+    #Z Time
+    ZT = struct.unpack("=B", binaryData[14])
+    if ZT != 0:
+        ZT = ZT[0] << 32
+    ZT2 = struct.unpack("=B", binaryData[15])
+    if ZT2 != 0:
+        ZT = ZT + (ZT2[0] << 16)
+    ZT3 = struct.unpack("=B", binaryData[16])
+    if ZT3 != 0:
+        ZT = ZT + (ZT3[0] << 16)
+    ZT4 = struct.unpack("=B", binaryData[17])
+    ZT = (ZT + ZT4[0])
+    print(f'ZT: {ZT}')
     
-    #Next write to a file or get ready for plotting the data
+
+    Acc1Data.append([])
+
+    Acc1Data[len(Acc1Data) -1].append(XAcc)    #XAcc
+    Acc1Data[len(Acc1Data) -1].append(YAcc)    #YAcc
+    Acc1Data[len(Acc1Data) -1].append(ZAcc)    #ZAcc
+    Acc1Data[len(Acc1Data)-1].append(XT)       #XT
+    Acc1Data[len(Acc1Data)-1].append(YT)       #YT
+    Acc1Data[len(Acc1Data)-1].append(ZT)       #ZT
+    
+    print(f'Acc1Data[{len(Acc1Data) -1}]: {Acc1Data[len(Acc1Data) -1]}]')
+    print()
+    # for i in range(len(Acc1Data)):
+    #     for j in range(len(Acc1Data[i])):
+    #         print(f'Acc1Data {i},{j}: {Acc1Data[i][j]}')
+    #     print()
+    
+def plotAcc():
+    #Arrange the data
+    time.sleep(2)
+    XList = [[],[]]
+    for i in range(len(Acc1Data)):
+        XList[0].append(Acc1Data[i][0])
+        XList[1].append(Acc1Data[i][3])
+    print(f'XList: {XList}')
+
+    YList = [[],[]]
+    for i in range(len(Acc1Data)):
+        YList[0].append(Acc1Data[i][1])
+        YList[1].append(Acc1Data[i][4])
+    print(f'YList: {YList}')
+
+    ZList = [[],[]]
+    for i in range(len(Acc1Data)):
+        ZList[0].append(Acc1Data[i][3])
+        ZList[1].append(Acc1Data[i][5])
+    print(f'ZList: {ZList}')
+
+    _,axs = plt.subplots(1,3, figsize=(6,5))
+    axs[0].plot(XList[1],XList[0])
+    axs[1].plot(YList[1],YList[0])
+    axs[2].plot(ZList[1],ZList[0])
+    plt.show()
 
  
 def socketLoop(): 
@@ -69,7 +176,7 @@ def socketLoop():
         except ConnectionError:
             print(f"Unable to reach client with socket: Retrying")
             socketLoop()
-        print(f'y[a]: {y[a]}');
+        # print(f'y[a]: {y[a]}');
         a += 1
     
     #y = bytearray(18)
@@ -79,17 +186,18 @@ def socketLoop():
     sock.close()
 
     #TODO ensure that a new thread is created - use ids as args to the threads and check for a free thread to use
-    dataThread = Thread(target=processData,args=y)
+    dataThread = Thread(target=processData, args=(y,))
     dataThread.start()
     ##dataThread.join()
 
-    if packetSize < 5:             #Only needed for testing - production code will run continiously
+    if packetSize < 4:             #Only needed for testing - production code will run continiously
         packetSize += 1
-        time.sleep(2)
+        time.sleep(1)
         socketLoop()
     else:
         #sock.close()
         print("Packet Done")
+        plotAcc()
         packetSize = 0
 
 def main():
