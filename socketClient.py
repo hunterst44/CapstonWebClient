@@ -11,20 +11,35 @@
 import socket  
 import numpy as np
 import struct
-import time             
+import time
+from threading import Thread           
  
 # sock = socket.socket()
 host = "192.168.1.74"
 port = 80    
 packetSize = 0        
 
-AcclData = np.array([ [0,0,0] ])
+Acc1Data = []
 
 
 def getHost():
     host = "192.168.1.65"
     #host = input("Enter Server IP: ")
     print("Host IP: {host}")
+
+def processData(binaryData):
+    Acc1Data[len(Acc1Data)] = []
+    Acc1Data[len(Acc1Data)][0] = (binaryData[0] << 8) + binaryData[1]                                                     #XAcc
+    Acc1Data[len(Acc1Data)][1] = (binaryData[2] << 8) + binaryData[3]                                                     #YAcc
+    Acc1Data[len(Acc1Data)][4] = (binaryData[2] << 8) + binaryData[5]                                                     #ZACC
+    Acc1Data[len(Acc1Data)][5] = (binaryData[6] << 24) + (binaryData[7] << 16) + (binaryData[8] << 8) + binaryData[9]     #XT
+    Acc1Data[len(Acc1Data)][6] = (binaryData[10] << 24) + (binaryData[11] << 16) + (binaryData[12] << 8) + binaryData[13] #YT
+    Acc1Data[len(Acc1Data)][7] = (binaryData[14] << 24) + (binaryData[15] << 16) + (binaryData[16] << 8) + binaryData[17] #ZT
+    
+    print(f'Acc1Data: {Acc1Data}')
+    
+    #Next write to a file or get ready for plotting the data
+
  
 def socketLoop(): 
     print()
@@ -62,6 +77,11 @@ def socketLoop():
     print(f'y: {y}');
     # print(f'y[0]: {y[0]}');
     sock.close()
+
+    #TODO ensure that a new thread is created - use ids as args to the threads and check for a free thread to use
+    dataThread = Thread(target=processData,args=y)
+    dataThread.start()
+    ##dataThread.join()
 
     if packetSize < 5:             #Only needed for testing - production code will run continiously
         packetSize += 1
