@@ -37,27 +37,27 @@ def processData(binaryData):
     #X Axis
     XAcc = struct.unpack("=b", binaryData[0])
     #print(f'XAcc Raw: {XAcc}')
-    XAcc = XAcc[0] << 8
+    XAcc = XAcc[0] << 4
     #print(f'XAcc Shift: {XAcc}')
     XAcc1 = struct.unpack("=b", binaryData[1])
     XAcc = XAcc + XAcc1[0]
     #print(f'XAcc Final: {XAcc}')
 
     #Y Axis
-    YAcc = struct.unpack("=b", binaryData[2])
+    YAcc = struct.unpack("=b", binaryData[3])
     #print(f'XAcc Raw: {XAcc}')
-    YAcc = YAcc[0] << 8
+    YAcc = YAcc[0] << 4
     #print(f'YAcc Shift: {YAcc}')
-    YAcc1 = struct.unpack("=b", binaryData[3])
+    YAcc1 = struct.unpack("=b", binaryData[2])
     YAcc = YAcc + YAcc1[0]
     #print(f'YAcc Final: {YAcc}')
 
     #Z Axis
-    ZAcc = struct.unpack("=b", binaryData[4])
+    ZAcc = struct.unpack("=b", binaryData[5])
     #print(f'XAcc Raw: {XAcc}')
-    ZAcc = ZAcc[0] << 8
+    ZAcc = ZAcc[0] << 4
     #print(f'ZAcc Shift: {ZAcc}')
-    ZAcc1 = struct.unpack("=b", binaryData[5])
+    ZAcc1 = struct.unpack("=b", binaryData[4])
     ZAcc = ZAcc + ZAcc1[0]
     #print(f'ZAcc Final: {ZAcc}')
 
@@ -72,7 +72,7 @@ def processData(binaryData):
     if XT3 != 0:
         XT = XT + (XT3[0] << 8)
     XT4 = struct.unpack("=B", binaryData[6])
-    XT = (XT + XT4[0])
+    XT = (XT + XT4[0]) / 8000
     print(f'XT: {XT}')
 
     #Y Time
@@ -86,7 +86,7 @@ def processData(binaryData):
     if YT3 != 0:
         YT = YT + (YT3[0] << 8)
     YT4 = struct.unpack("=B", binaryData[10])
-    YT = (YT + YT4[0])
+    YT = (YT + YT4[0]) / 8000
     #print(f'YT: {YT}')
 
     #Z Time
@@ -100,7 +100,7 @@ def processData(binaryData):
     if ZT3 != 0:
         ZT = ZT + (ZT3[0] << 8)
     ZT4 = struct.unpack("=B", binaryData[14])
-    ZT = (ZT + ZT4[0])
+    ZT = (ZT + ZT4[0]) / 8000
     #print(f'ZT: {ZT}')
 
     Acc1Data.append([])
