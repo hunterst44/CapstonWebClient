@@ -41,7 +41,7 @@ def processData(binaryData):
     #print(f'XAcc Shift: {XAcc}')
     XAcc1 = struct.unpack("=b", binaryData[1])
     XAcc = XAcc + XAcc1[0]
-    print(f'XAcc Final: {XAcc}')
+    #print(f'XAcc Final: {XAcc}')
 
     #Y Axis
     YAcc = struct.unpack("=b", binaryData[2])
@@ -50,7 +50,7 @@ def processData(binaryData):
     #print(f'YAcc Shift: {YAcc}')
     YAcc1 = struct.unpack("=b", binaryData[3])
     YAcc = YAcc + YAcc1[0]
-    print(f'YAcc Final: {YAcc}')
+    #print(f'YAcc Final: {YAcc}')
 
     #Z Axis
     ZAcc = struct.unpack("=b", binaryData[4])
@@ -59,50 +59,49 @@ def processData(binaryData):
     #print(f'ZAcc Shift: {ZAcc}')
     ZAcc1 = struct.unpack("=b", binaryData[5])
     ZAcc = ZAcc + ZAcc1[0]
-    print(f'ZAcc Final: {ZAcc}')
+    #print(f'ZAcc Final: {ZAcc}')
 
     #X Time
-    XT = struct.unpack("=B", binaryData[6])
+    XT = struct.unpack("=B", binaryData[9])
     if XT != 0:
-        XT = XT[0] << 32
-    XT2 = struct.unpack("=B", binaryData[7])
+        XT = XT[0] << 24
+    XT2 = struct.unpack("=B", binaryData[8])
     if XT2 != 0:
         XT = XT + (XT2[0] << 16)
-    XT3 = struct.unpack("=B", binaryData[8])
+    XT3 = struct.unpack("=B", binaryData[7])
     if XT3 != 0:
-        XT = XT + (XT3[0] << 16)
-    XT4 = struct.unpack("=B", binaryData[9])
+        XT = XT + (XT3[0] << 8)
+    XT4 = struct.unpack("=B", binaryData[6])
     XT = (XT + XT4[0])
     print(f'XT: {XT}')
 
     #Y Time
-    YT = struct.unpack("=B", binaryData[10])
+    YT = struct.unpack("=B", binaryData[13])
     if YT != 0:
-        YT = YT[0] << 32
-    YT2 = struct.unpack("=B", binaryData[11])
+        YT = YT[0] << 24
+    YT2 = struct.unpack("=B", binaryData[12])
     if YT2 != 0:
         YT = YT + (YT2[0] << 16)
-    YT3 = struct.unpack("=B", binaryData[12])
+    YT3 = struct.unpack("=B", binaryData[11])
     if YT3 != 0:
-        YT = YT + (YT3[0] << 16)
-    YT4 = struct.unpack("=B", binaryData[13])
+        YT = YT + (YT3[0] << 8)
+    YT4 = struct.unpack("=B", binaryData[10])
     YT = (YT + YT4[0])
-    print(f'YT: {YT}')
+    #print(f'YT: {YT}')
 
     #Z Time
-    ZT = struct.unpack("=B", binaryData[14])
+    ZT = struct.unpack("=B", binaryData[17])
     if ZT != 0:
-        ZT = ZT[0] << 32
-    ZT2 = struct.unpack("=B", binaryData[15])
+        ZT = ZT[0] << 24
+    ZT2 = struct.unpack("=B", binaryData[16])
     if ZT2 != 0:
         ZT = ZT + (ZT2[0] << 16)
-    ZT3 = struct.unpack("=B", binaryData[16])
+    ZT3 = struct.unpack("=B", binaryData[15])
     if ZT3 != 0:
-        ZT = ZT + (ZT3[0] << 16)
-    ZT4 = struct.unpack("=B", binaryData[17])
+        ZT = ZT + (ZT3[0] << 8)
+    ZT4 = struct.unpack("=B", binaryData[14])
     ZT = (ZT + ZT4[0])
-    print(f'ZT: {ZT}')
-    
+    #print(f'ZT: {ZT}')
 
     Acc1Data.append([])
 
@@ -127,24 +126,28 @@ def plotAcc():
     for i in range(len(Acc1Data)):
         XList[0].append(Acc1Data[i][0])
         XList[1].append(Acc1Data[i][3])
-    print(f'XList: {XList}')
+    #print(f'XList: {XList}')
 
     YList = [[],[]]
     for i in range(len(Acc1Data)):
         YList[0].append(Acc1Data[i][1])
         YList[1].append(Acc1Data[i][4])
-    print(f'YList: {YList}')
+    #print(f'YList: {YList}')
 
     ZList = [[],[]]
     for i in range(len(Acc1Data)):
         ZList[0].append(Acc1Data[i][3])
         ZList[1].append(Acc1Data[i][5])
-    print(f'ZList: {ZList}')
+    #print(f'ZList: {ZList}')
 
     _,axs = plt.subplots(1,3, figsize=(6,5))
     axs[0].plot(XList[1],XList[0])
     axs[1].plot(YList[1],YList[0])
     axs[2].plot(ZList[1],ZList[0])
+
+    # axs[0].title("X Axis Acceleration")
+    # axs[1].title("Y Axis Acceleration")
+    # axs[2].title("Z Axis Acceleration")
     plt.show()
 
  
@@ -171,8 +174,10 @@ def socketLoop():
     #y = sock.recv(18)
     a = 0
     while a < 18:
+        #print(f'while loop')
         try:
             y[a] = sock.recv(1)
+            #print(f'Received 1')
         except ConnectionError:
             print(f"Unable to reach client with socket: Retrying")
             socketLoop()
@@ -190,15 +195,15 @@ def socketLoop():
     dataThread.start()
     ##dataThread.join()
 
-    if packetSize < 4:             #Only needed for testing - production code will run continiously
+    if packetSize < 50:             #Only needed for testing - production code will run continiously
         packetSize += 1
-        time.sleep(1)
+        time.sleep(0.01)
         socketLoop()
     else:
         #sock.close()
         print("Packet Done")
         plotAcc()
-        packetSize = 0
+        #packetSize = 0
 
 def main():
     
