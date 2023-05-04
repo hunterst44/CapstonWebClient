@@ -136,7 +136,7 @@ def plotAcc():
 
     ZList = [[],[]]
     for i in range(len(Acc1Data)):
-        ZList[0].append(Acc1Data[i][3])
+        ZList[0].append(Acc1Data[i][2])
         ZList[1].append(Acc1Data[i][5])
     #print(f'ZList: {ZList}')
 
