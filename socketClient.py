@@ -150,7 +150,7 @@ def plotAcc():
     for i in range(50):
         XList1[0].append(AccData[i,0,0])
         XList1[1].append(AccData[i,0,3])
-    print(f'XList1: {XList1}')
+    #print(f'XList1: {XList1}')
 
     XList2 = [[],[]]
     for i in range(50):
@@ -183,8 +183,8 @@ def plotAcc():
     #print(f'ZList: {ZList}')
 
     _,axs = plt.subplots(2,3, figsize=(6,5))
-    axs[0][0].plot(AccData[:,1,1])
-    #axs[0][0].plot(XList1[1],XList1[0])
+    #axs[0][0].plot(AccData[:,1,1])
+    axs[0][0].plot(XList1[1],XList1[0])
     axs[0][1].plot(YList1[1],YList1[0])
     axs[0][2].plot(ZList1[1],ZList1[0])
     axs[1][0].plot(XList2[1],XList2[0])
