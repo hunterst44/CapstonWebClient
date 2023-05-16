@@ -18,7 +18,9 @@ import matplotlib.pyplot as plt
 # sock = socket.socket()
 host = "192.168.1.75"
 port = 80    
-sampleCount = 0        
+processCount = 0          #Counts how many samples have been processed
+recvCount = 0             #Counts how many samples have been received
+processStartMS = int(time.time() * 1000)       
 
 Acc1Data = []
 AccData = np.zeros([50,2,6])    ##3 dimensional array to hold sensor data [Samples: Sensors : Features]
@@ -33,7 +35,8 @@ def processData(binaryData):
     print("processData(binaryData)")
     print(f'binaryData: {binaryData}')
     print()
-    global sampleCount
+    #processStartMS = int(time() * 1000)
+    global processCount
 
     def formatData(binaryData, sensorIndex):
 
@@ -77,7 +80,7 @@ def processData(binaryData):
             XT = XT + (XT3[0] << 8)
         XT4 = struct.unpack("=B", binaryData[6 + (sensorIndex * 18)])
         XT = (XT + XT4[0]) / 8000
-        print(f'XT: {XT}')
+        #print(f'XT: {XT}')
 
         #Y Time
         YT = struct.unpack("=B", binaryData[13 + (sensorIndex * 18)])
@@ -109,23 +112,29 @@ def processData(binaryData):
 
         return XAcc, YAcc, ZAcc, XT, YT, ZT
     
-    X1Acc, Y1Acc, Z1Acc, X1T, Y1T, Z1T = formatData(binaryData, 0)
-    X2Acc, Y2Acc, Z2Acc, X2T, Y2T, Z2T = formatData(binaryData, 1)
+    if processCount < 50:
+    
+        X1Acc, Y1Acc, Z1Acc, X1T, Y1T, Z1T = formatData(binaryData, 0)
+        X2Acc, Y2Acc, Z2Acc, X2T, Y2T, Z2T = formatData(binaryData, 1)
 
-    AccData[sampleCount,0,0] = X1Acc
-    AccData[sampleCount,0,1] = Y1Acc
-    AccData[sampleCount,0,2] = Z1Acc
-    AccData[sampleCount,0,3] = X1T
-    AccData[sampleCount,0,4] = Y1T
-    AccData[sampleCount,0,5] = Z1T
-    AccData[sampleCount,1,0] = X2Acc
-    AccData[sampleCount,1,1] = Y2Acc
-    AccData[sampleCount,1,2] = Z2Acc
-    AccData[sampleCount,1,3] = X2T
-    AccData[sampleCount,1,4] = Y2T
-    AccData[sampleCount,1,5] = Z2T
+        AccData[processCount,0,0] = X1Acc
+        AccData[processCount,0,1] = Y1Acc
+        AccData[processCount,0,2] = Z1Acc
+        AccData[processCount,0,3] = X1T
+        AccData[processCount,0,4] = Y1T
+        AccData[processCount,0,5] = Z1T
+        AccData[processCount,1,0] = X2Acc
+        AccData[processCount,1,1] = Y2Acc
+        AccData[processCount,1,2] = Z2Acc
+        AccData[processCount,1,3] = X2T
+        AccData[processCount,1,4] = Y2T
+        AccData[processCount,1,5] = Z2T
 
-    sampleCount += 1
+        #processStopMS = int(time() * 1000)
+
+        #processTimeMS = processStopMS - processStartMS
+        #print(f'processing time in ms: {processTimeMS}')
+        processCount += 1
 
     # Acc1Data.append([])
 
@@ -145,7 +154,7 @@ def processData(binaryData):
     
 def plotAcc():
     #Arrange the data
-    time.sleep(2)
+    #time.sleep(2)
     XList1 = [[],[]]
     for i in range(50):
         XList1[0].append(AccData[i,0,0])
@@ -180,7 +189,7 @@ def plotAcc():
     for i in range(50):
         ZList2[0].append(AccData[i,1,2])
         ZList2[1].append(AccData[i,1,5])
-    #print(f'ZList: {ZList}')
+    #print(f'ZList2: {ZList2}')
 
     _,axs = plt.subplots(2,3, figsize=(6,5))
     #axs[0][0].plot(AccData[:,1,1])
@@ -207,59 +216,66 @@ def plotAcc():
 def socketLoop(): 
     print()
     print("socketLoop")
-    global sampleCount                        #Only needed for testing - production code will run continiously
-    print(f'sampleCount: {sampleCount}' )
+    global processCount                        #Only needed for testing - production code will run continiously
+    global recvCount
+    print(f'processCount: {processCount}' )
+    print(f'recvCount: {processCount}' )
     
-    sock = socket.socket()
-    sock.connect((host, port))
-    print("Connected to server")
-    dataTx = struct.pack("=i", 255)
-    #try:
-    sock.send(dataTx);
-    #except:
-    #    sock.connect((host, port))
-    #    print("Socket Reconnected")
-    #    sock.send(255);
-    print(f'sockname: {sock.getsockname()}')
-    print(f'sockpeer: {sock.getpeername()}')
-    y = []
-    #time.sleep(0.01)
-    #y = sock.recv(18)
-    a = 0
-    while a < 36:
-        #print(f'while loop')
-        try:
-            y.append(sock.recv(1))
-            #print(f'Received 1')
-        except ConnectionError:
-            print(f"Unable to reach client with socket: Retrying")
-            socketLoop()
-        # print(f'y[a]: {y[a]}');
-        a += 1
-    
-    #y = bytearray(18)
-    #sock.recv_into(y, 18)
-    print(f'y: {y}');
-    # print(f'y[0]: {y[0]}');
-    sock.close()
+    if recvCount < 50:             #Only needed for testing - production code will run continiously
+        sock = socket.socket()
+        sock.connect((host, port))
+        print("Connected to server")
+        dataTx = struct.pack("=i", 255)
+        #try:
+        sock.send(dataTx);
+        #except:
+        #    sock.connect((host, port))
+        #    print("Socket Reconnected")
+        #    sock.send(255);
+        print(f'sockname: {sock.getsockname()}')
+        print(f'sockpeer: {sock.getpeername()}')
+        y = []
+        #time.sleep(0.01)
+        #y = sock.recv(18)
+        a = 0
+        while a < 36:
+            #print(f'while loop')
+            try:
+                y.append(sock.recv(1))
+                #print(f'Received 1')
+            except ConnectionError:
+                print(f"Unable to reach client with socket: Retrying")
+                socketLoop()
+            # print(f'y[a]: {y[a]}');
+            a += 1
+        recvCount += 1
+        #y = bytearray(18)
+        #sock.recv_into(y, 18)
+        #print(f'y: {y}');
+        # print(f'y[0]: {y[0]}');
+        sock.close()
 
-    if sampleCount < 50:             #Only needed for testing - production code will run continiously
         #TODO ensure that a new thread is created - use ids as args to the threads and check for a free thread to use
         dataThread = Thread(target=processData, args=(y,))
         dataThread.start()
         ##dataThread.join()
-        #sampleCount += 1
-        time.sleep(0.01)
+        #processCount += 1
+        #time.sleep(0.01)
         socketLoop()
-    else:
+
+    elif recvCount == 50 and processCount == 50:
         #sock.close()
         print("Packet Done")
+        processStopMS = int(time.time() * 1000)
+        processTimeMS = processStopMS - processStartMS
+        #print(f'processStart: {processStartMS}')
+        print(f'processing time in ms: {processTimeMS}')
+
         plotAcc()
-        #sampleCount = 0
+        processCount += 1
 
 def main():
     
-    #getHost()
     socketLoop()
 
     
