@@ -33,6 +33,7 @@ def processData(binaryData):
     print("processData(binaryData)")
     print(f'binaryData: {binaryData}')
     print()
+    global sampleCount
 
     def formatData(binaryData, sensorIndex):
 
@@ -124,6 +125,8 @@ def processData(binaryData):
     AccData[sampleCount,1,4] = Y2T
     AccData[sampleCount,1,5] = Z2T
 
+    sampleCount += 1
+
     # Acc1Data.append([])
 
     # Acc1Data[len(Acc1Data) -1].append(XAcc)    #XAcc
@@ -133,8 +136,8 @@ def processData(binaryData):
     # Acc1Data[len(Acc1Data)-1].append(YT)       #YT
     # Acc1Data[len(Acc1Data)-1].append(ZT)       #ZT
     
-    print(f'AccData: {AccData}')
-    print()
+    #print(f'AccData: {AccData}')
+    #print()
     # for i in range(len(Acc1Data)):
     #     for j in range(len(Acc1Data[i])):
     #         print(f'Acc1Data {i},{j}: {Acc1Data[i][j]}')
@@ -146,53 +149,54 @@ def plotAcc():
     XList1 = [[],[]]
     for i in range(50):
         XList1[0].append(AccData[i,0,0])
-        XList1[1].append(Acc1Data[i,0,3])
-    #print(f'XList: {XList}')
+        XList1[1].append(AccData[i,0,3])
+    print(f'XList1: {XList1}')
 
     XList2 = [[],[]]
     for i in range(50):
         XList2[0].append(AccData[i,1,0])
-        XList2[1].append(Acc1Data[i,1,3])
+        XList2[1].append(AccData[i,1,3])
     #print(f'XList: {XList}')
 
     YList1 = [[],[]]
-    for i in range(len(Acc1Data)):
-        YList1[0].append(Acc1Data[i,0,1])
-        YList1[1].append(Acc1Data[i,0,4])
+    for i in range(50):
+        YList1[0].append(AccData[i,0,1])
+        YList1[1].append(AccData[i,0,4])
     #print(f'YList: {YList}')
 
     YList2 = [[],[]]
-    for i in range(len(Acc1Data)):
-        YList2[0].append(Acc1Data[i,1,1])
-        YList2[1].append(Acc1Data[i,1,4])
+    for i in range(50):
+        YList2[0].append(AccData[i,1,1])
+        YList2[1].append(AccData[i,1,4])
     #print(f'YList: {YList}')
 
     ZList1 = [[],[]]
-    for i in range(len(Acc1Data)):
-        ZList1[0].append(Acc1Data[i,0,2])
-        ZList1[1].append(Acc1Data[i,0,5])
+    for i in range(50):
+        ZList1[0].append(AccData[i,0,2])
+        ZList1[1].append(AccData[i,0,5])
     #print(f'ZList: {ZList}')
 
     ZList2 = [[],[]]
-    for i in range(len(Acc1Data)):
-        ZList2[0].append(Acc1Data[i,1,2])
-        ZList2[1].append(Acc1Data[i,1,5])
+    for i in range(50):
+        ZList2[0].append(AccData[i,1,2])
+        ZList2[1].append(AccData[i,1,5])
     #print(f'ZList: {ZList}')
 
     _,axs = plt.subplots(2,3, figsize=(6,5))
-    axs[0].plot(XList1[1],XList1[0])
-    axs[1].plot(YList1[1],YList1[0])
-    axs[2].plot(ZList1[1],ZList1[0])
-    axs[3].plot(XList2[1],XList2[0])
-    axs[3].plot(YList2[1],YList2[0])
-    axs[5].plot(ZList2[1],ZList2[0])
+    axs[0][0].plot(AccData[:,1,1])
+    #axs[0][0].plot(XList1[1],XList1[0])
+    axs[0][1].plot(YList1[1],YList1[0])
+    axs[0][2].plot(ZList1[1],ZList1[0])
+    axs[1][0].plot(XList2[1],XList2[0])
+    axs[1][1].plot(YList2[1],YList2[0])
+    axs[1][2].plot(ZList2[1],ZList2[0])
 
-    axs[0].set_title('X Axis Acceleration Sensor 1')
-    axs[1].set_title('Y Axis Acceleration Sensor 1')
-    axs[2].set_title('Z Axis Acceleration Sensor 1')
-    axs[3].set_title('X Axis Acceleration Sensor 2')
-    axs[4].set_title('Y Axis Acceleration Sensor 2')
-    axs[5].set_title('Y Axis Acceleration Sensor 2')
+    # axs[0].set_title('X Axis Acceleration Sensor 1')
+    # axs[1].set_title('Y Axis Acceleration Sensor 1')
+    # axs[2].set_title('Z Axis Acceleration Sensor 1')
+    # axs[3].set_title('X Axis Acceleration Sensor 2')
+    # axs[4].set_title('Y Axis Acceleration Sensor 2')
+    # axs[5].set_title('Y Axis Acceleration Sensor 2')
 
     # axs[0].title("X Axis Acceleration")
     # axs[1].title("Y Axis Acceleration")
@@ -239,13 +243,12 @@ def socketLoop():
     # print(f'y[0]: {y[0]}');
     sock.close()
 
-    #TODO ensure that a new thread is created - use ids as args to the threads and check for a free thread to use
-    dataThread = Thread(target=processData, args=(y,))
-    dataThread.start()
-    ##dataThread.join()
-
     if sampleCount < 50:             #Only needed for testing - production code will run continiously
-        sampleCount += 1
+        #TODO ensure that a new thread is created - use ids as args to the threads and check for a free thread to use
+        dataThread = Thread(target=processData, args=(y,))
+        dataThread.start()
+        ##dataThread.join()
+        #sampleCount += 1
         time.sleep(0.01)
         socketLoop()
     else:
