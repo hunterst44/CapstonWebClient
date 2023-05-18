@@ -79,7 +79,7 @@ def processData(binaryData):
         if XT3 != 0:
             XT = XT + (XT3[0] << 8)
         XT4 = struct.unpack("=B", binaryData[6 + (sensorIndex * 18)])
-        XT = (XT + XT4[0]) / 8000
+        XT = (XT + XT4[0]) / 1000
         #print(f'XT: {XT}')
 
         #Y Time
@@ -93,7 +93,7 @@ def processData(binaryData):
         if YT3 != 0:
             YT = YT + (YT3[0] << 8)
         YT4 = struct.unpack("=B", binaryData[10 + (sensorIndex * 18)])
-        YT = (YT + YT4[0]) / 8000
+        YT = (YT + YT4[0]) / 1000
         #print(f'YT: {YT}')
 
         #Z Time
@@ -107,7 +107,7 @@ def processData(binaryData):
         if ZT3 != 0:
             ZT = ZT + (ZT3[0] << 8)
         ZT4 = struct.unpack("=B", binaryData[14 + (sensorIndex * 18)])
-        ZT = (ZT + ZT4[0]) / 8000
+        ZT = (ZT + ZT4[0]) / 1000
         #print(f'ZT: {ZT}')
 
         return XAcc, YAcc, ZAcc, XT, YT, ZT
