@@ -12,6 +12,7 @@ import socket
 import numpy as np
 import struct
 import time
+import threading
 from threading import Thread
 import matplotlib.pyplot as plt           
  
@@ -20,7 +21,8 @@ host = "192.168.1.75"
 port = 80    
 processCount = 0          #Counts how many samples have been processed
 recvCount = 0             #Counts how many samples have been received
-processStartMS = int(time.time() * 1000)       
+processStartMS = int(time.time() * 1000)   
+threadCount = 0    
 
 Acc1Data = []
 AccData = np.zeros([50,4,3])    ##3 dimensional array to hold sensor data [Samples: Sensors : Features]
@@ -32,7 +34,8 @@ AccData = np.zeros([50,4,3])    ##3 dimensional array to hold sensor data [Sampl
 #     print("Host IP: {host}")
 
 def processData(binaryData):
-    print("processData(binaryData)")
+    print()
+    print("processData()")
     print(f'binaryData: {binaryData}')
     print()
     #processStartMS = int(time() * 1000)
@@ -139,7 +142,9 @@ def processData(binaryData):
 
         #processTimeMS = processStopMS - processStartMS
         #print(f'processing time in ms: {processTimeMS}')
+        print(f'Processed packet: {processCount}')
         processCount += 1
+
 
     # Acc1Data.append([])
 
@@ -163,37 +168,37 @@ def plotAcc():
     XList1 = [[],[]]
     for i in range(50):
         XList1[0].append(AccData[i,0,0])
-        XList1[1].append(AccData[i,0,3])
+        XList1[1].append(i)
     #print(f'XList1: {XList1}')
 
     XList2 = [[],[]]
     for i in range(50):
         XList2[0].append(AccData[i,1,0])
-        XList2[1].append(AccData[i,1,3])
+        XList2[1].append(i)
     #print(f'XList: {XList}')
 
     YList1 = [[],[]]
     for i in range(50):
         YList1[0].append(AccData[i,0,1])
-        YList1[1].append(AccData[i,0,4])
+        YList1[1].append(i)
     #print(f'YList: {YList}')
 
     YList2 = [[],[]]
     for i in range(50):
         YList2[0].append(AccData[i,1,1])
-        YList2[1].append(AccData[i,1,4])
+        YList2[1].append(i)
     #print(f'YList: {YList}')
 
     ZList1 = [[],[]]
     for i in range(50):
         ZList1[0].append(AccData[i,0,2])
-        ZList1[1].append(AccData[i,0,5])
+        ZList1[1].append(i)
     #print(f'ZList: {ZList}')
 
     ZList2 = [[],[]]
     for i in range(50):
         ZList2[0].append(AccData[i,1,2])
-        ZList2[1].append(AccData[i,1,5])
+        ZList2[1].append(i)
     #print(f'ZList2: {ZList2}')
 
     _,axs = plt.subplots(2,3, figsize=(6,5))
@@ -221,15 +226,16 @@ def plotAcc():
 def socketLoop(): 
     print()
     print("socketLoop")
+    global threadCount
     global processCount                        #Only needed for testing - production code will run continiously
     global recvCount
     print(f'processCount: {processCount}' )
-    print(f'recvCount: {processCount}' )
+    print(f'recvCount: {recvCount}' )
     
     if recvCount < 50:             #Only needed for testing - production code will run continiously
         sock = socket.socket()
         sock.connect((host, port))
-        print("Connected to server")
+        #print("Connected to server")
         dataTx = struct.pack("=i", 255)
         #try:
         sock.send(dataTx);
@@ -237,14 +243,14 @@ def socketLoop():
         #    sock.connect((host, port))
         #    print("Socket Reconnected")
         #    sock.send(255);
-        print(f'sockname: {sock.getsockname()}')
-        print(f'sockpeer: {sock.getpeername()}')
+        #print(f'sockname: {sock.getsockname()}')
+        #print(f'sockpeer: {sock.getpeername()}')
         y = []
         #time.sleep(0.01)
         #y = sock.recv(18)
         a = 0
         while a < 24:
-            #print(f'while loop')
+            #print(f'while loop a')
             try:
                 y.append(sock.recv(1))
                 #print(f'Received 1')
@@ -261,23 +267,39 @@ def socketLoop():
         sock.close()
 
         #TODO ensure that a new thread is created - use ids as args to the threads and check for a free thread to use
+        print()
+        print(f"Received Data Starting new thread: {threadCount}")
+        threadCount += 1
         dataThread = Thread(target=processData, args=(y,))
         dataThread.start()
+        print()
+        for thread in threading.enumerate(): 
+            print(thread.name)
         ##dataThread.join()
         #processCount += 1
         #time.sleep(0.01)
         socketLoop()
 
-    elif recvCount == 50 and processCount == 50:
+    while processCount < 50:
+        pass
+
+    if processCount == 50:
         #sock.close()
         print("Packet Done")
         processStopMS = int(time.time() * 1000)
         processTimeMS = processStopMS - processStartMS
         #print(f'processStart: {processStartMS}')
         print(f'processing time in ms: {processTimeMS}')
-
+        for thread in threading.enumerate(): 
+            print(thread.name)
         plotAcc()
+        print("plot done return 0")
+        processCount += 1
+        print(f'processCount: {processCount}' )
+        print(f'recvCount: {recvCount}' )
         return 0
+    
+    return 0
 
 def main():
     
