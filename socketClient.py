@@ -23,7 +23,7 @@ recvCount = 0             #Counts how many samples have been received
 processStartMS = int(time.time() * 1000)       
 
 Acc1Data = []
-AccData = np.zeros([50,2,6])    ##3 dimensional array to hold sensor data [Samples: Sensors : Features]
+AccData = np.zeros([50,4,3])    ##3 dimensional array to hold sensor data [Samples: Sensors : Features]
 
 
 # def getHost():
@@ -42,93 +42,98 @@ def processData(binaryData):
 
         #Parse binary data and recombine into ints
         #X Axis
-        XAcc = struct.unpack("=b", binaryData[0 + (sensorIndex * 18)])
+        XAcc = struct.unpack("=b", binaryData[0 + (sensorIndex * 6)])
         #print(f'XAcc Raw: {XAcc}')
         XAcc = XAcc[0] << 4
         #print(f'XAcc Shift: {XAcc}')
-        XAcc1 = struct.unpack("=b", binaryData[1 + (sensorIndex * 18)])
+        XAcc1 = struct.unpack("=b", binaryData[1 + (sensorIndex * 6)])
         XAcc = XAcc + XAcc1[0]
         #print(f'XAcc Final: {XAcc}')
 
         #Y Axis
-        YAcc = struct.unpack("=b", binaryData[3 + (sensorIndex * 18)])
+        YAcc = struct.unpack("=b", binaryData[3 + (sensorIndex * 6)])
         #print(f'XAcc Raw: {XAcc}')
         YAcc = YAcc[0] << 4
         #print(f'YAcc Shift: {YAcc}')
-        YAcc1 = struct.unpack("=b", binaryData[2 + (sensorIndex * 18)])
+        YAcc1 = struct.unpack("=b", binaryData[2 + (sensorIndex * 6)])
         YAcc = YAcc + YAcc1[0]
         #print(f'YAcc Final: {YAcc}')
 
         #Z Axis
-        ZAcc = struct.unpack("=b", binaryData[5 + (sensorIndex * 18)])
+        ZAcc = struct.unpack("=b", binaryData[5 + (sensorIndex * 6)])
         #print(f'XAcc Raw: {XAcc}')
         ZAcc = ZAcc[0] << 4
         #print(f'ZAcc Shift: {ZAcc}')
-        ZAcc1 = struct.unpack("=b", binaryData[4 + (sensorIndex * 18)])
+        ZAcc1 = struct.unpack("=b", binaryData[4 + (sensorIndex * 6)])
         ZAcc = ZAcc + ZAcc1[0]
         #print(f'ZAcc Final: {ZAcc}')
 
-        #X Time
-        XT = struct.unpack("=B", binaryData[9 + (sensorIndex * 18)])
-        if XT != 0:
-            XT = XT[0] << 24
-        XT2 = struct.unpack("=B", binaryData[8 + (sensorIndex * 18)])
-        if XT2 != 0:
-            XT = XT + (XT2[0] << 16)
-        XT3 = struct.unpack("=B", binaryData[7 + (sensorIndex * 18)])
-        if XT3 != 0:
-            XT = XT + (XT3[0] << 8)
-        XT4 = struct.unpack("=B", binaryData[6 + (sensorIndex * 18)])
-        XT = (XT + XT4[0]) / 1000
-        #print(f'XT: {XT}')
+        # #X Time
+        # XT = struct.unpack("=B", binaryData[9 + (sensorIndex * 18)])
+        # if XT != 0:
+        #     XT = XT[0] << 24
+        # XT2 = struct.unpack("=B", binaryData[8 + (sensorIndex * 18)])
+        # if XT2 != 0:
+        #     XT = XT + (XT2[0] << 16)
+        # XT3 = struct.unpack("=B", binaryData[7 + (sensorIndex * 18)])
+        # if XT3 != 0:
+        #     XT = XT + (XT3[0] << 8)
+        # XT4 = struct.unpack("=B", binaryData[6 + (sensorIndex * 18)])
+        # XT = (XT + XT4[0]) / 1000
+        # #print(f'XT: {XT}')
 
-        #Y Time
-        YT = struct.unpack("=B", binaryData[13 + (sensorIndex * 18)])
-        if YT != 0:
-            YT = YT[0] << 24
-        YT2 = struct.unpack("=B", binaryData[12 + (sensorIndex * 18)])
-        if YT2 != 0:
-            YT = YT + (YT2[0] << 16)
-        YT3 = struct.unpack("=B", binaryData[11 + (sensorIndex * 18)])
-        if YT3 != 0:
-            YT = YT + (YT3[0] << 8)
-        YT4 = struct.unpack("=B", binaryData[10 + (sensorIndex * 18)])
-        YT = (YT + YT4[0]) / 1000
-        #print(f'YT: {YT}')
+        # #Y Time
+        # YT = struct.unpack("=B", binaryData[13 + (sensorIndex * 18)])
+        # if YT != 0:
+        #     YT = YT[0] << 24
+        # YT2 = struct.unpack("=B", binaryData[12 + (sensorIndex * 18)])
+        # if YT2 != 0:
+        #     YT = YT + (YT2[0] << 16)
+        # YT3 = struct.unpack("=B", binaryData[11 + (sensorIndex * 18)])
+        # if YT3 != 0:
+        #     YT = YT + (YT3[0] << 8)
+        # YT4 = struct.unpack("=B", binaryData[10 + (sensorIndex * 18)])
+        # YT = (YT + YT4[0]) / 1000
+        # #print(f'YT: {YT}')
 
-        #Z Time
-        ZT = struct.unpack("=B", binaryData[17 + (sensorIndex * 18)])
-        if ZT != 0:
-            ZT = ZT[0] << 24
-        ZT2 = struct.unpack("=B", binaryData[16 + (sensorIndex * 18)])
-        if ZT2 != 0:
-            ZT = ZT + (ZT2[0] << 16)
-        ZT3 = struct.unpack("=B", binaryData[15 + (sensorIndex * 18)])
-        if ZT3 != 0:
-            ZT = ZT + (ZT3[0] << 8)
-        ZT4 = struct.unpack("=B", binaryData[14 + (sensorIndex * 18)])
-        ZT = (ZT + ZT4[0]) / 1000
-        #print(f'ZT: {ZT}')
+        # #Z Time
+        # ZT = struct.unpack("=B", binaryData[17 + (sensorIndex * 18)])
+        # if ZT != 0:
+        #     ZT = ZT[0] << 24
+        # ZT2 = struct.unpack("=B", binaryData[16 + (sensorIndex * 18)])
+        # if ZT2 != 0:
+        #     ZT = ZT + (ZT2[0] << 16)
+        # ZT3 = struct.unpack("=B", binaryData[15 + (sensorIndex * 18)])
+        # if ZT3 != 0:
+        #     ZT = ZT + (ZT3[0] << 8)
+        # ZT4 = struct.unpack("=B", binaryData[14 + (sensorIndex * 18)])
+        # ZT = (ZT + ZT4[0]) / 1000
+        # #print(f'ZT: {ZT}')
 
-        return XAcc, YAcc, ZAcc, XT, YT, ZT
+        return XAcc, YAcc, ZAcc
     
     if processCount < 50:
     
-        X1Acc, Y1Acc, Z1Acc, X1T, Y1T, Z1T = formatData(binaryData, 0)
-        X2Acc, Y2Acc, Z2Acc, X2T, Y2T, Z2T = formatData(binaryData, 1)
-
+        X1Acc, Y1Acc, Z1Acc = formatData(binaryData, 0)
         AccData[processCount,0,0] = X1Acc
         AccData[processCount,0,1] = Y1Acc
         AccData[processCount,0,2] = Z1Acc
-        AccData[processCount,0,3] = X1T
-        AccData[processCount,0,4] = Y1T
-        AccData[processCount,0,5] = Z1T
+
+        X2Acc, Y2Acc, Z2Acc = formatData(binaryData, 1)
         AccData[processCount,1,0] = X2Acc
         AccData[processCount,1,1] = Y2Acc
         AccData[processCount,1,2] = Z2Acc
-        AccData[processCount,1,3] = X2T
-        AccData[processCount,1,4] = Y2T
-        AccData[processCount,1,5] = Z2T
+
+        X3Acc, Y3Acc, Z3Acc = formatData(binaryData, 2)
+        AccData[processCount,2,0] = X3Acc
+        AccData[processCount,2,1] = Y3Acc
+        AccData[processCount,2,2] = Z3Acc
+
+        X4Acc, Y4Acc, Z4Acc = formatData(binaryData, 3)
+        AccData[processCount,3,0] = X4Acc
+        AccData[processCount,3,1] = Y4Acc
+        AccData[processCount,3,2] = Z2Acc
+   
 
         #processStopMS = int(time() * 1000)
 
@@ -238,7 +243,7 @@ def socketLoop():
         #time.sleep(0.01)
         #y = sock.recv(18)
         a = 0
-        while a < 36:
+        while a < 24:
             #print(f'while loop')
             try:
                 y.append(sock.recv(1))
@@ -272,7 +277,7 @@ def socketLoop():
         print(f'processing time in ms: {processTimeMS}')
 
         plotAcc()
-        processCount += 1
+        return 0
 
 def main():
     
