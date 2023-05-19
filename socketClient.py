@@ -33,7 +33,7 @@ AccData = np.zeros([50,4,3])    ##3 dimensional array to hold sensor data [Sampl
 
 def processData(binaryData, recvCount):
     print(f'processData recvCount(): {recvCount}')
-    #print(f'binaryData: {binaryData}')
+    print(f'binaryData: {binaryData}')
 
     #processStartMS = int(time() * 1000)
     #global processCount
@@ -256,11 +256,15 @@ def socketLoop(recvCount):
             except ConnectionError:
                 print(f"Unable to reach client with socket: Retrying")
                 print(f'Connection error recvCount: {recvCount}' )
+                #Close and reopen the connection
                 if errorCount < 10:
-                    if a > 0:
-                        a -= 1     #Ask for a resend
-                    time.sleep(0.01)
+                    #Close and reopen the connection
+                    sock.close()
+                    sock = socket.socket()
+                    sock.connect((host, port))
+                    a -= 1     #Ask for a resend
                     errorCount += 1
+                    sock.send(dataTx);
                 else:
                     print(f'Fatal Error: SocketBroken')
                     return -1
@@ -268,6 +272,8 @@ def socketLoop(recvCount):
                 #socketLoop(recvCount)
             # print(f'y[a]: {y[a]}');
             a += 1
+
+            
         #y = bytearray(18)
         #sock.recv_into(y, 18)
         #print(f'y: {y}');
