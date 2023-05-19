@@ -19,10 +19,8 @@ import matplotlib.pyplot as plt
 # sock = socket.socket()
 host = "192.168.1.75"
 port = 80    
-processCount = 0          #Counts how many samples have been processed
-recvCount = 0             #Counts how many samples have been received
 processStartMS = int(time.time() * 1000)   
-threadCount = 0    
+packetDone = 0 
 
 Acc1Data = []
 AccData = np.zeros([50,4,3])    ##3 dimensional array to hold sensor data [Samples: Sensors : Features]
@@ -33,13 +31,12 @@ AccData = np.zeros([50,4,3])    ##3 dimensional array to hold sensor data [Sampl
 #     #host = input("Enter Server IP: ")
 #     print("Host IP: {host}")
 
-def processData(binaryData):
-    print()
-    print("processData()")
-    print(f'binaryData: {binaryData}')
-    print()
+def processData(binaryData, recvCount):
+    print(f'processData recvCount(): {recvCount}')
+    #print(f'binaryData: {binaryData}')
+
     #processStartMS = int(time() * 1000)
-    global processCount
+    #global processCount
 
     def formatData(binaryData, sensorIndex):
 
@@ -115,35 +112,35 @@ def processData(binaryData):
 
         return XAcc, YAcc, ZAcc
     
-    if processCount < 50:
+    if recvCount < 50:
     
         X1Acc, Y1Acc, Z1Acc = formatData(binaryData, 0)
-        AccData[processCount,0,0] = X1Acc
-        AccData[processCount,0,1] = Y1Acc
-        AccData[processCount,0,2] = Z1Acc
+        AccData[recvCount,0,0] = X1Acc
+        AccData[recvCount,0,1] = Y1Acc
+        AccData[recvCount,0,2] = Z1Acc
 
         X2Acc, Y2Acc, Z2Acc = formatData(binaryData, 1)
-        AccData[processCount,1,0] = X2Acc
-        AccData[processCount,1,1] = Y2Acc
-        AccData[processCount,1,2] = Z2Acc
+        AccData[recvCount,1,0] = X2Acc
+        AccData[recvCount,1,1] = Y2Acc
+        AccData[recvCount,1,2] = Z2Acc
 
         X3Acc, Y3Acc, Z3Acc = formatData(binaryData, 2)
-        AccData[processCount,2,0] = X3Acc
-        AccData[processCount,2,1] = Y3Acc
-        AccData[processCount,2,2] = Z3Acc
+        AccData[recvCount,2,0] = X3Acc
+        AccData[recvCount,2,1] = Y3Acc
+        AccData[recvCount,2,2] = Z3Acc
 
         X4Acc, Y4Acc, Z4Acc = formatData(binaryData, 3)
-        AccData[processCount,3,0] = X4Acc
-        AccData[processCount,3,1] = Y4Acc
-        AccData[processCount,3,2] = Z2Acc
+        AccData[recvCount,3,0] = X4Acc
+        AccData[recvCount,3,1] = Y4Acc
+        AccData[recvCount,3,2] = Z2Acc
    
 
         #processStopMS = int(time() * 1000)
 
         #processTimeMS = processStopMS - processStartMS
         #print(f'processing time in ms: {processTimeMS}')
-        print(f'Processed packet: {processCount}')
-        processCount += 1
+        #print(f'Processed packet: {processCount}')
+        #processCount += 1
 
 
     # Acc1Data.append([])
@@ -223,14 +220,14 @@ def plotAcc():
     plt.show()
 
  
-def socketLoop(): 
+def socketLoop(recvCount): 
+    #recvCount counts how many packets have been received
     print()
     print("socketLoop")
-    global threadCount
-    global processCount                        #Only needed for testing - production code will run continiously
-    global recvCount
-    print(f'processCount: {processCount}' )
-    print(f'recvCount: {recvCount}' )
+    #global processCount
+    #print(f'processCount: {processCount}' )
+    print(f'Start socketLoop recvCount: {recvCount}' )
+    global packetDone
     
     if recvCount < 50:             #Only needed for testing - production code will run continiously
         sock = socket.socket()
@@ -256,54 +253,58 @@ def socketLoop():
                 #print(f'Received 1')
             except ConnectionError:
                 print(f"Unable to reach client with socket: Retrying")
-                socketLoop()
+                print(f'Connection error recvCount: {recvCount}' )
+                #socketLoop(recvCount)
             # print(f'y[a]: {y[a]}');
             a += 1
-        recvCount += 1
         #y = bytearray(18)
         #sock.recv_into(y, 18)
         #print(f'y: {y}');
         # print(f'y[0]: {y[0]}');
         sock.close()
-
-        #TODO ensure that a new thread is created - use ids as args to the threads and check for a free thread to use
-        print()
-        print(f"Received Data Starting new thread: {threadCount}")
-        threadCount += 1
-        dataThread = Thread(target=processData, args=(y,))
+        print(f'Start dataThread recvCount: {recvCount}' )
+        dataThread = Thread(target=processData, args=(y, recvCount,))
         dataThread.start()
-        print()
-        for thread in threading.enumerate(): 
-            print(thread.name)
+        
         ##dataThread.join()
         #processCount += 1
         #time.sleep(0.01)
-        socketLoop()
+        recvCount += 1
 
-    while processCount < 50:
-        pass
+        print(f'Recursive call to socketLoop() recvCount: {recvCount}' )
+        socketLoop(recvCount)
 
-    if processCount == 50:
+    elif recvCount == 50:                      # Once we've received 50 packets
+        while threading.active_count() > 1:    #wait for the last threads to finish processing
+            print(f'threading.active_count(): {threading.active_count()}')
+            pass
+        #packetDone = 1
+
         #sock.close()
-        print("Packet Done")
-        processStopMS = int(time.time() * 1000)
-        processTimeMS = processStopMS - processStartMS
+        print(f'Packet Done')
+        #processStopMS = int(time.time() * 1000)
+        #processTimeMS = processStopMS - processStartMS
         #print(f'processStart: {processStartMS}')
-        print(f'processing time in ms: {processTimeMS}')
-        for thread in threading.enumerate(): 
-            print(thread.name)
+        #print(f'processing time in ms: {processTimeMS}')
+        # for thread in threading.enumerate(): 
+        #     print(thread.name)
+        #print()
+        #print(f'data: {AccData}')
+        #print()
         plotAcc()
-        print("plot done return 0")
-        processCount += 1
-        print(f'processCount: {processCount}' )
-        print(f'recvCount: {recvCount}' )
+        #print("plot done return 0")
+        
+        print(f'End recvCount: {recvCount}' )
+        #packetDone = 0
+        #print(f'Packet Done: {packetDone}')
         return 0
     
-    return 0
+    else: 
+        return 0
 
 def main():
     
-    socketLoop()
+    socketLoop(0)
 
     
 
