@@ -230,7 +230,7 @@ def socketLoop(recvCount):
     global packetDone
     
     if recvCount < 50:             #Only needed for testing - production code will run continiously
-        time.sleep(0.1)
+        #time.sleep(0.1)
         sock = socket.socket()
         sock.connect((host, port))
         #print("Connected to server")
