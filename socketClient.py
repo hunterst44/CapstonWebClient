@@ -230,6 +230,7 @@ def socketLoop(recvCount):
     global packetDone
     
     if recvCount < 50:             #Only needed for testing - production code will run continiously
+        time.sleep(0.1)
         sock = socket.socket()
         sock.connect((host, port))
         #print("Connected to server")
@@ -246,6 +247,7 @@ def socketLoop(recvCount):
         #time.sleep(0.01)
         #y = sock.recv(18)
         a = 0
+        errorCount = 0
         while a < 24:
             #print(f'while loop a')
             try:
@@ -254,6 +256,15 @@ def socketLoop(recvCount):
             except ConnectionError:
                 print(f"Unable to reach client with socket: Retrying")
                 print(f'Connection error recvCount: {recvCount}' )
+                if errorCount < 10:
+                    if a > 0:
+                        a -= 1     #Ask for a resend
+                    time.sleep(0.01)
+                    errorCount += 1
+                else:
+                    print(f'Fatal Error: SocketBroken')
+                    return -1
+
                 #socketLoop(recvCount)
             # print(f'y[a]: {y[a]}');
             a += 1
@@ -276,7 +287,7 @@ def socketLoop(recvCount):
 
     elif recvCount == 50:                      # Once we've received 50 packets
         while threading.active_count() > 1:    #wait for the last threads to finish processing
-            print(f'threading.active_count(): {threading.active_count()}')
+            #print(f'threading.active_count(): {threading.active_count()}')
             pass
         #packetDone = 1
 
@@ -297,6 +308,8 @@ def socketLoop(recvCount):
         print(f'End recvCount: {recvCount}' )
         #packetDone = 0
         #print(f'Packet Done: {packetDone}')
+        time.sleep(2)
+        socketLoop(0)
         return 0
     
     else: 
