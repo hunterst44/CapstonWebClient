@@ -132,7 +132,7 @@ def processData(binaryData, recvCount):
         X4Acc, Y4Acc, Z4Acc = formatData(binaryData, 3)
         AccData[recvCount,3,0] = X4Acc
         AccData[recvCount,3,1] = Y4Acc
-        AccData[recvCount,3,2] = Z2Acc
+        AccData[recvCount,3,2] = Z4Acc
    
 
         #processStopMS = int(time() * 1000)
