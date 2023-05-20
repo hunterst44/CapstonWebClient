@@ -19,7 +19,7 @@ import matplotlib.pyplot as plt
 # sock = socket.socket()
 host = "192.168.1.75"
 port = 80    
-processStartMS = int(time.time() * 1000)   
+packetStartMS = int(time.time() * 1000)   
 packetDone = 0 
 
 Acc1Data = []
@@ -35,81 +35,38 @@ def processData(binaryData, recvCount):
     print(f'processData recvCount(): {recvCount}')
     print(f'binaryData: {binaryData}')
 
-    #processStartMS = int(time() * 1000)
+    #packetStartMS = int(time() * 1000)
     #global processCount
 
     def formatData(binaryData, sensorIndex):
-
+        print(f'recvCount: {recvCount}')
         #Parse binary data and recombine into ints
         #X Axis
-        XAcc = struct.unpack("=b", binaryData[0 + (sensorIndex * 6)])
+        XAcc = struct.unpack("=b", binaryData[1 + (sensorIndex * 6)])  ##MSB is second byte in axis RX; Just a nibble
         #print(f'XAcc Raw: {XAcc}')
-        XAcc = XAcc[0] << 4
+        XAcc = XAcc[0] << 8
         #print(f'XAcc Shift: {XAcc}')
-        XAcc1 = struct.unpack("=b", binaryData[1 + (sensorIndex * 6)])
+        XAcc1 = struct.unpack("=b", binaryData[0 + (sensorIndex * 6)])  ##LSB is first byte in axis RX; full byte
         XAcc = XAcc + XAcc1[0]
-        #print(f'XAcc Final: {XAcc}')
+        print(f'XAcc Final: {XAcc}')
 
         #Y Axis
         YAcc = struct.unpack("=b", binaryData[3 + (sensorIndex * 6)])
         #print(f'XAcc Raw: {XAcc}')
-        YAcc = YAcc[0] << 4
+        YAcc = YAcc[0] << 8
         #print(f'YAcc Shift: {YAcc}')
         YAcc1 = struct.unpack("=b", binaryData[2 + (sensorIndex * 6)])
         YAcc = YAcc + YAcc1[0]
-        #print(f'YAcc Final: {YAcc}')
+        print(f'YAcc Final: {YAcc}')
 
         #Z Axis
         ZAcc = struct.unpack("=b", binaryData[5 + (sensorIndex * 6)])
         #print(f'XAcc Raw: {XAcc}')
-        ZAcc = ZAcc[0] << 4
+        ZAcc = ZAcc[0] << 8
         #print(f'ZAcc Shift: {ZAcc}')
         ZAcc1 = struct.unpack("=b", binaryData[4 + (sensorIndex * 6)])
         ZAcc = ZAcc + ZAcc1[0]
-        #print(f'ZAcc Final: {ZAcc}')
-
-        # #X Time
-        # XT = struct.unpack("=B", binaryData[9 + (sensorIndex * 18)])
-        # if XT != 0:
-        #     XT = XT[0] << 24
-        # XT2 = struct.unpack("=B", binaryData[8 + (sensorIndex * 18)])
-        # if XT2 != 0:
-        #     XT = XT + (XT2[0] << 16)
-        # XT3 = struct.unpack("=B", binaryData[7 + (sensorIndex * 18)])
-        # if XT3 != 0:
-        #     XT = XT + (XT3[0] << 8)
-        # XT4 = struct.unpack("=B", binaryData[6 + (sensorIndex * 18)])
-        # XT = (XT + XT4[0]) / 1000
-        # #print(f'XT: {XT}')
-
-        # #Y Time
-        # YT = struct.unpack("=B", binaryData[13 + (sensorIndex * 18)])
-        # if YT != 0:
-        #     YT = YT[0] << 24
-        # YT2 = struct.unpack("=B", binaryData[12 + (sensorIndex * 18)])
-        # if YT2 != 0:
-        #     YT = YT + (YT2[0] << 16)
-        # YT3 = struct.unpack("=B", binaryData[11 + (sensorIndex * 18)])
-        # if YT3 != 0:
-        #     YT = YT + (YT3[0] << 8)
-        # YT4 = struct.unpack("=B", binaryData[10 + (sensorIndex * 18)])
-        # YT = (YT + YT4[0]) / 1000
-        # #print(f'YT: {YT}')
-
-        # #Z Time
-        # ZT = struct.unpack("=B", binaryData[17 + (sensorIndex * 18)])
-        # if ZT != 0:
-        #     ZT = ZT[0] << 24
-        # ZT2 = struct.unpack("=B", binaryData[16 + (sensorIndex * 18)])
-        # if ZT2 != 0:
-        #     ZT = ZT + (ZT2[0] << 16)
-        # ZT3 = struct.unpack("=B", binaryData[15 + (sensorIndex * 18)])
-        # if ZT3 != 0:
-        #     ZT = ZT + (ZT3[0] << 8)
-        # ZT4 = struct.unpack("=B", binaryData[14 + (sensorIndex * 18)])
-        # ZT = (ZT + ZT4[0]) / 1000
-        # #print(f'ZT: {ZT}')
-
+        print(f'ZAcc Final: {ZAcc}')
         return XAcc, YAcc, ZAcc
     
     if recvCount < 50:
@@ -133,30 +90,14 @@ def processData(binaryData, recvCount):
         AccData[recvCount,3,0] = X4Acc
         AccData[recvCount,3,1] = Y4Acc
         AccData[recvCount,3,2] = Z4Acc
-   
-
-        #processStopMS = int(time() * 1000)
-
-        #processTimeMS = processStopMS - processStartMS
-        #print(f'processing time in ms: {processTimeMS}')
-        #print(f'Processed packet: {processCount}')
-        #processCount += 1
-
-
-    # Acc1Data.append([])
-
-    # Acc1Data[len(Acc1Data) -1].append(XAcc)    #XAcc
-    # Acc1Data[len(Acc1Data) -1].append(YAcc)    #YAcc
-    # Acc1Data[len(Acc1Data) -1].append(ZAcc)    #ZAcc
-    # Acc1Data[len(Acc1Data)-1].append(XT)       #XT
-    # Acc1Data[len(Acc1Data)-1].append(YT)       #YT
-    # Acc1Data[len(Acc1Data)-1].append(ZT)       #ZT
     
+
     #print(f'AccData: {AccData}')
     #print()
-    # for i in range(len(Acc1Data)):
-    #     for j in range(len(Acc1Data[i])):
-    #         print(f'Acc1Data {i},{j}: {Acc1Data[i][j]}')
+    print(f'AccData:')
+    for i in range(4):
+        for j in range(3):
+            print(f'Sample: {recvCount}, Sensor: {i}, Axis: {j}: {AccData[recvCount,i,j]}')
     #     print()
     
 def plotAcc():
@@ -174,6 +115,18 @@ def plotAcc():
         XList2[1].append(i)
     #print(f'XList: {XList}')
 
+    XList3 = [[],[]]
+    for i in range(50):
+        XList3[0].append(AccData[i,2,0])
+        XList3[1].append(i)
+    #print(f'XList1: {XList1}')
+
+    XList4 = [[],[]]
+    for i in range(50):
+        XList4[0].append(AccData[i,3,0])
+        XList4[1].append(i)
+    #print(f'XList: {XList}')
+
     YList1 = [[],[]]
     for i in range(50):
         YList1[0].append(AccData[i,0,1])
@@ -185,6 +138,17 @@ def plotAcc():
         YList2[0].append(AccData[i,1,1])
         YList2[1].append(i)
     #print(f'YList: {YList}')
+
+    YList3 = [[],[]]
+    for i in range(50):
+        YList3[0].append(AccData[i,2,1])
+        YList3[1].append(i)
+    #print(f'XList1: {XList1}')
+
+    YList4 = [[],[]]
+    for i in range(50):
+        YList4[0].append(AccData[i,3,1])
+        YList4[1].append(i)
 
     ZList1 = [[],[]]
     for i in range(50):
@@ -198,7 +162,18 @@ def plotAcc():
         ZList2[1].append(i)
     #print(f'ZList2: {ZList2}')
 
-    _,axs = plt.subplots(2,3, figsize=(6,5))
+    ZList3 = [[],[]]
+    for i in range(50):
+        ZList3[0].append(AccData[i,2,2])
+        ZList3[1].append(i)
+    #print(f'XList1: {XList1}')
+
+    ZList4 = [[],[]]
+    for i in range(50):
+        ZList4[0].append(AccData[i,3,2])
+        ZList4[1].append(i)
+
+    _,axs = plt.subplots(4,3, figsize=(6,5))
     #axs[0][0].plot(AccData[:,1,1])
     axs[0][0].plot(XList1[1],XList1[0])
     axs[0][1].plot(YList1[1],YList1[0])
@@ -206,28 +181,27 @@ def plotAcc():
     axs[1][0].plot(XList2[1],XList2[0])
     axs[1][1].plot(YList2[1],YList2[0])
     axs[1][2].plot(ZList2[1],ZList2[0])
-
-    # axs[0].set_title('X Axis Acceleration Sensor 1')
-    # axs[1].set_title('Y Axis Acceleration Sensor 1')
-    # axs[2].set_title('Z Axis Acceleration Sensor 1')
-    # axs[3].set_title('X Axis Acceleration Sensor 2')
-    # axs[4].set_title('Y Axis Acceleration Sensor 2')
-    # axs[5].set_title('Y Axis Acceleration Sensor 2')
-
-    # axs[0].title("X Axis Acceleration")
-    # axs[1].title("Y Axis Acceleration")
-    # axs[2].title("Z Axis Acceleration")
+    axs[2][0].plot(XList3[1],XList3[0])
+    axs[2][1].plot(YList3[1],YList3[0])
+    axs[2][2].plot(ZList3[1],ZList3[0])
+    axs[3][0].plot(XList4[1],XList4[0])
+    axs[3][1].plot(YList4[1],YList4[0])
+    axs[3][2].plot(ZList4[1],ZList4[0])
+   
     plt.show()
 
  
 def socketLoop(recvCount): 
     #recvCount counts how many packets have been received
-    print()
-    print("socketLoop")
+    #print()
+    #print("socketLoop")
     #global processCount
     #print(f'processCount: {processCount}' )
-    print(f'Start socketLoop recvCount: {recvCount}' )
+    #print(f'Start socketLoop recvCount: {recvCount}' )
     global packetDone
+    global packetStartMS
+    if recvCount == 0:
+        packetStartMS = int(time.time() * 1000)  
     
     if recvCount < 50:             #Only needed for testing - production code will run continiously
         #time.sleep(0.1)
@@ -299,10 +273,10 @@ def socketLoop(recvCount):
 
         #sock.close()
         print(f'Packet Done')
-        #processStopMS = int(time.time() * 1000)
-        #processTimeMS = processStopMS - processStartMS
-        #print(f'processStart: {processStartMS}')
-        #print(f'processing time in ms: {processTimeMS}')
+        packetStopMS = int(time.time() * 1000)
+        packetTimeMS = packetStopMS - packetStartMS
+        #print(f'packetStart: {packetStartMS}')
+        print(f'processing time in ms: {packetTimeMS}')
         # for thread in threading.enumerate(): 
         #     print(thread.name)
         #print()
