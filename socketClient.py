@@ -100,36 +100,37 @@ def processData(binaryData, recvCount):
         for j in range(3):
             print(f'Sample: {recvCount}, Sensor: {i}, Axis: {j}: {AccData[recvCount,i,j]}')
     #     print()
-    
-def plotAcc():
-    #Arrange the data
-    #time.sleep(2)
 
+
+def writetoBinary():
     #Write data to .npy file (binary)
     if os.path.exists('data/data.npy'):
         tmpArr = np.load('data/data.npy',allow_pickle=False)
-        print(f'tmpArr: {tmpArr}')
-        np.append(tmpArr,AccData, axis=0)
+        #print(f'tmpArr: {tmpArr}')
+        tmpArr = np.append(tmpArr,AccData, axis=0)
         np.save('data/data.npy', tmpArr, allow_pickle=False)
     else: 
          np.save('data/data.npy', AccData, allow_pickle=False)
 
-
+def writetoCSV():
      #Write data to .csv file (text)
      #TODO: Flatten to 2D before write; expand to 3D after read numpy.reshape()
     if os.path.exists('data/data.csv'):
-        tmpArr = np.loadtxt('data/data.csv')
-        np.reshape(tmpArr, (round(tmpArr.shape[0]/4)),4, 3)   #Reshape to a 3-D array
-        print(f'tmpArr.shape: {tmpArr.shape}')
-        np.append(tmpArr,AccData, axis=0)
-        print(f'tmpArr.shape: {tmpArr.shape}')
+        tmpArr = np.loadtxt('data/data.csv',dtype=int, delimiter=',')
+        tmpArr = np.reshape(tmpArr, (round(tmpArr.shape[0]/4),4, 3))   #Reshape to a 3-D array
+        print(f'tmpArr.shape 1: {tmpArr.shape}')
+        tmpArr = np.append(tmpArr,AccData, axis=0)
+        print(f'tmpArr.shape 2: {tmpArr.shape}')
         tmpArr = np.reshape(tmpArr, (tmpArr.shape[0] * 4, 3))   #Reshape to a 2-D array
+        print(f'tmpArr.shape 3: {tmpArr.shape}')
         np.savetxt('data/data.csv', tmpArr, fmt="%d", delimiter=",")
     else: 
          tmpArr = np.reshape(AccData, (AccData.shape[0] * 4, 3))   #Reshape to a 2-D array
-         np.savetxt('data/data.csv', AccData, fmt="%d", delimiter=",")
+         np.savetxt('data/data.csv', tmpArr, fmt="%d", delimiter=",")
 
-    #AccData.tofile('data/datafile.csv', sep=',')
+def plotAcc():
+    #Arrange the data
+    #time.sleep(2)
 
     XList1 = [[],[]]
     for i in range(5):
@@ -311,6 +312,8 @@ def socketLoop(recvCount):
         #print(f'data: {AccData}')
         #print()
         plotAcc()
+        writetoBinary()
+        writetoCSV()
         #print("plot done return 0")
         
         print(f'End recvCount: {recvCount}' )
