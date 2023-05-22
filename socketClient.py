@@ -14,7 +14,8 @@ import struct
 import time
 import threading
 from threading import Thread
-import matplotlib.pyplot as plt           
+import matplotlib.pyplot as plt 
+import os.path          
  
 # sock = socket.socket()
 host = "192.168.1.75"
@@ -23,7 +24,7 @@ packetStartMS = int(time.time() * 1000)
 packetDone = 0 
 
 Acc1Data = []
-AccData = np.zeros([50,4,3])    ##3 dimensional array to hold sensor data [Samples: Sensors : Features]
+AccData = np.zeros([5,4,3])    ##3 dimensional array to hold sensor data [Samples: Sensors : Features]
 
 
 # def getHost():
@@ -69,7 +70,7 @@ def processData(binaryData, recvCount):
         print(f'ZAcc Final: {ZAcc}')
         return XAcc, YAcc, ZAcc
     
-    if recvCount < 50:
+    if recvCount < 5:
     
         X1Acc, Y1Acc, Z1Acc = formatData(binaryData, 0)
         AccData[recvCount,0,0] = X1Acc
@@ -103,73 +104,93 @@ def processData(binaryData, recvCount):
 def plotAcc():
     #Arrange the data
     #time.sleep(2)
+
+    #Write data to .npy file (binary)
+    if os.path.exists('data/data.npy'):
+        tmpArr = np.load('data/data.npy',allow_pickle=False)
+        print(f'tmpArr: {tmpArr}')
+        #tmpArr.append(AccData)
+        np.save('data/data.npy', tmpArr, allow_pickle=False)
+    else: 
+         np.save('data/data.npy', AccData, allow_pickle=False)
+
+     #Write data to .csv file
+    if os.path.exists('data/data.csv'):
+        tmpArr = np.loadtxt('data/data.csv')
+        #tmpArr.append(AccData)
+        np.savetxt('data/data.csv', tmpArr, fmt="%d", delimiter=",")
+    else: 
+         np.savetxt('data/data.csv', AccData, fmt="%d", delimiter=",")
+
+    #AccData.tofile('data/datafile.csv', sep=',')
+
     XList1 = [[],[]]
-    for i in range(50):
+    for i in range(5):
         XList1[0].append(AccData[i,0,0])
         XList1[1].append(i)
     #print(f'XList1: {XList1}')
 
     XList2 = [[],[]]
-    for i in range(50):
+    for i in range(5):
         XList2[0].append(AccData[i,1,0])
         XList2[1].append(i)
     #print(f'XList: {XList}')
 
     XList3 = [[],[]]
-    for i in range(50):
+    for i in range(5):
         XList3[0].append(AccData[i,2,0])
         XList3[1].append(i)
     #print(f'XList1: {XList1}')
 
     XList4 = [[],[]]
-    for i in range(50):
+    for i in range(5):
         XList4[0].append(AccData[i,3,0])
         XList4[1].append(i)
     #print(f'XList: {XList}')
 
     YList1 = [[],[]]
-    for i in range(50):
+    for i in range(5):
         YList1[0].append(AccData[i,0,1])
         YList1[1].append(i)
     #print(f'YList: {YList}')
 
     YList2 = [[],[]]
-    for i in range(50):
+    for i in range(5):
         YList2[0].append(AccData[i,1,1])
         YList2[1].append(i)
     #print(f'YList: {YList}')
 
     YList3 = [[],[]]
-    for i in range(50):
+    for i in range(5):
         YList3[0].append(AccData[i,2,1])
         YList3[1].append(i)
     #print(f'XList1: {XList1}')
 
     YList4 = [[],[]]
-    for i in range(50):
+    for i in range(5):
         YList4[0].append(AccData[i,3,1])
         YList4[1].append(i)
 
     ZList1 = [[],[]]
-    for i in range(50):
+    for i in range(5):
         ZList1[0].append(AccData[i,0,2])
         ZList1[1].append(i)
     #print(f'ZList: {ZList}')
 
     ZList2 = [[],[]]
-    for i in range(50):
+    for i in range(5):
         ZList2[0].append(AccData[i,1,2])
         ZList2[1].append(i)
     #print(f'ZList2: {ZList2}')
 
     ZList3 = [[],[]]
-    for i in range(50):
+    for i in range(5):
         ZList3[0].append(AccData[i,2,2])
         ZList3[1].append(i)
     #print(f'XList1: {XList1}')
 
     ZList4 = [[],[]]
-    for i in range(50):
+    for i in range(5):
         ZList4[0].append(AccData[i,3,2])
         ZList4[1].append(i)
 
@@ -203,7 +224,7 @@ def socketLoop(recvCount):
     if recvCount == 0:
         packetStartMS = int(time.time() * 1000)  
     
-    if recvCount < 50:             #Only needed for testing - production code will run continiously
+    if recvCount < 5:             #Only needed for testing - production code will run continiously
         #time.sleep(0.1)
         sock = socket.socket()
         sock.connect((host, port))
@@ -265,7 +286,7 @@ def socketLoop(recvCount):
         print(f'Recursive call to socketLoop() recvCount: {recvCount}' )
         socketLoop(recvCount)
 
-    elif recvCount == 50:                      # Once we've received 50 packets
+    elif recvCount == 5:                      # Once we've received 5 packets
         while threading.active_count() > 1:    #wait for the last threads to finish processing
             #print(f'threading.active_count(): {threading.active_count()}')
             pass
