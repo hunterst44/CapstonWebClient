@@ -109,15 +109,16 @@ def plotAcc():
     if os.path.exists('data/data.npy'):
         tmpArr = np.load('data/data.npy',allow_pickle=False)
         print(f'tmpArr: {tmpArr}')
-        #tmpArr.append(AccData)
+        np.append(tmpArr,AccData, axis=0)
         np.save('data/data.npy', tmpArr, allow_pickle=False)
     else: 
          np.save('data/data.npy', AccData, allow_pickle=False)
 
      #Write data to .csv file
+     #TODO: Flatten to 2D before write; expand to 3D after read numpy.reshape()
     if os.path.exists('data/data.csv'):
         tmpArr = np.loadtxt('data/data.csv')
-        #tmpArr.append(AccData)
+        np.append(tmpArr,AccData, axis=0)
         np.savetxt('data/data.csv', tmpArr, fmt="%d", delimiter=",")
     else: 
          np.savetxt('data/data.csv', AccData, fmt="%d", delimiter=",")
