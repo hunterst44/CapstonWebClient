@@ -22,9 +22,12 @@ host = "192.168.1.75"
 port = 80    
 packetStartMS = int(time.time() * 1000)   
 packetDone = 0 
+PACKETSIZE = 5   #Size of a packet - corresponds to a gesture -- aim to cover about 1 - 2 seconds of sampling time (~10 samples) Use less for testing
+NUMSENSORS = 4   #Number of sensors
+packetCount = 0  #number of packets through the machine
 
 Acc1Data = []
-AccData = np.zeros([5,4,3])    ##3 dimensional array to hold sensor data [Samples: Sensors : Features]
+AccData = np.zeros([PACKETSIZE,NUMSENSORS,3])    ##3 dimensional array to hold sensor data [Samples: Sensors : Features]
 
 
 # def getHost():
@@ -70,7 +73,7 @@ def processData(binaryData, recvCount):
         print(f'ZAcc Final: {ZAcc}')
         return XAcc, YAcc, ZAcc
     
-    if recvCount < 5:
+    if recvCount < PACKETSIZE:
     
         X1Acc, Y1Acc, Z1Acc = formatData(binaryData, 0)
         AccData[recvCount,0,0] = X1Acc
@@ -91,114 +94,150 @@ def processData(binaryData, recvCount):
         AccData[recvCount,3,0] = X4Acc
         AccData[recvCount,3,1] = Y4Acc
         AccData[recvCount,3,2] = Z4Acc
-    
 
     #print(f'AccData: {AccData}')
     #print()
     print(f'AccData:')
-    for i in range(4):
+    for i in range(NUMSENSORS):
         for j in range(3):
             print(f'Sample: {recvCount}, Sensor: {i}, Axis: {j}: {AccData[recvCount,i,j]}')
     #     print()
 
+def prepTraining(pathToBinary, pathToCSV, label):    #Prep the packet for training
 
-def writetoBinary():
+    #AccData is a three dimensional array (PACKETSIZE, NUMSENSORS, Axi[XYZ])
+    #Scale Axes to +-1
+
+    trainingData = AccData.copy()
+    trainingData = np.resize(trainingData, (PACKETSIZE,NUMSENSORS,4))   #Add another spot for the ground truth label
+
+    print(f'AccData Original: {AccData}')  
+    for i in range(PACKETSIZE):
+        for j in range(NUMSENSORS):
+            if AccData[i, j, 0]:                   #X axis not zero
+                trainingData[i, j, 0] = trainingData[i, j, 0] / 2048
+
+            if trainingData[i, j, 1]:                   #Y axis not zero
+                trainingData[i, j, 1] = trainingData[i, j, 1] / 2048
+           
+            if trainingData[i, j, 2]:                   #Z axis not zero
+                trainingData[i, j, 2] = trainingData[i, j, 2] / 2048 
+
+            #print(f'trainingData scaled: {trainingData}')    
+
+            trainingData[i,j,3] = label          #Add ground truth label
+
+    #print(f'trainingData scaled: {trainingData}') 
+
+    #Write to files
+    writetoBinary(trainingData, pathToBinary)
+    writetoCSV(trainingData, pathToCSV)
+
+def writetoBinary(trainingData, pathTo):
+    print(f'trainingData for write: {trainingData}')
     #Write data to .npy file (binary)
-    if os.path.exists('data/data.npy'):
-        tmpArr = np.load('data/data.npy',allow_pickle=False)
-        #print(f'tmpArr: {tmpArr}')
-        tmpArr = np.append(tmpArr,AccData, axis=0)
-        np.save('data/data.npy', tmpArr, allow_pickle=False)
+    if os.path.exists(pathTo):
+        tmpArr = np.load(pathTo,allow_pickle=False)
+        print(f'tmpArr from file: {tmpArr}')
+        tmpArr = np.append(tmpArr,trainingData, axis=0)
+        print(f'tmpArr appended and saved (Binary): {tmpArr}')
+        np.save(pathTo, tmpArr, allow_pickle=False)
     else: 
-         np.save('data/data.npy', AccData, allow_pickle=False)
+         np.save(pathTo, trainingData, allow_pickle=False)
+         print(f'trainingData saved: {trainingData}')
 
-def writetoCSV():
+def writetoCSV(trainingData, pathTo):
      #Write data to .csv file (text)
      #TODO: Flatten to 2D before write; expand to 3D after read numpy.reshape()
-    if os.path.exists('data/data.csv'):
-        tmpArr = np.loadtxt('data/data.csv',dtype=int, delimiter=',')
-        tmpArr = np.reshape(tmpArr, (round(tmpArr.shape[0]/4),4, 3))   #Reshape to a 3-D array
+    if os.path.exists(pathTo):
+        tmpArr = np.loadtxt(pathTo,dtype=float, delimiter=',')
         print(f'tmpArr.shape 1: {tmpArr.shape}')
-        tmpArr = np.append(tmpArr,AccData, axis=0)
+        
+        TwoDtrainingData = np.reshape(trainingData, (trainingData.shape[0] * 4, 4))  #Shape trainingData to 2-D array for CSV
+        print(f'TwoDtrainingData Shape: {TwoDtrainingData.shape}')              
+        
+        tmpArr = np.append(tmpArr,TwoDtrainingData, axis=0)                  #Append trainingData to tmpArr
         print(f'tmpArr.shape 2: {tmpArr.shape}')
-        tmpArr = np.reshape(tmpArr, (tmpArr.shape[0] * 4, 3))   #Reshape to a 2-D array
-        print(f'tmpArr.shape 3: {tmpArr.shape}')
-        np.savetxt('data/data.csv', tmpArr, fmt="%d", delimiter=",")
-    else: 
-         tmpArr = np.reshape(AccData, (AccData.shape[0] * 4, 3))   #Reshape to a 2-D array
-         np.savetxt('data/data.csv', tmpArr, fmt="%d", delimiter=",")
 
-def plotAcc():
+        np.savetxt(pathTo, tmpArr, fmt="%f", delimiter=",") 
+        print(f'tmpArr appended and saved (TXT): {tmpArr}')
+
+    else: 
+         tmpArr = np.reshape(trainingData, (trainingData.shape[0] * 4, 4))   #Reshape to a 2-D array
+         np.savetxt(pathTo, tmpArr, fmt="%f", delimiter=",")
+         print(f'tmpArr appended and saved (TXT): {tmpArr}')
+
+def plotAcc(pathToFig, label):
     #Arrange the data
     #time.sleep(2)
 
     XList1 = [[],[]]
-    for i in range(5):
+    for i in range(PACKETSIZE):
         XList1[0].append(AccData[i,0,0])
         XList1[1].append(i)
     #print(f'XList1: {XList1}')
 
     XList2 = [[],[]]
-    for i in range(5):
+    for i in range(PACKETSIZE):
         XList2[0].append(AccData[i,1,0])
         XList2[1].append(i)
     #print(f'XList: {XList}')
 
     XList3 = [[],[]]
-    for i in range(5):
+    for i in range(PACKETSIZE):
         XList3[0].append(AccData[i,2,0])
         XList3[1].append(i)
     #print(f'XList1: {XList1}')
 
     XList4 = [[],[]]
-    for i in range(5):
+    for i in range(PACKETSIZE):
         XList4[0].append(AccData[i,3,0])
         XList4[1].append(i)
     #print(f'XList: {XList}')
 
     YList1 = [[],[]]
-    for i in range(5):
+    for i in range(PACKETSIZE):
         YList1[0].append(AccData[i,0,1])
         YList1[1].append(i)
     #print(f'YList: {YList}')
 
     YList2 = [[],[]]
-    for i in range(5):
+    for i in range(PACKETSIZE):
         YList2[0].append(AccData[i,1,1])
         YList2[1].append(i)
     #print(f'YList: {YList}')
 
     YList3 = [[],[]]
-    for i in range(5):
+    for i in range(PACKETSIZE):
         YList3[0].append(AccData[i,2,1])
         YList3[1].append(i)
     #print(f'XList1: {XList1}')
 
     YList4 = [[],[]]
-    for i in range(5):
+    for i in range(PACKETSIZE):
         YList4[0].append(AccData[i,3,1])
         YList4[1].append(i)
 
     ZList1 = [[],[]]
-    for i in range(5):
+    for i in range(PACKETSIZE):
         ZList1[0].append(AccData[i,0,2])
         ZList1[1].append(i)
     #print(f'ZList: {ZList}')
 
     ZList2 = [[],[]]
-    for i in range(5):
+    for i in range(PACKETSIZE):
         ZList2[0].append(AccData[i,1,2])
         ZList2[1].append(i)
     #print(f'ZList2: {ZList2}')
 
     ZList3 = [[],[]]
-    for i in range(5):
+    for i in range(PACKETSIZE):
         ZList3[0].append(AccData[i,2,2])
         ZList3[1].append(i)
     #print(f'XList1: {XList1}')
 
     ZList4 = [[],[]]
-    for i in range(5):
+    for i in range(PACKETSIZE):
         ZList4[0].append(AccData[i,3,2])
         ZList4[1].append(i)
 
@@ -219,6 +258,9 @@ def plotAcc():
    
     plt.show()
 
+    figPath = pathToFig + str(packetCount) + '_' + str(label) + '.png'
+    plt.savefig(figPath)
+
  
 def socketLoop(recvCount): 
     #recvCount counts how many packets have been received
@@ -229,10 +271,12 @@ def socketLoop(recvCount):
     #print(f'Start socketLoop recvCount: {recvCount}' )
     global packetDone
     global packetStartMS
+    global packetCount
     if recvCount == 0:
         packetStartMS = int(time.time() * 1000)  
-    
-    if recvCount < 5:             #Only needed for testing - production code will run continiously
+
+
+    while recvCount <= PACKETSIZE:             #Only needed for testing - production code will run continiously
         #time.sleep(0.1)
         sock = socket.socket()
         sock.connect((host, port))
@@ -272,59 +316,44 @@ def socketLoop(recvCount):
                     print(f'Fatal Error: SocketBroken')
                     return -1
 
-                #socketLoop(recvCount)
-            # print(f'y[a]: {y[a]}');
-            a += 1
-
-            
-        #y = bytearray(18)
-        #sock.recv_into(y, 18)
-        #print(f'y: {y}');
-        # print(f'y[0]: {y[0]}');
+            a += 1 
         sock.close()
-        print(f'Start dataThread recvCount: {recvCount}' )
+        print(f'Start preocessData() thread for sample: {recvCount}' )
         dataThread = Thread(target=processData, args=(y, recvCount,))
         dataThread.start()
-        
-        ##dataThread.join()
-        #processCount += 1
-        #time.sleep(0.01)
         recvCount += 1
+        print(f'Completed Rx of sample: {recvCount}' )
+        #socketLoop(recvCount)
 
-        print(f'Recursive call to socketLoop() recvCount: {recvCount}' )
-        socketLoop(recvCount)
-
-    elif recvCount == 5:                      # Once we've received 5 packets
-        while threading.active_count() > 1:    #wait for the last threads to finish processing
-            #print(f'threading.active_count(): {threading.active_count()}')
-            pass
-        #packetDone = 1
-
-        #sock.close()
-        print(f'Packet Done')
-        packetStopMS = int(time.time() * 1000)
-        packetTimeMS = packetStopMS - packetStartMS
-        #print(f'packetStart: {packetStartMS}')
-        print(f'processing time in ms: {packetTimeMS}')
-        # for thread in threading.enumerate(): 
-        #     print(thread.name)
-        #print()
-        #print(f'data: {AccData}')
-        #print()
-        plotAcc()
-        writetoBinary()
-        writetoCSV()
-        #print("plot done return 0")
-        
-        print(f'End recvCount: {recvCount}' )
-        #packetDone = 0
-        #print(f'Packet Done: {packetDone}')
-        time.sleep(2)
-        socketLoop(0)
-        return 0
-    
-    else: 
-        return 0
+        if recvCount == PACKETSIZE:                      # Once we've received 5 packets
+            while threading.active_count() > 1:    #wait for the last threads to finish processing
+                #print(f'threading.active_count(): {threading.active_count()}')
+                pass
+            
+            print(f'Packet Done')
+            packetStopMS = int(time.time() * 1000)
+            packetTimeMS = packetStopMS - packetStartMS
+            #print(f'packetStart: {packetStartMS}')
+            print(f'processing time in ms: {packetTimeMS}')
+            # for thread in threading.enumerate(): 
+            #     print(thread.name)
+            #print()
+            #print(f'data: {AccData}')
+            #print()
+            #plotAcc('data/Train01Fig_', 1)
+            
+            #Save data for training
+            #Training Label codes
+            # 0 No training - prediction only
+            # 1 Not movinng - Environmental movements
+            # 2 ...
+            prepTraining('data/Train01.npy', 'data/Train01.csv', 1)
+            
+            #packetDone = 1
+            print(f'Completed Packet: {packetCount}')
+            time.sleep(1)
+            packetCount += 1
+            recvCount = 0    #Reset recvCount to get the next packet
 
 def main():
     

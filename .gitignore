@@ -1,3 +1,8 @@
 testing.py
-data/data.npy
+data/*
+data.npy
 data/data.csv
+data/Train00.csv
+data/Train00Fig_0_1.png
+data/Train00Fig_1_1.png
+data/Train00Fig_2_1.png
