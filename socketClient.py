@@ -301,11 +301,12 @@ class GetData:
 
             if self.getTraining:
                 #Prompt user to get ready to create training data
+                time.sleep(0.5)
                 print('********************************************')  
                 print('********************************************') 
                 print('********************************************') 
                 print('Creating training data.')
-
+                
                 if self.label == 0:
                     print('Get ready to perform gesture: 0 No movement')
                 elif self.label == 1:
@@ -322,7 +323,8 @@ class GetData:
                 print('Go!')
                 time.sleep(0.1)
 
-        while recvCount <= self.packetSize:             #Only needed for testing - production code will run continiously
+        while recvCount <= self.packetSize:             
+                
             sock = socket.socket()
             sock.connect((self.host, self.port))
             #print("Connected to server")
@@ -385,7 +387,7 @@ class GetData:
                 #print()
                 #print(f'data: {self.AccData}')
                 #print()
-                #self.plotAcc()
+                self.plotAcc()
                 
                 if self.getTraining:
                     #Save data for training
@@ -396,7 +398,7 @@ class GetData:
                     self.prepTraining()
                 
                 #self.packetDone = 1
-                print(f'Completed packet: {self.packetCount} of {self.packetLimit} packets')
+                print(f'Completed packet: {self.packetCount + 1} of {self.packetLimit} packets')
                 #time.sleep(1)
                 self.packetCount += 1
                 if self.packetCount > self.packetLimit:  # We have all the packets we need 
