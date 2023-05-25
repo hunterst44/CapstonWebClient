@@ -1,282 +1,408 @@
 #   Python Socket client
-#   Sends query to esp32 to request data
-#   Accepts streaming data from esp32
-#   Performs data analysis on data received
+#   Created May 1 2023 by Joel Legassie
 #   
-#  Basic functionality
+#  Functionality
 #  Connect to server and send test byte
-#  Receive six bytes data and decode into 3x1 vector
+#  Receive 24 bytes data and decode into 3x1 vector
+#  Decodes binary code in 12 bit twos complement into 16 bit signed integers
+#  Organizes samples into packets of packetSize corresponding to a gesture
+#  Writes packets to files cumulatively - binary and human readable (CSV)
+#  Generates plot images of each packet
 
 
 import socket  
 import numpy as np
 import struct
 import time
+import threading
 from threading import Thread
-import matplotlib.pyplot as plt           
- 
-# sock = socket.socket()
-host = "192.168.1.75"
-port = 80    
-processCount = 0          #Counts how many samples have been processed
-recvCount = 0             #Counts how many samples have been received
-processStartMS = int(time.time() * 1000)       
+import matplotlib.pyplot as plt 
+import os.path          
 
-Acc1Data = []
-AccData = np.zeros([50,2,6])    ##3 dimensional array to hold sensor data [Samples: Sensors : Features]
-
-
-# def getHost():
-#     host = "192.168.1.65"
-#     #host = input("Enter Server IP: ")
-#     print("Host IP: {host}")
-
-def processData(binaryData):
-    print("processData(binaryData)")
-    print(f'binaryData: {binaryData}')
-    print()
-    #processStartMS = int(time() * 1000)
-    global processCount
-
-    def formatData(binaryData, sensorIndex):
-
-        #Parse binary data and recombine into ints
-        #X Axis
-        XAcc = struct.unpack("=b", binaryData[0 + (sensorIndex * 18)])
-        #print(f'XAcc Raw: {XAcc}')
-        XAcc = XAcc[0] << 4
-        #print(f'XAcc Shift: {XAcc}')
-        XAcc1 = struct.unpack("=b", binaryData[1 + (sensorIndex * 18)])
-        XAcc = XAcc + XAcc1[0]
-        #print(f'XAcc Final: {XAcc}')
-
-        #Y Axis
-        YAcc = struct.unpack("=b", binaryData[3 + (sensorIndex * 18)])
-        #print(f'XAcc Raw: {XAcc}')
-        YAcc = YAcc[0] << 4
-        #print(f'YAcc Shift: {YAcc}')
-        YAcc1 = struct.unpack("=b", binaryData[2 + (sensorIndex * 18)])
-        YAcc = YAcc + YAcc1[0]
-        #print(f'YAcc Final: {YAcc}')
-
-        #Z Axis
-        ZAcc = struct.unpack("=b", binaryData[5 + (sensorIndex * 18)])
-        #print(f'XAcc Raw: {XAcc}')
-        ZAcc = ZAcc[0] << 4
-        #print(f'ZAcc Shift: {ZAcc}')
-        ZAcc1 = struct.unpack("=b", binaryData[4 + (sensorIndex * 18)])
-        ZAcc = ZAcc + ZAcc1[0]
-        #print(f'ZAcc Final: {ZAcc}')
-
-        #X Time
-        XT = struct.unpack("=B", binaryData[9 + (sensorIndex * 18)])
-        if XT != 0:
-            XT = XT[0] << 24
-        XT2 = struct.unpack("=B", binaryData[8 + (sensorIndex * 18)])
-        if XT2 != 0:
-            XT = XT + (XT2[0] << 16)
-        XT3 = struct.unpack("=B", binaryData[7 + (sensorIndex * 18)])
-        if XT3 != 0:
-            XT = XT + (XT3[0] << 8)
-        XT4 = struct.unpack("=B", binaryData[6 + (sensorIndex * 18)])
-        XT = (XT + XT4[0]) / 1000
-        #print(f'XT: {XT}')
-
-        #Y Time
-        YT = struct.unpack("=B", binaryData[13 + (sensorIndex * 18)])
-        if YT != 0:
-            YT = YT[0] << 24
-        YT2 = struct.unpack("=B", binaryData[12 + (sensorIndex * 18)])
-        if YT2 != 0:
-            YT = YT + (YT2[0] << 16)
-        YT3 = struct.unpack("=B", binaryData[11 + (sensorIndex * 18)])
-        if YT3 != 0:
-            YT = YT + (YT3[0] << 8)
-        YT4 = struct.unpack("=B", binaryData[10 + (sensorIndex * 18)])
-        YT = (YT + YT4[0]) / 1000
-        #print(f'YT: {YT}')
-
-        #Z Time
-        ZT = struct.unpack("=B", binaryData[17 + (sensorIndex * 18)])
-        if ZT != 0:
-            ZT = ZT[0] << 24
-        ZT2 = struct.unpack("=B", binaryData[16 + (sensorIndex * 18)])
-        if ZT2 != 0:
-            ZT = ZT + (ZT2[0] << 16)
-        ZT3 = struct.unpack("=B", binaryData[15 + (sensorIndex * 18)])
-        if ZT3 != 0:
-            ZT = ZT + (ZT3[0] << 8)
-        ZT4 = struct.unpack("=B", binaryData[14 + (sensorIndex * 18)])
-        ZT = (ZT + ZT4[0]) / 1000
-        #print(f'ZT: {ZT}')
-
-        return XAcc, YAcc, ZAcc, XT, YT, ZT
+class GetData:
     
-    if processCount < 50:
+    def __init__(self, *, host="192.168.1.75", port=80, packetSize=5, numSensors=4, pathPreface='data/data', label=0, getTraining=True, packetLimit=100):
+        self.host = host
+        self.port = port
+        self.packetSize = packetSize
+        self.numSensors = numSensors
+        self.AccData = np.zeros([self.packetSize, self.numSensors, 3])
+        self.packetCount = 0
+        self.packetDone = 0
+        self.pathPreface = pathPreface 
+        self.label = label
+        self.getTraining = getTraining
+        self.packetLimit = packetLimit
+
+    def processData(self, binaryData, recvCount):
+        #print(f'processData recvCount(): {recvCount}')
+        #print(f'binaryData: {binaryData}')
+
+        #packetStartMS = int(time() * 1000)
+        #global processCount
+
+        def formatData(binaryData, sensorIndex):
+            #print(f'recvCount: {recvCount}')
+            #Parse binary data and recombine into ints
+            #X Axis
+            XAcc = struct.unpack("=b", binaryData[1 + (sensorIndex * 6)])  ##MSB is second byte in axis RX; Just a nibble
+            #print(f'XAcc Raw: {XAcc}')
+            XAcc = XAcc[0] << 8
+            #print(f'XAcc Shift: {XAcc}')
+            XAcc1 = struct.unpack("=b", binaryData[0 + (sensorIndex * 6)])  ##LSB is first byte in axis RX; full byte
+            XAcc = XAcc + XAcc1[0]
+            #print(f'XAcc Final: {XAcc}')
+
+            #Y Axis
+            YAcc = struct.unpack("=b", binaryData[3 + (sensorIndex * 6)])
+            #print(f'XAcc Raw: {XAcc}')
+            YAcc = YAcc[0] << 8
+            #print(f'YAcc Shift: {YAcc}')
+            YAcc1 = struct.unpack("=b", binaryData[2 + (sensorIndex * 6)])
+            YAcc = YAcc + YAcc1[0]
+            #print(f'YAcc Final: {YAcc}')
+
+            #Z Axis
+            ZAcc = struct.unpack("=b", binaryData[5 + (sensorIndex * 6)])
+            #print(f'XAcc Raw: {XAcc}')
+            ZAcc = ZAcc[0] << 8
+            #print(f'ZAcc Shift: {ZAcc}')
+            ZAcc1 = struct.unpack("=b", binaryData[4 + (sensorIndex * 6)])
+            ZAcc = ZAcc + ZAcc1[0]
+            #print(f'ZAcc Final: {ZAcc}')
+            return XAcc, YAcc, ZAcc
+        
+        if recvCount < self.packetSize:
+        
+            X1Acc, Y1Acc, Z1Acc = formatData(binaryData, 0)
+            self.AccData[recvCount,0,0] = X1Acc
+            self.AccData[recvCount,0,1] = Y1Acc
+            self.AccData[recvCount,0,2] = Z1Acc
+
+            X2Acc, Y2Acc, Z2Acc = formatData(binaryData, 1)
+            self.AccData[recvCount,1,0] = X2Acc
+            self.AccData[recvCount,1,1] = Y2Acc
+            self.AccData[recvCount,1,2] = Z2Acc
+
+            X3Acc, Y3Acc, Z3Acc = formatData(binaryData, 2)
+            self.AccData[recvCount,2,0] = X3Acc
+            self.AccData[recvCount,2,1] = Y3Acc
+            self.AccData[recvCount,2,2] = Z3Acc
+
+            X4Acc, Y4Acc, Z4Acc = formatData(binaryData, 3)
+            self.AccData[recvCount,3,0] = X4Acc
+            self.AccData[recvCount,3,1] = Y4Acc
+            self.AccData[recvCount,3,2] = Z4Acc
+
+        #print(f'self.AccData: {self.AccData}')
+        #print()
+        # print(f'self.AccData:')
+        # for i in range(self.numSensors):
+        #     for j in range(3):
+        #         print(f'Sample: {recvCount}, Sensor: {i}, Axis: {j}: {self.AccData[recvCount,i,j]}')
+        # #     print()
+
+    def prepTraining(self):    #Prep the packet for training
+
+        #self.AccData is a three dimensional array (self.packetSize, self.numSensors, Axi[XYZ])
+        #Scale Axes to +-1
+
+        trainingData = self.AccData.copy()
+        trainingData = np.resize(trainingData, (self.packetSize,self.numSensors,4))   #Add another spot for the ground truth label
+
+        #print(f'self.AccData Original: {self.AccData}')  
+        for i in range(self.packetSize):
+            for j in range(self.numSensors):
+                if self.AccData[i, j, 0]:                   #X axis not zero
+                    trainingData[i, j, 0] = trainingData[i, j, 0] / 2048
+
+                if trainingData[i, j, 1]:                   #Y axis not zero
+                    trainingData[i, j, 1] = trainingData[i, j, 1] / 2048
+            
+                if trainingData[i, j, 2]:                   #Z axis not zero
+                    trainingData[i, j, 2] = trainingData[i, j, 2] / 2048 
+
+                #print(f'trainingData scaled: {trainingData}')    
+
+                trainingData[i,j,3] = self.label          #Add ground truth label
+
+        #print(f'trainingData scaled: {trainingData}') 
+
+        pathToBinary = self.pathPreface + '.npy'
+        pathToCSV = self.pathPreface + '.csv'
+
+        #Write to files
+        self.writetoBinary(trainingData, pathToBinary)
+        self.writetoCSV(trainingData, pathToCSV)
+
+    def writetoBinary(self,trainingData, pathTo):
+        #print(f'trainingData for write: {trainingData}')
+        #Write data to .npy file (binary)
+        if os.path.exists(pathTo):
+            tmpArr = np.load(pathTo,allow_pickle=False)
+            #print(f'tmpArr from file: {tmpArr}')
+            tmpArr = np.append(tmpArr,trainingData, axis=0)
+            #print(f'tmpArr appended and saved (Binary): {tmpArr}')
+            np.save(pathTo, tmpArr, allow_pickle=False)
+        else: 
+            np.save(pathTo, trainingData, allow_pickle=False)
+            #print(f'trainingData saved: {trainingData}')
+
+    def writetoCSV(self, trainingData, pathTo):
+        #Write data to .csv file (text)
+        #TODO: Flatten to 2D before write; expand to 3D after read numpy.reshape()
+        if os.path.exists(pathTo):
+            tmpArr = np.loadtxt(pathTo,dtype=float, delimiter=',')
+            #print(f'tmpArr.shape 1: {tmpArr.shape}')
+            
+            TwoDtrainingData = np.reshape(trainingData, (trainingData.shape[0] * 4, 4))  #Shape trainingData to 2-D array for CSV
+            #print(f'TwoDtrainingData Shape: {TwoDtrainingData.shape}')              
+            
+            tmpArr = np.append(tmpArr,TwoDtrainingData, axis=0)                  #Append trainingData to tmpArr
+            #print(f'tmpArr.shape 2: {tmpArr.shape}')
+
+            np.savetxt(pathTo, tmpArr, fmt="%f", delimiter=",") 
+            #print(f'tmpArr appended and saved (TXT): {tmpArr}')
+
+        else: 
+            tmpArr = np.reshape(trainingData, (trainingData.shape[0] * 4, 4))   #Reshape to a 2-D array
+            np.savetxt(pathTo, tmpArr, fmt="%f", delimiter=",")
+            #print(f'tmpArr appended and saved (TXT): {tmpArr}')
+
+    def plotAcc(self):
+        #Arrange the data
+        #time.sleep(2)
+
+        XList1 = [[],[]]
+        for i in range(self.packetSize):
+            XList1[0].append(self.AccData[i,0,0])
+            XList1[1].append(i)
+        #print(f'XList1: {XList1}')
+
+        XList2 = [[],[]]
+        for i in range(self.packetSize):
+            XList2[0].append(self.AccData[i,1,0])
+            XList2[1].append(i)
+        #print(f'XList: {XList}')
+
+        XList3 = [[],[]]
+        for i in range(self.packetSize):
+            XList3[0].append(self.AccData[i,2,0])
+            XList3[1].append(i)
+        #print(f'XList1: {XList1}')
+
+        XList4 = [[],[]]
+        for i in range(self.packetSize):
+            XList4[0].append(self.AccData[i,3,0])
+            XList4[1].append(i)
+        #print(f'XList: {XList}')
+
+        YList1 = [[],[]]
+        for i in range(self.packetSize):
+            YList1[0].append(self.AccData[i,0,1])
+            YList1[1].append(i)
+        #print(f'YList: {YList}')
+
+        YList2 = [[],[]]
+        for i in range(self.packetSize):
+            YList2[0].append(self.AccData[i,1,1])
+            YList2[1].append(i)
+        #print(f'YList: {YList}')
+
+        YList3 = [[],[]]
+        for i in range(self.packetSize):
+            YList3[0].append(self.AccData[i,2,1])
+            YList3[1].append(i)
+        #print(f'XList1: {XList1}')
+
+        YList4 = [[],[]]
+        for i in range(self.packetSize):
+            YList4[0].append(self.AccData[i,3,1])
+            YList4[1].append(i)
+
+        ZList1 = [[],[]]
+        for i in range(self.packetSize):
+            ZList1[0].append(self.AccData[i,0,2])
+            ZList1[1].append(i)
+        #print(f'ZList: {ZList}')
+
+        ZList2 = [[],[]]
+        for i in range(self.packetSize):
+            ZList2[0].append(self.AccData[i,1,2])
+            ZList2[1].append(i)
+        #print(f'ZList2: {ZList2}')
+
+        ZList3 = [[],[]]
+        for i in range(self.packetSize):
+            ZList3[0].append(self.AccData[i,2,2])
+            ZList3[1].append(i)
+        #print(f'XList1: {XList1}')
+
+        ZList4 = [[],[]]
+        for i in range(self.packetSize):
+            ZList4[0].append(self.AccData[i,3,2])
+            ZList4[1].append(i)
+
+        _,axs = plt.subplots(4,3, figsize=(6,4))
+        #axs[0][0].plot(self.AccData[:,1,1])
+        axs[0][0].plot(XList1[1],XList1[0])
+        axs[0][0].set_title('X Axis')
+        axs[0][0].set_ylabel('Sensor 1')
+        axs[0][1].plot(YList1[1],YList1[0])
+        axs[0][1].set_title('Y Axis')
+        axs[0][2].plot(ZList1[1],ZList1[0])
+        axs[0][2].set_title('Z Axis')
+        axs[1][0].plot(XList2[1],XList2[0])
+        axs[1][0].set_ylabel('Sensor 2')
+        axs[1][1].plot(YList2[1],YList2[0])
+        axs[1][2].plot(ZList2[1],ZList2[0])
+        axs[2][0].plot(XList3[1],XList3[0])
+        axs[2][0].set_ylabel('Sensor 3')
+        axs[2][1].plot(YList3[1],YList3[0])
+        axs[2][2].plot(ZList3[1],ZList3[0])
+        axs[3][0].plot(XList4[1],XList4[0])
+        axs[3][0].set_ylabel('Sensor 4')
+        axs[3][1].plot(YList4[1],YList4[0])
+        axs[3][2].plot(ZList4[1],ZList4[0])
     
-        X1Acc, Y1Acc, Z1Acc, X1T, Y1T, Z1T = formatData(binaryData, 0)
-        X2Acc, Y2Acc, Z2Acc, X2T, Y2T, Z2T = formatData(binaryData, 1)
+        figPath = self.pathPreface + str(self.packetCount) + '_' + str(self.label) + '.png'
+        plt.savefig(figPath)
+        #plt.show()
 
-        AccData[processCount,0,0] = X1Acc
-        AccData[processCount,0,1] = Y1Acc
-        AccData[processCount,0,2] = Z1Acc
-        AccData[processCount,0,3] = X1T
-        AccData[processCount,0,4] = Y1T
-        AccData[processCount,0,5] = Z1T
-        AccData[processCount,1,0] = X2Acc
-        AccData[processCount,1,1] = Y2Acc
-        AccData[processCount,1,2] = Z2Acc
-        AccData[processCount,1,3] = X2T
-        AccData[processCount,1,4] = Y2T
-        AccData[processCount,1,5] = Z2T
 
-        #processStopMS = int(time() * 1000)
+    def socketLoop(self, recvCount): 
 
-        #processTimeMS = processStopMS - processStartMS
-        #print(f'processing time in ms: {processTimeMS}')
-        processCount += 1
+        packetStartMS = 0
 
-    # Acc1Data.append([])
+        while self.packetCount < self.packetLimit:                   #keep getting packets until the packetLimit is reaches   
+            if recvCount == 0:
+                
+                packetStartMS = int(time.time() * 1000)
+                print(f'Start packet time: {packetStartMS}')
 
-    # Acc1Data[len(Acc1Data) -1].append(XAcc)    #XAcc
-    # Acc1Data[len(Acc1Data) -1].append(YAcc)    #YAcc
-    # Acc1Data[len(Acc1Data) -1].append(ZAcc)    #ZAcc
-    # Acc1Data[len(Acc1Data)-1].append(XT)       #XT
-    # Acc1Data[len(Acc1Data)-1].append(YT)       #YT
-    # Acc1Data[len(Acc1Data)-1].append(ZT)       #ZT
-    
-    #print(f'AccData: {AccData}')
-    #print()
-    # for i in range(len(Acc1Data)):
-    #     for j in range(len(Acc1Data[i])):
-    #         print(f'Acc1Data {i},{j}: {Acc1Data[i][j]}')
-    #     print()
-    
-def plotAcc():
-    #Arrange the data
-    #time.sleep(2)
-    XList1 = [[],[]]
-    for i in range(50):
-        XList1[0].append(AccData[i,0,0])
-        XList1[1].append(AccData[i,0,3])
-    #print(f'XList1: {XList1}')
+                if self.getTraining:
+                    #Prompt user to get ready to create training data
+                    time.sleep(0.5)
+                    print('********************************************')  
+                    print('********************************************') 
+                    print('********************************************') 
+                    print('Creating training data.')
+                    
+                    if self.label == 0:
+                        print('Get ready to perform gesture: 0 No movement')
+                    elif self.label == 1:
+                        print('Get ready to perform gesture: 1 Alternate up and down')
+                    elif self.label == 2:
+                        print('Get ready to perform gesture: 2 Out and in together')
+                    
+                    print('In 3...')
+                    time.sleep(1)
+                    print('2...')
+                    time.sleep(1)
+                    print('1...')
+                    time.sleep(1)
+                    print('Go!')
+                    time.sleep(0.1)
 
-    XList2 = [[],[]]
-    for i in range(50):
-        XList2[0].append(AccData[i,1,0])
-        XList2[1].append(AccData[i,1,3])
-    #print(f'XList: {XList}')
+            while recvCount < self.packetSize:             
+                    
+                sock = socket.socket()
+                sock.connect((self.host, self.port))
+                #print("Connected to server")
+                dataTx = struct.pack("=i", 255)
+                #try:
+                sock.send(dataTx);
+                #except:
+                #    sock.connect((host, port))
+                #    print("Socket Reconnected")
+                #    sock.send(255);
+                #print(f'sockname: {sock.getsockname()}')
+                #print(f'sockpeer: {sock.getpeername()}')
+                y = []
+                #time.sleep(0.01)
+                #y = sock.recv(18)
+                a = 0
+                errorCount = 0
+                sampleRxStartMS = int(time.time() * 1000)
+                while a < 24:
+                    #print(f'while loop a')
+                    try:
+                        y.append(sock.recv(1))
+                        #print(f'Received 1')
+                    except ConnectionError:
+                        print(f"Unable to reach client with socket: Retrying")
+                        print(f'Connection error recvCount: {recvCount}' )
+                        #Close and reopen the connection
+                        if errorCount < 10:
+                            #Close and reopen the connection
+                            sock.close()
+                            sock = socket.socket()
+                            sock.connect((self.host, self.port))
+                            a -= 1     #Ask for a resend
+                            errorCount += 1
+                            sock.send(dataTx);
+                        else:
+                            print(f'Fatal Error: SocketBroken')
+                            return -1
 
-    YList1 = [[],[]]
-    for i in range(50):
-        YList1[0].append(AccData[i,0,1])
-        YList1[1].append(AccData[i,0,4])
-    #print(f'YList: {YList}')
+                    a += 1 
+                sock.close()
+                
+                print(f'Sample Received')
+                sampleRxStopMS = int(time.time() * 1000)
+                sampleRxTimeMS = sampleRxStopMS - sampleRxStartMS
+                print(f'Sample receive time in ms: {sampleRxTimeMS}')
+                
+                #print(f'Start preocessData() thread for sample: {recvCount}' )
+                dataThread = Thread(target=self.processData, args=(y, recvCount,))
+                dataThread.start()
+                recvCount += 1
+                #print(f'Completed Rx of sample: {recvCount}' )
+                #socketLoop(recvCount)
 
-    YList2 = [[],[]]
-    for i in range(50):
-        YList2[0].append(AccData[i,1,1])
-        YList2[1].append(AccData[i,1,4])
-    #print(f'YList: {YList}')
+            if recvCount == self.packetSize:                      # Once we've received 5 packets
+                while threading.active_count() > 1:    #wait for the last threads to finish processing
+                    #print(f'threading.active_count(): {threading.active_count()}')
+                    pass
+                
+                print(f'Packet Done')
+                packetStopMS = int(time.time() * 1000)
+                packetTimeMS = packetStopMS - packetStartMS
+                print(f'packetStart: {packetStartMS}')
+                print(f'packetStopMS: {packetStopMS}')
+                print(f'packet processing time in ms: {packetTimeMS}')
+                # for thread in threading.enumerate(): 
+                #     print(thread.name)
+                #print()
+                #print(f'data: {self.AccData}')
+                #print()
+                
+                if self.getTraining:
+                    #Save data for training
+                    #Training Label codes
+                    # 0 Not movinng - Environmental movements
+                    # 1 Alternate up and down
+                    # 2 Out and in alternately
+                    self.prepTraining()
+                    self.plotAcc()
+                
+                print(f'Completed packet: {self.packetCount + 1} of {self.packetLimit} packets')
+                self.packetCount += 1
+                recvCount = 0    #Reset recvCount to get the next packet
+        
+        self.packetCount = 0            
+        return 0
+                
 
-    ZList1 = [[],[]]
-    for i in range(50):
-        ZList1[0].append(AccData[i,0,2])
-        ZList1[1].append(AccData[i,0,5])
-    #print(f'ZList: {ZList}')
-
-    ZList2 = [[],[]]
-    for i in range(50):
-        ZList2[0].append(AccData[i,1,2])
-        ZList2[1].append(AccData[i,1,5])
-    #print(f'ZList2: {ZList2}')
-
-    _,axs = plt.subplots(2,3, figsize=(6,5))
-    #axs[0][0].plot(AccData[:,1,1])
-    axs[0][0].plot(XList1[1],XList1[0])
-    axs[0][1].plot(YList1[1],YList1[0])
-    axs[0][2].plot(ZList1[1],ZList1[0])
-    axs[1][0].plot(XList2[1],XList2[0])
-    axs[1][1].plot(YList2[1],YList2[0])
-    axs[1][2].plot(ZList2[1],ZList2[0])
-
-    # axs[0].set_title('X Axis Acceleration Sensor 1')
-    # axs[1].set_title('Y Axis Acceleration Sensor 1')
-    # axs[2].set_title('Z Axis Acceleration Sensor 1')
-    # axs[3].set_title('X Axis Acceleration Sensor 2')
-    # axs[4].set_title('Y Axis Acceleration Sensor 2')
-    # axs[5].set_title('Y Axis Acceleration Sensor 2')
-
-    # axs[0].title("X Axis Acceleration")
-    # axs[1].title("Y Axis Acceleration")
-    # axs[2].title("Z Axis Acceleration")
-    plt.show()
-
- 
-def socketLoop(): 
-    print()
-    print("socketLoop")
-    global processCount                        #Only needed for testing - production code will run continiously
-    global recvCount
-    print(f'processCount: {processCount}' )
-    print(f'recvCount: {processCount}' )
-    
-    if recvCount < 50:             #Only needed for testing - production code will run continiously
-        sock = socket.socket()
-        sock.connect((host, port))
-        print("Connected to server")
-        dataTx = struct.pack("=i", 255)
-        #try:
-        sock.send(dataTx);
-        #except:
-        #    sock.connect((host, port))
-        #    print("Socket Reconnected")
-        #    sock.send(255);
-        print(f'sockname: {sock.getsockname()}')
-        print(f'sockpeer: {sock.getpeername()}')
-        y = []
-        #time.sleep(0.01)
-        #y = sock.recv(18)
-        a = 0
-        while a < 36:
-            #print(f'while loop')
-            try:
-                y.append(sock.recv(1))
-                #print(f'Received 1')
-            except ConnectionError:
-                print(f"Unable to reach client with socket: Retrying")
-                socketLoop()
-            # print(f'y[a]: {y[a]}');
-            a += 1
-        recvCount += 1
-        #y = bytearray(18)
-        #sock.recv_into(y, 18)
-        #print(f'y: {y}');
-        # print(f'y[0]: {y[0]}');
-        sock.close()
-
-        #TODO ensure that a new thread is created - use ids as args to the threads and check for a free thread to use
-        dataThread = Thread(target=processData, args=(y,))
-        dataThread.start()
-        ##dataThread.join()
-        #processCount += 1
-        #time.sleep(0.01)
-        socketLoop()
-
-    elif recvCount == 50 and processCount == 50:
-        #sock.close()
-        print("Packet Done")
-        processStopMS = int(time.time() * 1000)
-        processTimeMS = processStopMS - processStartMS
-        #print(f'processStart: {processStartMS}')
-        print(f'processing time in ms: {processTimeMS}')
-
-        plotAcc()
-        processCount += 1
+def createTrainingData(*, pathPreface='data/data', label=0, packetLimit=5, packetSize=10):
+    trgData = GetData(packetSize=packetSize, pathPreface=pathPreface, label=label, getTraining=True, packetLimit=packetLimit)
+    trgData.socketLoop(0)
 
 def main():
     
-    socketLoop()
+    createTrainingData(pathPreface="data/packet15/training00_noMove", label=0, packetSize=15)
+    createTrainingData(pathPreface="data/packet15/training01_upandDown", label=1, packetSize=15)
+    createTrainingData(pathPreface="data/packet15/training01_inandOut", label=2, packetSize=15)
 
     
 
