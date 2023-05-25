@@ -276,9 +276,6 @@ class GetData:
 
         while self.packetCount < self.packetLimit:                   #keep getting packets until the packetLimit is reaches   
             if recvCount == 0:
-                
-                packetStartMS = int(time.time() * 1000)
-                print(f'Start packet time: {packetStartMS}')
 
                 if self.getTraining:
                     #Prompt user to get ready to create training data
@@ -303,6 +300,9 @@ class GetData:
                     time.sleep(1)
                     print('Go!')
                     time.sleep(0.1)
+                
+                packetStartMS = int(time.time() * 1000)
+                print(f'Start packet time: {packetStartMS}')
 
             while recvCount < self.packetSize:             
                     
@@ -383,8 +383,11 @@ class GetData:
                     # 0 Not movinng - Environmental movements
                     # 1 Alternate up and down
                     # 2 Out and in alternately
+                    metaDataTimeStartMs = int(time.time() * 1000)
                     self.prepTraining()
                     self.plotAcc()
+                    metaDataTimeStopMs = int(time.time() * 1000)
+                    print(f'metaData Time Save to files and image [ms]: {metaDataTimeStopMs - metaDataTimeStartMs}')
                 
                 print(f'Completed packet: {self.packetCount + 1} of {self.packetLimit} packets')
                 self.packetCount += 1
