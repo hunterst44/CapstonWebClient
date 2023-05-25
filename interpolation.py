@@ -36,13 +36,13 @@ x_fourier = f_fourier_x(t_resampled)
 y_fourier = f_fourier_y(t_resampled)
 z_fourier = f_fourier_z(t_resampled)
 
-# Wavelet interpolation
-from pywt import WaveletPacket
-wp = WaveletPacket(data=np.array([x, y, z]), wavelet='db1', mode='symmetric')
-wp_resampled = wp.reconstruct(update=True)
-x_wavelet = wp_resampled[0,:]
-y_wavelet = wp_resampled[1,:]
-z_wavelet = wp_resampled[2,:]
+# # Wavelet interpolation
+# from pywt import WaveletPacket
+# wp = WaveletPacket(data=np.array([x, y, z]), wavelet='db1', mode='symmetric')
+# wp_resampled = wp.reconstruct(update=True)
+# x_wavelet = wp_resampled[0,:]
+# y_wavelet = wp_resampled[1,:]
+# z_wavelet = wp_resampled[2,:]
 
 # Plot the results
 import matplotlib.pyplot as plt
@@ -51,21 +51,21 @@ axs[0].plot(t, x, 'b.')
 axs[0].plot(t_resampled, x_linear, 'r-')
 axs[0].plot(t_resampled, x_spline, 'g-')
 axs[0].plot(t_resampled, x_fourier, 'm-')
-axs[0].plot(t_resampled, x_wavelet, 'c-')
+#axs[0].plot(t_resampled, x_wavelet, 'c-')
 axs[0].set_ylabel('X acceleration')
 
 axs[1].plot(t, y, 'b.')
 axs[1].plot(t_resampled, y_linear, 'r-')
 axs[1].plot(t_resampled, y_spline, 'g-')
 axs[1].plot(t_resampled, y_fourier, 'm-')
-axs[1].plot(t_resampled, y_wavelet, 'c-')
+#axs[1].plot(t_resampled, y_wavelet, 'c-')
 axs[1].set_ylabel('Y acceleration')
 
 axs[2].plot(t, z, 'b.')
 axs[2].plot(t_resampled, z_linear, 'r-')
 axs[2].plot(t_resampled, z_spline, 'g-')
 axs[2].plot(t_resampled, z_fourier, 'm-')
-axs[2].plot(t_resampled, z_wavelet, 'c-')
+#axs[2].plot(t_resampled, z_wavelet, 'c-')
 axs[2].set_ylabel('Z acceleration')
 
 plt.xlabel('Time (s)')

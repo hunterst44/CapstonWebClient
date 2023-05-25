@@ -1,11 +1,13 @@
 #   Python Socket client
-#   Sends query to esp32 to request data
-#   Accepts streaming data from esp32
-#   Performs data analysis on data received
+#   Created May 1 2023 by Joel Legassie
 #   
-#  Basic functionality
+#  Functionality
 #  Connect to server and send test byte
-#  Receive six bytes data and decode into 3x1 vector
+#  Receive 24 bytes data and decode into 3x1 vector
+#  Decodes binary code in 12 bit twos complement into 16 bit signed integers
+#  Organizes samples into packets of packetSize corresponding to a gesture
+#  Writes packets to files cumulatively - binary and human readable (CSV)
+#  Generates plot images of each packet
 
 
 import socket  
@@ -27,33 +29,20 @@ class GetData:
         self.AccData = np.zeros([self.packetSize, self.numSensors, 3])
         self.packetCount = 0
         self.packetDone = 0
-        self.packetStartMS = int(time.time() * 1000)
         self.pathPreface = pathPreface 
         self.label = label
         self.getTraining = getTraining
         self.packetLimit = packetLimit
 
-
-# sock = socket.socket()
-# host = "192.168.1.75"
-# port = 80    
-# packetStartMS = int(time.time() * 1000)   
-# self.packetDone = 0 
-# PACKETSIZE = 5   #Size of a packet - corresponds to a gesture -- aim to cover about 1 - 2 seconds of sampling time (~10 samples) Use less for testing
-# NUMSENSORS = 4   #Number of sensors
-# self.packetCount = 0  #number of packets through the machine
-# AccData = np.zeros([PACKETSIZE,NUMSENSORS,3])    ##3 dimensional array to hold sensor data [Samples: Sensors : Features]
-
-
     def processData(self, binaryData, recvCount):
-        print(f'processData recvCount(): {recvCount}')
-        print(f'binaryData: {binaryData}')
+        #print(f'processData recvCount(): {recvCount}')
+        #print(f'binaryData: {binaryData}')
 
         #packetStartMS = int(time() * 1000)
         #global processCount
 
         def formatData(binaryData, sensorIndex):
-            print(f'recvCount: {recvCount}')
+            #print(f'recvCount: {recvCount}')
             #Parse binary data and recombine into ints
             #X Axis
             XAcc = struct.unpack("=b", binaryData[1 + (sensorIndex * 6)])  ##MSB is second byte in axis RX; Just a nibble
@@ -62,7 +51,7 @@ class GetData:
             #print(f'XAcc Shift: {XAcc}')
             XAcc1 = struct.unpack("=b", binaryData[0 + (sensorIndex * 6)])  ##LSB is first byte in axis RX; full byte
             XAcc = XAcc + XAcc1[0]
-            print(f'XAcc Final: {XAcc}')
+            #print(f'XAcc Final: {XAcc}')
 
             #Y Axis
             YAcc = struct.unpack("=b", binaryData[3 + (sensorIndex * 6)])
@@ -71,7 +60,7 @@ class GetData:
             #print(f'YAcc Shift: {YAcc}')
             YAcc1 = struct.unpack("=b", binaryData[2 + (sensorIndex * 6)])
             YAcc = YAcc + YAcc1[0]
-            print(f'YAcc Final: {YAcc}')
+            #print(f'YAcc Final: {YAcc}')
 
             #Z Axis
             ZAcc = struct.unpack("=b", binaryData[5 + (sensorIndex * 6)])
@@ -80,7 +69,7 @@ class GetData:
             #print(f'ZAcc Shift: {ZAcc}')
             ZAcc1 = struct.unpack("=b", binaryData[4 + (sensorIndex * 6)])
             ZAcc = ZAcc + ZAcc1[0]
-            print(f'ZAcc Final: {ZAcc}')
+            #print(f'ZAcc Final: {ZAcc}')
             return XAcc, YAcc, ZAcc
         
         if recvCount < self.packetSize:
@@ -107,11 +96,11 @@ class GetData:
 
         #print(f'self.AccData: {self.AccData}')
         #print()
-        print(f'self.AccData:')
-        for i in range(self.numSensors):
-            for j in range(3):
-                print(f'Sample: {recvCount}, Sensor: {i}, Axis: {j}: {self.AccData[recvCount,i,j]}')
-        #     print()
+        # print(f'self.AccData:')
+        # for i in range(self.numSensors):
+        #     for j in range(3):
+        #         print(f'Sample: {recvCount}, Sensor: {i}, Axis: {j}: {self.AccData[recvCount,i,j]}')
+        # #     print()
 
     def prepTraining(self):    #Prep the packet for training
 
@@ -121,7 +110,7 @@ class GetData:
         trainingData = self.AccData.copy()
         trainingData = np.resize(trainingData, (self.packetSize,self.numSensors,4))   #Add another spot for the ground truth label
 
-        print(f'self.AccData Original: {self.AccData}')  
+        #print(f'self.AccData Original: {self.AccData}')  
         for i in range(self.packetSize):
             for j in range(self.numSensors):
                 if self.AccData[i, j, 0]:                   #X axis not zero
@@ -147,38 +136,38 @@ class GetData:
         self.writetoCSV(trainingData, pathToCSV)
 
     def writetoBinary(self,trainingData, pathTo):
-        print(f'trainingData for write: {trainingData}')
+        #print(f'trainingData for write: {trainingData}')
         #Write data to .npy file (binary)
         if os.path.exists(pathTo):
             tmpArr = np.load(pathTo,allow_pickle=False)
-            print(f'tmpArr from file: {tmpArr}')
+            #print(f'tmpArr from file: {tmpArr}')
             tmpArr = np.append(tmpArr,trainingData, axis=0)
-            print(f'tmpArr appended and saved (Binary): {tmpArr}')
+            #print(f'tmpArr appended and saved (Binary): {tmpArr}')
             np.save(pathTo, tmpArr, allow_pickle=False)
         else: 
             np.save(pathTo, trainingData, allow_pickle=False)
-            print(f'trainingData saved: {trainingData}')
+            #print(f'trainingData saved: {trainingData}')
 
     def writetoCSV(self, trainingData, pathTo):
         #Write data to .csv file (text)
         #TODO: Flatten to 2D before write; expand to 3D after read numpy.reshape()
         if os.path.exists(pathTo):
             tmpArr = np.loadtxt(pathTo,dtype=float, delimiter=',')
-            print(f'tmpArr.shape 1: {tmpArr.shape}')
+            #print(f'tmpArr.shape 1: {tmpArr.shape}')
             
             TwoDtrainingData = np.reshape(trainingData, (trainingData.shape[0] * 4, 4))  #Shape trainingData to 2-D array for CSV
-            print(f'TwoDtrainingData Shape: {TwoDtrainingData.shape}')              
+            #print(f'TwoDtrainingData Shape: {TwoDtrainingData.shape}')              
             
             tmpArr = np.append(tmpArr,TwoDtrainingData, axis=0)                  #Append trainingData to tmpArr
-            print(f'tmpArr.shape 2: {tmpArr.shape}')
+            #print(f'tmpArr.shape 2: {tmpArr.shape}')
 
             np.savetxt(pathTo, tmpArr, fmt="%f", delimiter=",") 
-            print(f'tmpArr appended and saved (TXT): {tmpArr}')
+            #print(f'tmpArr appended and saved (TXT): {tmpArr}')
 
         else: 
             tmpArr = np.reshape(trainingData, (trainingData.shape[0] * 4, 4))   #Reshape to a 2-D array
             np.savetxt(pathTo, tmpArr, fmt="%f", delimiter=",")
-            print(f'tmpArr appended and saved (TXT): {tmpArr}')
+            #print(f'tmpArr appended and saved (TXT): {tmpArr}')
 
     def plotAcc(self):
         #Arrange the data
@@ -258,119 +247,118 @@ class GetData:
         #axs[0][0].plot(self.AccData[:,1,1])
         axs[0][0].plot(XList1[1],XList1[0])
         axs[0][0].set_title('X Axis')
+        axs[0][0].set_ylabel('Sensor 1')
         axs[0][1].plot(YList1[1],YList1[0])
         axs[0][1].set_title('Y Axis')
         axs[0][2].plot(ZList1[1],ZList1[0])
         axs[0][2].set_title('Z Axis')
         axs[1][0].plot(XList2[1],XList2[0])
-        #axs[1][0].set_title('Sensor 2, X Axis')
+        axs[1][0].set_ylabel('Sensor 2')
         axs[1][1].plot(YList2[1],YList2[0])
-        #axs[1][1].set_title('Sensor 2, Y Axis')
         axs[1][2].plot(ZList2[1],ZList2[0])
-        #axs[1][2].set_title('Sensor 2, Z Axis')
         axs[2][0].plot(XList3[1],XList3[0])
-        #axs[1][0].set_title('Sensor 3, X Axis')
+        axs[2][0].set_ylabel('Sensor 3')
         axs[2][1].plot(YList3[1],YList3[0])
-        #axs[2][1].set_title('Sensor 3, Y Axis')
         axs[2][2].plot(ZList3[1],ZList3[0])
-        #axs[2][2].set_title('Sensor 3, Z Axis')
         axs[3][0].plot(XList4[1],XList4[0])
-        #axs[3][0].set_title('Sensor 4, X Axis')
+        axs[3][0].set_ylabel('Sensor 4')
         axs[3][1].plot(YList4[1],YList4[0])
-        #axs[3][1].set_title('Sensor 4, Y Axis')
         axs[3][2].plot(ZList4[1],ZList4[0])
-        #axs[3][2].set_title('Sensor 4, Z Axis')
     
         figPath = self.pathPreface + str(self.packetCount) + '_' + str(self.label) + '.png'
         plt.savefig(figPath)
-        plt.show()
+        #plt.show()
 
 
     def socketLoop(self, recvCount): 
-        #recvCount counts how many packets have been received
-        #print()
-        #print("socketLoop")
-        #global processCount
-        #print(f'processCount: {processCount}' )
-        #print(f'Start socketLoop recvCount: {recvCount}' )
-        #global packetDone
-        #global packetStartMS
-        #global packetCount
-        if recvCount == 0:
-            self.packetStartMS = int(time.time() * 1000)
 
-            if self.getTraining:
-                #Prompt user to get ready to create training data
-                time.sleep(0.5)
-                print('********************************************')  
-                print('********************************************') 
-                print('********************************************') 
-                print('Creating training data.')
-                
-                if self.label == 0:
-                    print('Get ready to perform gesture: 0 No movement')
-                elif self.label == 1:
-                    print('Get ready to perform gesture: 1 Alternate up and down')
-                elif self.label == 2:
-                    print('Get ready to perform gesture: 2 Out and in together')
-                
-                print('In 3...')
-                time.sleep(1)
-                print('2...')
-                time.sleep(1)
-                print('1...')
-                time.sleep(1)
-                print('Go!')
-                time.sleep(0.1)
+        packetStartMS = 0
 
-        while recvCount <= self.packetSize:             
+        while self.packetCount < self.packetLimit:                   #keep getting packets until the packetLimit is reaches   
+            if recvCount == 0:
                 
-            sock = socket.socket()
-            sock.connect((self.host, self.port))
-            #print("Connected to server")
-            dataTx = struct.pack("=i", 255)
-            #try:
-            sock.send(dataTx);
-            #except:
-            #    sock.connect((host, port))
-            #    print("Socket Reconnected")
-            #    sock.send(255);
-            #print(f'sockname: {sock.getsockname()}')
-            #print(f'sockpeer: {sock.getpeername()}')
-            y = []
-            #time.sleep(0.01)
-            #y = sock.recv(18)
-            a = 0
-            errorCount = 0
-            while a < 24:
-                #print(f'while loop a')
-                try:
-                    y.append(sock.recv(1))
-                    #print(f'Received 1')
-                except ConnectionError:
-                    print(f"Unable to reach client with socket: Retrying")
-                    print(f'Connection error recvCount: {recvCount}' )
-                    #Close and reopen the connection
-                    if errorCount < 10:
+                packetStartMS = int(time.time() * 1000)
+                print(f'Start packet time: {packetStartMS}')
+
+                if self.getTraining:
+                    #Prompt user to get ready to create training data
+                    time.sleep(0.5)
+                    print('********************************************')  
+                    print('********************************************') 
+                    print('********************************************') 
+                    print('Creating training data.')
+                    
+                    if self.label == 0:
+                        print('Get ready to perform gesture: 0 No movement')
+                    elif self.label == 1:
+                        print('Get ready to perform gesture: 1 Alternate up and down')
+                    elif self.label == 2:
+                        print('Get ready to perform gesture: 2 Out and in together')
+                    
+                    print('In 3...')
+                    time.sleep(1)
+                    print('2...')
+                    time.sleep(1)
+                    print('1...')
+                    time.sleep(1)
+                    print('Go!')
+                    time.sleep(0.1)
+
+            while recvCount < self.packetSize:             
+                    
+                sock = socket.socket()
+                sock.connect((self.host, self.port))
+                #print("Connected to server")
+                dataTx = struct.pack("=i", 255)
+                #try:
+                sock.send(dataTx);
+                #except:
+                #    sock.connect((host, port))
+                #    print("Socket Reconnected")
+                #    sock.send(255);
+                #print(f'sockname: {sock.getsockname()}')
+                #print(f'sockpeer: {sock.getpeername()}')
+                y = []
+                #time.sleep(0.01)
+                #y = sock.recv(18)
+                a = 0
+                errorCount = 0
+                sampleRxStartMS = int(time.time() * 1000)
+                while a < 24:
+                    #print(f'while loop a')
+                    try:
+                        y.append(sock.recv(1))
+                        #print(f'Received 1')
+                    except ConnectionError:
+                        print(f"Unable to reach client with socket: Retrying")
+                        print(f'Connection error recvCount: {recvCount}' )
                         #Close and reopen the connection
-                        sock.close()
-                        sock = socket.socket()
-                        sock.connect((self.host, self.port))
-                        a -= 1     #Ask for a resend
-                        errorCount += 1
-                        sock.send(dataTx);
-                    else:
-                        print(f'Fatal Error: SocketBroken')
-                        return -1
+                        if errorCount < 10:
+                            #Close and reopen the connection
+                            sock.close()
+                            sock = socket.socket()
+                            sock.connect((self.host, self.port))
+                            a -= 1     #Ask for a resend
+                            errorCount += 1
+                            sock.send(dataTx);
+                        else:
+                            print(f'Fatal Error: SocketBroken')
+                            return -1
 
-                a += 1 
-            sock.close()
-            print(f'Start preocessData() thread for sample: {recvCount}' )
-            dataThread = Thread(target=self.processData, args=(y, recvCount,))
-            dataThread.start()
-            recvCount += 1
-            print(f'Completed Rx of sample: {recvCount}' )
-            #socketLoop(recvCount)
+                    a += 1 
+                sock.close()
+                
+                print(f'Sample Received')
+                sampleRxStopMS = int(time.time() * 1000)
+                sampleRxTimeMS = sampleRxStopMS - sampleRxStartMS
+                print(f'Sample receive time in ms: {sampleRxTimeMS}')
+                
+                #print(f'Start preocessData() thread for sample: {recvCount}' )
+                dataThread = Thread(target=self.processData, args=(y, recvCount,))
+                dataThread.start()
+                recvCount += 1
+                #print(f'Completed Rx of sample: {recvCount}' )
+                #socketLoop(recvCount)
 
             if recvCount == self.packetSize:                      # Once we've received 5 packets
                 while threading.active_count() > 1:    #wait for the last threads to finish processing
@@ -379,15 +367,15 @@ class GetData:
                 
                 print(f'Packet Done')
                 packetStopMS = int(time.time() * 1000)
-                packetTimeMS = packetStopMS - self.packetStartMS
-                #print(f'packetStart: {self.packetStartMS}')
-                print(f'processing time in ms: {packetTimeMS}')
+                packetTimeMS = packetStopMS - packetStartMS
+                print(f'packetStart: {packetStartMS}')
+                print(f'packetStopMS: {packetStopMS}')
+                print(f'packet processing time in ms: {packetTimeMS}')
                 # for thread in threading.enumerate(): 
                 #     print(thread.name)
                 #print()
                 #print(f'data: {self.AccData}')
                 #print()
-                self.plotAcc()
                 
                 if self.getTraining:
                     #Save data for training
@@ -396,25 +384,25 @@ class GetData:
                     # 1 Alternate up and down
                     # 2 Out and in alternately
                     self.prepTraining()
+                    self.plotAcc()
                 
-                #self.packetDone = 1
                 print(f'Completed packet: {self.packetCount + 1} of {self.packetLimit} packets')
-                #time.sleep(1)
                 self.packetCount += 1
-                if self.packetCount > self.packetLimit:  # We have all the packets we need 
-                    #Jobs done
-                    return 0
                 recvCount = 0    #Reset recvCount to get the next packet
+        
+        self.packetCount = 0            
+        return 0
+                
 
-def createTrainingData(*, pathPreface='data/data', label=0, packetLimit=5, packetSize=5):
+def createTrainingData(*, pathPreface='data/data', label=0, packetLimit=5, packetSize=10):
     trgData = GetData(packetSize=packetSize, pathPreface=pathPreface, label=label, getTraining=True, packetLimit=packetLimit)
     trgData.socketLoop(0)
 
 def main():
     
-    createTrainingData(pathPreface="data/training00_noMove", label=0)
-    createTrainingData(pathPreface="data/training01_upandDown", label=1)
-    createTrainingData(pathPreface="data/training01_inandOut", label=2)
+    createTrainingData(pathPreface="data/packet15/training00_noMove", label=0, packetSize=15)
+    createTrainingData(pathPreface="data/packet15/training01_upandDown", label=1, packetSize=15)
+    createTrainingData(pathPreface="data/packet15/training01_inandOut", label=2, packetSize=15)
 
     
 
