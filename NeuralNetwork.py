@@ -1,4 +1,3 @@
-#!bin/python
 
 # Generic Neural Network code from 
 # H. Kinsley & D. Kukiela, Neural Networks from Scratch in Python, 2020.

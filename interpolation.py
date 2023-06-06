@@ -43,7 +43,6 @@ z_fourier = f_fourier_z(t_resampled)
 # x_wavelet = wp_resampled[0,:]
 # y_wavelet = wp_resampled[1,:]
 # z_wavelet = wp_resampled[2,:]
-
 # Plot the results
 import matplotlib.pyplot as plt
 fig, axs = plt.subplots(3, 1, figsize=(8, 8))
