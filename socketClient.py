@@ -427,8 +427,8 @@ def createTrainingData(*, pathPreface='data/data', label=0, packetLimit=1, packe
 def main():
     
     createTrainingData(pathPreface="data/packet5Avg20/training00_noMove", packetLimit=5, label=0, packetSize=5)
-    createTrainingData(pathPreface="data/packet5Avg20/training01_upandDown", label=1, packetSize=5)
-    createTrainingData(pathPreface="data/packet5Avg20/training02_inandOut", label=2, packetSize=5)
+    createTrainingData(pathPreface="data/packet5Avg20/training01_upandDown", packetLimit=5, label=1, packetSize=5)
+    createTrainingData(pathPreface="data/packet5Avg20/training02_inandOut", packetLimit=5, label=2, packetSize=5)
 
     
 
