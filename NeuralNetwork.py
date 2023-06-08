@@ -49,7 +49,7 @@ class Layer_Dense:
         self.dweights = np.dot(self.inputs.T, dvalues)
         self.dbiases = np.sum(dvalues, axis=0, keepdims=True)
         
-        #Gradients onh regularization
+        #Gradients on regularization
         #L1 on weights
         if self.weight_regularizer_l1 > 0:
             dL1 = np.ones_like(self.weights)
@@ -1148,12 +1148,52 @@ def prediction():
     confidences = model.predict(X_test[:5])
     predictions = model.output_layer_activation.predictions(confidences)
     print(predictions)
+
+def AccModel01():
+    #Create Dataset
+    #TODO: Create data and validation arrays
+        # X Data is a randomized 1D array of features in groups of 15 (3 axis * 5 samples)
+        # y ground truth is the list of the classes of the data - see spiral_data as an example
+    #X,y = spiral_data(samples=1000, classes=3)
+    #X_test, y_test = spiral_data(samples=100, classes=3)
     
+    EPOCHS = 1000
+    BATCH_SIZE = 250
+    
+    #Instanstiate the model
+    model = Model()
+    
+    #Add layers
+    #Input is 15 features (3 Axis * 5 samples)
+    model.add(Layer_Dense(15,225, weight_regularizer_l2=5e-4, bias_regularizer_l2=5e-4))
+    model.add(Activation_ReLu())
+    model.add(Layer_Dropout(0.1))
+    model.add(Layer_Dense(225,3))
+    model.add(Activation_Softmax())
+    
+    model.set(
+        loss=Loss_CategoricalCrossEntropy(),
+        optimizer=Optimizer_Adam(learning_rate=0.05, decay=5e-5),
+        accuracy=Accuracy_Categorical()
+    )
+    
+    model.finalize()
+    
+    #model.train(X,y, validation_data=(X_test, y_test),epochs=EPOCHS, batch_size=BATCH_SIZE, print_every=5)
+    
+    parameters = model.get_parameters()
+    print(parameters)
+    
+    model.save('data/AccModel01')
+
 def main():
     #RegressionNoValid()
     #binaryLogisticValid()
     #CategoricalCrossEntropy()
     #batchModel()
     #testLoadModel()
-    prediction()
+    #prediction()
+    X,y = spiral_data(samples=1000, classes=3)
+    print(X)
+    print(y)
 if __name__ == "__main__": main()
