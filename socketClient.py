@@ -26,7 +26,7 @@ class GetData:
         self.port = port
         self.packetSize = packetSize
         self.numSensors = numSensors
-        self.AccData = np.zeros([-1, self.packetSize * self.numSensors * 3]) #An array of packets (gestures) each gesture is 3 axis * number of sensors times the number of samples per gesture
+        self.AccData = np.zeros([1, self.packetSize * self.numSensors * 3]) #An array of packets (gestures) each gesture is 3 axis * number of sensors times the number of samples per gesture
         self.packetCount = 0
         self.packetDone = 0
         self.pathPreface = pathPreface 
@@ -101,6 +101,135 @@ class GetData:
         #     for j in range(3):
         #         print(f'Sample: {recvCount}, Sensor: {i}, Axis: {j}: {self.AccData[recvCount,i,j]}')
         # #     print()
+
+
+    def socketLoop(self, recvCount): 
+
+        packetStartMS = 0
+
+        while self.packetCount < self.packetLimit:                   #keep getting packets until the packetLimit is reaches   
+            if recvCount == 0:
+
+                if self.getTraining:
+                    #Prompt user to get ready to create training data
+                    time.sleep(0.5)
+                    print('********************************************')  
+                    print('********************************************') 
+                    print('********************************************') 
+                    print('Creating training data.')
+                    
+                    if self.label == 0:
+                        print('Get ready to perform gesture: 0 No movement')
+                    elif self.label == 1:
+                        print('Get ready to perform gesture: 1 Alternate up and down')
+                    elif self.label == 2:
+                        print('Get ready to perform gesture: 2 Out and in together')
+                    
+                    print('In 3...')
+                    time.sleep(1)
+                    print('2...')
+                    time.sleep(1)
+                    print('1...')
+                    time.sleep(1)
+                    print('Go!')
+                    time.sleep(0.1)
+                
+                packetStartMS = int(time.time() * 1000)
+                print(f'Start packet time: {packetStartMS}')
+
+            while recvCount < self.packetSize:             
+                #TO DO: Get packetData into ProcessData function and get data out again...
+                packetData = np.zeros([1, self.packetSize * self.numSensors * 3])
+
+                sock = socket.socket()
+                sock.connect((self.host, self.port))
+                #print("Connected to server")
+                dataTx = struct.pack("=i", 255)
+                #try:
+                sock.send(dataTx);
+                #except:
+                #    sock.connect((host, port))
+                #    print("Socket Reconnected")
+                #    sock.send(255);
+                #print(f'sockname: {sock.getsockname()}')
+                #print(f'sockpeer: {sock.getpeername()}')
+                y = []
+                #time.sleep(0.01)
+                #y = sock.recv(18)
+                a = 0
+                errorCount = 0
+                sampleRxStartMS = int(time.time() * 1000)
+                while a < 24:
+                    #print(f'while loop a')
+                    try:
+                        y.append(sock.recv(1))
+                        #print(f'Received 1')
+                    except ConnectionError:
+                        print(f"Unable to reach client with socket: Retrying")
+                        print(f'Connection error recvCount: {recvCount}' )
+                        #Close and reopen the connection
+                        if errorCount < 10:
+                            #Close and reopen the connection
+                            sock.close()
+                            sock = socket.socket()
+                            sock.connect((self.host, self.port))
+                            a -= 1     #Ask for a resend
+                            errorCount += 1
+                            sock.send(dataTx);
+                        else:
+                            print(f'Fatal Error: SocketBroken')
+                            return -1
+
+                    a += 1 
+                sock.close()
+                
+                print(f'Sample Received')
+                sampleRxStopMS = int(time.time() * 1000)
+                sampleRxTimeMS = sampleRxStopMS - sampleRxStartMS
+                print(f'Sample receive time in ms: {sampleRxTimeMS}')
+                
+                #print(f'Start preocessData() thread for sample: {recvCount}' )
+                dataThread = Thread(target=self.processData, args=(y, recvCount,))
+                dataThread.start()
+                recvCount += 1
+                #print(f'Completed Rx of sample: {recvCount}' )
+                #socketLoop(recvCount)
+
+            if recvCount == self.packetSize:                      # Once we've received 5 packets
+                while threading.active_count() > 1:    #wait for the last threads to finish processing
+                    #print(f'threading.active_count(): {threading.active_count()}')
+                    pass
+                
+                print(f'Packet Done')
+                packetStopMS = int(time.time() * 1000)
+                packetTimeMS = packetStopMS - packetStartMS
+                print(f'packetStart: {packetStartMS}')
+                print(f'packetStopMS: {packetStopMS}')
+                print(f'packet processing time in ms: {packetTimeMS}')
+                # for thread in threading.enumerate(): 
+                #     print(thread.name)
+                #print()
+                #print(f'data: {self.AccData}')
+                #print()
+                
+                if self.getTraining:
+                    #Save data for training
+                    #Training Label codes
+                    # 0 Not movinng - Environmental movements
+                    # 1 Alternate up and down
+                    # 2 Out and in alternately
+                    metaDataTimeStartMs = int(time.time() * 1000)
+                    self.prepTraining()
+                    self.plotAcc()
+                    metaDataTimeStopMs = int(time.time() * 1000)
+                    print(f'metaData Time Save to files and image [ms]: {metaDataTimeStopMs - metaDataTimeStartMs}')
+                
+                print(f'Completed packet: {self.packetCount + 1} of {self.packetLimit} packets')
+                self.packetCount += 1
+                recvCount = 0    #Reset recvCount to get the next packet
+        
+        self.packetCount = 0            
+        return 0
 
     def prepTraining(self):    #Prep the packet for training
 
@@ -291,135 +420,7 @@ class GetData:
     
         figPath = self.pathPreface + str(self.packetCount) + '_' + str(self.label) + '.png'
         plt.savefig(figPath)
-        #plt.show()
-
-
-    def socketLoop(self, recvCount): 
-
-        packetStartMS = 0
-
-        while self.packetCount < self.packetLimit:                   #keep getting packets until the packetLimit is reaches   
-            if recvCount == 0:
-
-                if self.getTraining:
-                    #Prompt user to get ready to create training data
-                    time.sleep(0.5)
-                    print('********************************************')  
-                    print('********************************************') 
-                    print('********************************************') 
-                    print('Creating training data.')
-                    
-                    if self.label == 0:
-                        print('Get ready to perform gesture: 0 No movement')
-                    elif self.label == 1:
-                        print('Get ready to perform gesture: 1 Alternate up and down')
-                    elif self.label == 2:
-                        print('Get ready to perform gesture: 2 Out and in together')
-                    
-                    print('In 3...')
-                    time.sleep(1)
-                    print('2...')
-                    time.sleep(1)
-                    print('1...')
-                    time.sleep(1)
-                    print('Go!')
-                    time.sleep(0.1)
-                
-                packetStartMS = int(time.time() * 1000)
-                print(f'Start packet time: {packetStartMS}')
-
-            while recvCount < self.packetSize:             
-                    
-                sock = socket.socket()
-                sock.connect((self.host, self.port))
-                #print("Connected to server")
-                dataTx = struct.pack("=i", 255)
-                #try:
-                sock.send(dataTx);
-                #except:
-                #    sock.connect((host, port))
-                #    print("Socket Reconnected")
-                #    sock.send(255);
-                #print(f'sockname: {sock.getsockname()}')
-                #print(f'sockpeer: {sock.getpeername()}')
-                y = []
-                #time.sleep(0.01)
-                #y = sock.recv(18)
-                a = 0
-                errorCount = 0
-                sampleRxStartMS = int(time.time() * 1000)
-                while a < 24:
-                    #print(f'while loop a')
-                    try:
-                        y.append(sock.recv(1))
-                        #print(f'Received 1')
-                    except ConnectionError:
-                        print(f"Unable to reach client with socket: Retrying")
-                        print(f'Connection error recvCount: {recvCount}' )
-                        #Close and reopen the connection
-                        if errorCount < 10:
-                            #Close and reopen the connection
-                            sock.close()
-                            sock = socket.socket()
-                            sock.connect((self.host, self.port))
-                            a -= 1     #Ask for a resend
-                            errorCount += 1
-                            sock.send(dataTx);
-                        else:
-                            print(f'Fatal Error: SocketBroken')
-                            return -1
-
-                    a += 1 
-                sock.close()
-                
-                print(f'Sample Received')
-                sampleRxStopMS = int(time.time() * 1000)
-                sampleRxTimeMS = sampleRxStopMS - sampleRxStartMS
-                print(f'Sample receive time in ms: {sampleRxTimeMS}')
-                
-                #print(f'Start preocessData() thread for sample: {recvCount}' )
-                dataThread = Thread(target=self.processData, args=(y, recvCount,))
-                dataThread.start()
-                recvCount += 1
-                #print(f'Completed Rx of sample: {recvCount}' )
-                #socketLoop(recvCount)
-
-            if recvCount == self.packetSize:                      # Once we've received 5 packets
-                while threading.active_count() > 1:    #wait for the last threads to finish processing
-                    #print(f'threading.active_count(): {threading.active_count()}')
-                    pass
-                
-                print(f'Packet Done')
-                packetStopMS = int(time.time() * 1000)
-                packetTimeMS = packetStopMS - packetStartMS
-                print(f'packetStart: {packetStartMS}')
-                print(f'packetStopMS: {packetStopMS}')
-                print(f'packet processing time in ms: {packetTimeMS}')
-                # for thread in threading.enumerate(): 
-                #     print(thread.name)
-                #print()
-                #print(f'data: {self.AccData}')
-                #print()
-                
-                if self.getTraining:
-                    #Save data for training
-                    #Training Label codes
-                    # 0 Not movinng - Environmental movements
-                    # 1 Alternate up and down
-                    # 2 Out and in alternately
-                    metaDataTimeStartMs = int(time.time() * 1000)
-                    self.prepTraining()
-                    self.plotAcc()
-                    metaDataTimeStopMs = int(time.time() * 1000)
-                    print(f'metaData Time Save to files and image [ms]: {metaDataTimeStopMs - metaDataTimeStartMs}')
-                
-                print(f'Completed packet: {self.packetCount + 1} of {self.packetLimit} packets')
-                self.packetCount += 1
-                recvCount = 0    #Reset recvCount to get the next packet
-        
-        self.packetCount = 0            
-        return 0
-                
+        #plt.show()            
 
 def createTrainingData(*, pathPreface='data/data', label=0, packetLimit=1, packetSize=10):
     trgData = GetData(packetSize=packetSize, pathPreface=pathPreface, label=label, getTraining=True, packetLimit=packetLimit)
