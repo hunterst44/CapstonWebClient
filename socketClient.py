@@ -26,7 +26,7 @@ class GetData:
         self.port = port
         self.packetSize = packetSize
         self.numSensors = numSensors
-        self.AccData = np.zeros([self.packetSize, self.numSensors, 3])
+        self.AccData = np.zeros([-1, self.packetSize * self.numSensors * 3]) #An array of packets (gestures) each gesture is 3 axis * number of sensors times the number of samples per gesture
         self.packetCount = 0
         self.packetDone = 0
         self.pathPreface = pathPreface 
