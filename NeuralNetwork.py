@@ -1200,10 +1200,17 @@ def getAccDataBinary(pathList):
             print()
             print()
 
-def getDataCSV(pathList):
+def getAccDataCSV(pathList):
     for path in pathList:
         if os.path.exists(path):
-            tmpArr = np.load(path,allow_pickle=False)
+            print("****")
+            print(path)
+            tmpArr = np.loadtxt(path,dtype=float, delimiter=',')
+
+            print(f'tmpArr shape: {tmpArr.shape}')
+            print(f'tmpArr from file: {tmpArr}')
+            print()
+            print()
 
 def main():
     #RegressionNoValid()
@@ -1216,5 +1223,6 @@ def main():
     # print(X)
     # print(y)
     #getAccData(["data\packet5Avg20/\/training00_noMove.npy","data\packet5Avg20\/training01_upandDown.npy","data\packet5Avg20\/training02_inandOut.npy"])
-    getAccDataBinary(["data\/test/test.npy"])
+    getAccDataCSV(["data\packet5Avg20\\training00_noMove.csv","data\packet5Avg20\\training01_upandDown.csv","data\packet5Avg20\\training02_inandOut.csv"])
+    #getAccDataBinary(["data\/test/test.npy"])
 if __name__ == "__main__": main()
