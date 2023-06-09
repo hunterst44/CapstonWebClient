@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import math
 import pickle
 import copy
+import os.path
 
 nnfs.init()
 
@@ -1186,6 +1187,22 @@ def AccModel01():
     
     model.save('data/AccModel01')
 
+def getAccDataBinary(pathList):
+    for path in pathList:
+        if os.path.exists(path):
+            tmpArr = np.load(path,allow_pickle=False)
+            print("****")
+            print(path)
+            print(f'tmpArr shape: {tmpArr.shape}')
+            print(f'tmpArr from file: {tmpArr}')
+            print()
+            print()
+
+def getDataCSV(pathList):
+    for path in pathList:
+        if os.path.exists(path):
+            tmpArr = np.load(path,allow_pickle=False)
+
 def main():
     #RegressionNoValid()
     #binaryLogisticValid()
@@ -1193,7 +1210,9 @@ def main():
     #batchModel()
     #testLoadModel()
     #prediction()
-    X,y = spiral_data(samples=1000, classes=3)
-    print(X)
-    print(y)
+    # X,y = spiral_data(samples=1000, classes=3)
+    # print(X)
+    # print(y)
+    #getAccData(["data\packet5Avg20/\/training00_noMove.npy","data\packet5Avg20\/training01_upandDown.npy","data\packet5Avg20\/training02_inandOut.npy"])
+    getAccDataBinary(["data\/test/test.npy"])
 if __name__ == "__main__": main()

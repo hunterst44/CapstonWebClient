@@ -107,34 +107,35 @@ class GetData:
         #self.AccData is a three dimensional array (self.packetSize, self.numSensors, Axi[XYZ])
         #Scale Axes to +-1
 
-        trainingData = self.AccData.copy()
+        trainingData = np.zeros_like(self.AccData)
         trainingData = np.resize(trainingData, (self.packetSize,self.numSensors,4))   #Add another spot for the ground truth label
+        print(trainingData) 
 
-        print(f'self.AccData Original: {self.AccData}')  
-        print(f'trainingData Original: {trainingData}') 
+        #print(f'self.AccData Original: {self.AccData}')  
+        #print(f'trainingData Original: {trainingData}') 
         for i in range(self.packetSize):
-            print()
-            print(f'i: {i}')
+            #print()
+            #print(f'i: {i}')
             for j in range(self.numSensors):
-                print(f'j: {j}')
-                print(f'AccData pre-scaled (X): {self.AccData[i, j, 0]}')
+                #print(f'j: {j}')
+                #print(f'AccData pre-scaled (X): {self.AccData[i, j, 0]}')
                 if self.AccData[i, j, 0]:                   #X axis not zero
                     trainingData[i, j, 0] = self.AccData[i, j, 0] / 2048
-                    print(f'trainingData post-scaled (X): {trainingData[i, j, 0]}')
+                    #print(f'trainingData post-scaled (X): {trainingData[i, j, 0]}')
                 else:
                   trainingData[i, j, 0] = 0.  
                 
-                print(f'AccData pre-scaled (Y): {self.AccData[i, j, 1]}')
+                #print(f'AccData pre-scaled (Y): {self.AccData[i, j, 1]}')
                 if self.AccData[i, j, 1]:                   #Y axis not zero
                     trainingData[i, j, 1] = self.AccData[i, j, 1] / 2048
-                    print(f'trainingData post-scaled (Y): {trainingData[i, j, 1]}')
+                    #print(f'trainingData post-scaled (Y): {trainingData[i, j, 1]}')
                 else:
                   trainingData[i, j, 1] = 0.
                 
-                print(f'AccData pre-scaled (Z): {self.AccData[i, j, 2]}')
+                #print(f'AccData pre-scaled (Z): {self.AccData[i, j, 2]}')
                 if self.AccData[i, j, 2]:                   #Z axis not zero
                     trainingData[i, j, 2] = self.AccData[i, j, 2] / 2048 
-                    print(f'trainingData post-scaled (Z): {trainingData[i, j, 2]}')
+                    #print(f'trainingData post-scaled (Z): {trainingData[i, j, 2]}')
                 else:
                   trainingData[i, j, 2] = 0.
 
@@ -142,11 +143,11 @@ class GetData:
 
                 trainingData[i,j,3] = self.label          #Add ground truth label
 
-        print(f'trainingData scaled Complete: {trainingData}') 
+        #print(f'trainingData scaled Complete: {trainingData}') 
 
-        print(f'trainingData [0,2,0]: {trainingData[0,2,0]}')
-        print(f'AccData [0,2,0]: {self.AccData[0,2,0]}')
-        print(f'AccData [0,2,2]: {self.AccData[0,2,2]}')
+        #print(f'trainingData [0,2,0]: {trainingData[0,2,0]}')
+        #print(f'AccData [0,2,0]: {self.AccData[0,2,0]}')
+        #print(f'AccData [0,2,2]: {self.AccData[0,2,2]}')
 
         pathToBinary = self.pathPreface + '.npy'
         pathToCSV = self.pathPreface + '.csv'
@@ -162,11 +163,11 @@ class GetData:
             tmpArr = np.load(pathTo,allow_pickle=False)
             #print(f'tmpArr from file: {tmpArr}')
             tmpArr = np.append(tmpArr,trainingData, axis=0)
-            print(f'tmpArr appended and saved (Binary): {tmpArr}')
+            #print(f'tmpArr appended and saved (Binary): {tmpArr}')
             np.save(pathTo, tmpArr, allow_pickle=False)
         else: 
             np.save(pathTo, trainingData, allow_pickle=False)
-            print(f'trainingData saved (Binary): {trainingData}')
+            #print(f'trainingData saved (Binary): {trainingData}')
 
     def writetoCSV(self, trainingData, pathTo):
         #Write data to .csv file (text)
@@ -178,19 +179,19 @@ class GetData:
             
             TwoDtrainingData = np.reshape(trainingData, (trainingData.shape[0] * 4, 4))  #Shape trainingData to 2-D array for CSV
             #print(f'TwoDtrainingData Shape: {TwoDtrainingData.shape}')   
-            print(f'TwoDtrainingData: {TwoDtrainingData}')            
+            #print(f'TwoDtrainingData: {TwoDtrainingData}')            
             
             tmpArr = np.append(tmpArr,TwoDtrainingData, axis=0)                  #Append trainingData to tmpArr
             #print(f'tmpArr.shape 2: {tmpArr.shape}')
             #print(f'tmpArr: {tmpArr}')
 
             np.savetxt(pathTo, tmpArr, fmt="%f", delimiter=",") 
-            print(f'tmpArr appended and saved (TXT): {tmpArr}')
+            #print(f'tmpArr appended and saved (TXT): {tmpArr}')
 
         else: 
             tmpArr = np.reshape(trainingData, (trainingData.shape[0] * 4, 4))   #Reshape to a 2-D array
             np.savetxt(pathTo, tmpArr, fmt="%f", delimiter=",")
-            print(f'tmpArr appended and saved (TXT): {tmpArr}')
+            #print(f'tmpArr appended and saved (TXT): {tmpArr}')
 
     def plotAcc(self):
         #Arrange the data
@@ -426,9 +427,11 @@ def createTrainingData(*, pathPreface='data/data', label=0, packetLimit=1, packe
 
 def main():
     
-    createTrainingData(pathPreface="data/packet5Avg20/training00_noMove", packetLimit=5, label=0, packetSize=5)
-    createTrainingData(pathPreface="data/packet5Avg20/training01_upandDown", packetLimit=5, label=1, packetSize=5)
-    createTrainingData(pathPreface="data/packet5Avg20/training02_inandOut", packetLimit=5, label=2, packetSize=5)
+    #createTrainingData(pathPreface="data/packet5Avg20/training00_noMove", packetLimit=5, label=0, packetSize=5)
+    #createTrainingData(pathPreface="data/packet5Avg20/training01_upandDown", packetLimit=5, label=1, packetSize=5)
+    #createTrainingData(pathPreface="data/packet5Avg20/training02_inandOut", packetLimit=5, label=2, packetSize=5)
+
+    createTrainingData(pathPreface="data/test/test", packetLimit=5, label=0, packetSize=5)
 
     
 
