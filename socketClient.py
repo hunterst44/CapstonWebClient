@@ -229,8 +229,7 @@ class GetData:
                     self.prepTraining()
                     self.plotAcc()
                     metaDataTimeStopMs = int(time.time() * 1000)
-                    print(f'metaData Time Save to files and image [ms]: {metaDataTimeStopMs - metaDataTimeStartMs}')
-                    
+                    print(f'metaData Time Save to files and image [ms]: {metaDataTimeStopMs - metaDataTimeStartMs}')   
                 
                 print(f'Completed packet: {self.packetCount + 1} of {self.packetLimit} packets')
                 self.packetCount += 1
@@ -246,13 +245,11 @@ class GetData:
 
         #trainingData = np.zeros_like(self.packetArr)
         #trainingData = np.resize(trainingData, (self.packetSize,self.numSensors,4))   #Add another spot for the ground truth label
-        print(trainingData) 
+        print(self.packetData) 
 
+        #scale the data to +-1
         for feature in self.packetData:
             feature = feature / 2048
-
-
-
 
         # #print(f'self.packetArr Original: {self.packetArr}')  
         # #print(f'trainingData Original: {trainingData}') 
@@ -296,8 +293,8 @@ class GetData:
         pathToCSV = self.pathPreface + '.csv'
 
         #Write to files
-        self.writetoBinary(trainingData, pathToBinary)
-        self.writetoCSV(trainingData, pathToCSV)
+        self.writetoBinary(self.packetData, pathToBinary)
+        self.writetoCSV(self.packetData, pathToCSV)
 
     def writetoBinary(self,trainingData, pathTo):
         #print(f'trainingData for write: {trainingData}')
@@ -305,7 +302,7 @@ class GetData:
         if os.path.exists(pathTo):
             tmpArr = np.load(pathTo,allow_pickle=False)
             #print(f'tmpArr from file: {tmpArr}')
-            tmpArr = np.append(tmpArr,trainingData, axis=0)
+            tmpArr = np.append(tmpArr,trainingData, axis=1)
             #print(f'tmpArr appended and saved (Binary): {tmpArr}')
             np.save(pathTo, tmpArr, allow_pickle=False)
         else: 
@@ -320,11 +317,11 @@ class GetData:
             #print(f'tmpArr.shape 1: {tmpArr.shape}')
             #print(f'tmpArr: {tmpArr}')
             
-            TwoDtrainingData = np.reshape(trainingData, (trainingData.shape[0] * 4, 4))  #Shape trainingData to 2-D array for CSV
+            #TwoDtrainingData = np.reshape(trainingData, (trainingData.shape[0] * 4, 4))  #Shape trainingData to 2-D array for CSV
             #print(f'TwoDtrainingData Shape: {TwoDtrainingData.shape}')   
             #print(f'TwoDtrainingData: {TwoDtrainingData}')            
             
-            tmpArr = np.append(tmpArr,TwoDtrainingData, axis=0)                  #Append trainingData to tmpArr
+            tmpArr = np.append(tmpArr,trainingData, axis=1)                  #Append trainingData to tmpArr
             #print(f'tmpArr.shape 2: {tmpArr.shape}')
             #print(f'tmpArr: {tmpArr}')
 
@@ -332,105 +329,112 @@ class GetData:
             #print(f'tmpArr appended and saved (TXT): {tmpArr}')
 
         else: 
-            tmpArr = np.reshape(trainingData, (trainingData.shape[0] * 4, 4))   #Reshape to a 2-D array
-            np.savetxt(pathTo, tmpArr, fmt="%f", delimiter=",")
+            #tmpArr = np.reshape(trainingData, (trainingData.shape[0] * 4, 4))   #Reshape to a 2-D array
+            np.savetxt(pathTo, trainingData, fmt="%f", delimiter=",")
             #print(f'tmpArr appended and saved (TXT): {tmpArr}')
 
     def plotAcc(self):
         #Arrange the data
         #time.sleep(2)
 
-        XList1 = [[],[]]
-        for i in range(self.packetSize):
-            XList1[0].append(self.packetArr[i,0,0])
-            XList1[1].append(i)
-        #print(f'XList1: {XList1}')
 
-        XList2 = [[],[]]
-        for i in range(self.packetSize):
-            XList2[0].append(self.packetArr[i,1,0])
-            XList2[1].append(i)
-        #print(f'XList: {XList}')
 
-        XList3 = [[],[]]
-        for i in range(self.packetSize):
-            XList3[0].append(self.packetArr[i,2,0])
-            XList3[1].append(i)
-        #print(f'XList1: {XList1}')
+        # XList1 = [[],[]]
+        # for i in range(self.packetSize):
+        #     XList1[0].append(self.packetArr[i,0,0])
+        #     XList1[1].append(i)
+        # #print(f'XList1: {XList1}')
 
-        XList4 = [[],[]]
-        for i in range(self.packetSize):
-            XList4[0].append(self.packetArr[i,3,0])
-            XList4[1].append(i)
-        #print(f'XList: {XList}')
+        # XList2 = [[],[]]
+        # for i in range(self.packetSize):
+        #     XList2[0].append(self.packetArr[i,1,0])
+        #     XList2[1].append(i)
+        # #print(f'XList: {XList}')
 
-        YList1 = [[],[]]
-        for i in range(self.packetSize):
-            YList1[0].append(self.packetArr[i,0,1])
-            YList1[1].append(i)
-        #print(f'YList: {YList}')
+        # XList3 = [[],[]]
+        # for i in range(self.packetSize):
+        #     XList3[0].append(self.packetArr[i,2,0])
+        #     XList3[1].append(i)
+        # #print(f'XList1: {XList1}')
 
-        YList2 = [[],[]]
-        for i in range(self.packetSize):
-            YList2[0].append(self.packetArr[i,1,1])
-            YList2[1].append(i)
-        #print(f'YList: {YList}')
+        # XList4 = [[],[]]
+        # for i in range(self.packetSize):
+        #     XList4[0].append(self.packetArr[i,3,0])
+        #     XList4[1].append(i)
+        # #print(f'XList: {XList}')
 
-        YList3 = [[],[]]
-        for i in range(self.packetSize):
-            YList3[0].append(self.packetArr[i,2,1])
-            YList3[1].append(i)
-        #print(f'XList1: {XList1}')
+        # YList1 = [[],[]]
+        # for i in range(self.packetSize):
+        #     YList1[0].append(self.packetArr[i,0,1])
+        #     YList1[1].append(i)
+        # #print(f'YList: {YList}')
 
-        YList4 = [[],[]]
-        for i in range(self.packetSize):
-            YList4[0].append(self.packetArr[i,3,1])
-            YList4[1].append(i)
+        # YList2 = [[],[]]
+        # for i in range(self.packetSize):
+        #     YList2[0].append(self.packetArr[i,1,1])
+        #     YList2[1].append(i)
+        # #print(f'YList: {YList}')
 
-        ZList1 = [[],[]]
-        for i in range(self.packetSize):
-            ZList1[0].append(self.packetArr[i,0,2])
-            ZList1[1].append(i)
-        #print(f'ZList: {ZList}')
+        # YList3 = [[],[]]
+        # for i in range(self.packetSize):
+        #     YList3[0].append(self.packetArr[i,2,1])
+        #     YList3[1].append(i)
+        # #print(f'XList1: {XList1}')
 
-        ZList2 = [[],[]]
-        for i in range(self.packetSize):
-            ZList2[0].append(self.packetArr[i,1,2])
-            ZList2[1].append(i)
-        #print(f'ZList2: {ZList2}')
+        # YList4 = [[],[]]
+        # for i in range(self.packetSize):
+        #     YList4[0].append(self.packetArr[i,3,1])
+        #     YList4[1].append(i)
 
-        ZList3 = [[],[]]
-        for i in range(self.packetSize):
-            ZList3[0].append(self.packetArr[i,2,2])
-            ZList3[1].append(i)
-        #print(f'XList1: {XList1}')
+        # ZList1 = [[],[]]
+        # for i in range(self.packetSize):
+        #     ZList1[0].append(self.packetArr[i,0,2])
+        #     ZList1[1].append(i)
+        # #print(f'ZList: {ZList}')
 
-        ZList4 = [[],[]]
-        for i in range(self.packetSize):
-            ZList4[0].append(self.packetArr[i,3,2])
-            ZList4[1].append(i)
+        # ZList2 = [[],[]]
+        # for i in range(self.packetSize):
+        #     ZList2[0].append(self.packetArr[i,1,2])
+        #     ZList2[1].append(i)
+        # #print(f'ZList2: {ZList2}')
 
-        _,axs = plt.subplots(4,3, figsize=(6,4))
+        # ZList3 = [[],[]]
+        # for i in range(self.packetSize):
+        #     ZList3[0].append(self.packetArr[i,2,2])
+        #     ZList3[1].append(i)
+        # #print(f'XList1: {XList1}')
+
+        # ZList4 = [[],[]]
+        # for i in range(self.packetSize):
+        #     ZList4[0].append(self.packetArr[i,3,2])
+        #     ZList4[1].append(i)
+
+        _,axs = plt.subplots(self.numSensors,3, figsize=(6,4))
         #axs[0][0].plot(self.packetArr[:,1,1])
-        axs[0][0].plot(XList1[1],XList1[0])
-        axs[0][0].set_title('X Axis')
-        axs[0][0].set_ylabel('Sensor 1')
-        axs[0][1].plot(YList1[1],YList1[0])
-        axs[0][1].set_title('Y Axis')
-        axs[0][2].plot(ZList1[1],ZList1[0])
-        axs[0][2].set_title('Z Axis')
-        axs[1][0].plot(XList2[1],XList2[0])
-        axs[1][0].set_ylabel('Sensor 2')
-        axs[1][1].plot(YList2[1],YList2[0])
-        axs[1][2].plot(ZList2[1],ZList2[0])
-        axs[2][0].plot(XList3[1],XList3[0])
-        axs[2][0].set_ylabel('Sensor 3')
-        axs[2][1].plot(YList3[1],YList3[0])
-        axs[2][2].plot(ZList3[1],ZList3[0])
-        axs[3][0].plot(XList4[1],XList4[0])
-        axs[3][0].set_ylabel('Sensor 4')
-        axs[3][1].plot(YList4[1],YList4[0])
-        axs[3][2].plot(ZList4[1],ZList4[0])
+        for i in range(self.numSensors):
+            #labels
+            axs[0][0].set_title('X Axis')
+            axs[0][1].set_title('Y Axis')
+            axs[0][2].set_title('Z Axis')
+            axs[i][0].set_ylabel(f'Sensor {i}')
+
+            #Data
+            axs[i][0].plot(self.packetData[0, 0 + (i * 3)], i)
+            axs[i][1].plot(self.packetData[0, 0 + (i * 3)], i)
+            axs[i][2].plot(self.packetData[0, 0 + (i * 3)], i)
+            
+
+            # axs[1][0].plot(XList2[1],XList2[0])
+            # axs[1][1].plot(YList2[1],YList2[0])
+            # axs[1][2].plot(ZList2[1],ZList2[0])
+            # axs[2][0].plot(XList3[1],XList3[0])
+            # axs[2][0].set_ylabel('Sensor 3')
+            # axs[2][1].plot(YList3[1],YList3[0])
+            # axs[2][2].plot(ZList3[1],ZList3[0])
+            # axs[3][0].plot(XList4[1],XList4[0])
+            # axs[3][0].set_ylabel('Sensor 4')
+            # axs[3][1].plot(YList4[1],YList4[0])
+            # axs[3][2].plot(ZList4[1],ZList4[0])
     
         figPath = self.pathPreface + str(self.packetCount) + '_' + str(self.label) + '.png'
         plt.savefig(figPath)
