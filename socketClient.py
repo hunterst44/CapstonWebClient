@@ -36,11 +36,7 @@ class GetData:
         self.packetLimit = packetLimit
 
     def processData(self, binaryData, recvCount):
-        
-
-
-
-
+      
         #print(f'processData recvCount(): {recvCount}')
         #print(f'binaryData: {binaryData}')
 
@@ -80,7 +76,7 @@ class GetData:
         if recvCount < self.packetSize:
             for i in range(self.numSensors):
                 formatData(binaryData, i)
-        
+            
             # X1Acc, Y1Acc, Z1Acc = formatData(binaryData, 0)
             # self.packetData[0,0 + (recvCount * 3)] = X1Acc
             # self.packetData[0,1 + (recvCount * 3)] = Y1Acc
@@ -252,6 +248,10 @@ class GetData:
         for feature in self.packetData:
             feature = feature / 2048
 
+        #Get ground truth labels
+        packetTruth = np.array([1,1])
+        packetTruth[0,0] = self.label
+
         # #print(f'self.packetArr Original: {self.packetArr}')  
         # #print(f'trainingData Original: {trainingData}') 
         # for i in range(self.packetSize):
@@ -291,45 +291,44 @@ class GetData:
         #print(f'packetArr [0,2,2]: {self.packetArr[0,2,2]}')
 
         #pathToBinary = self.pathPreface + '.npy'
-        pathToCSV = self.pathPreface + '.csv'
+        #pathToCSV = self.pathPreface + '.csv'
 
         #Write to files
-        self.writetoBinary(self.packetData)
-        self.writetoCSV(self.packetData, pathToCSV)
+        self.writetoBinary(self.packetData, packetTruth)
+        self.writetoCSV(self.packetData, packetTruth)
 
-    def writetoBinary(self,trainingData):
+    def writetoBinary(self,trainingData, packetTruth):
         #print(f'trainingData for write: {trainingData}')
         #Write data to .npy file (binary)
         dataPath = self.pathPreface + '.npy'
-        truthPath = self.pathPreface + '_truth' + '.npy'
-        packetTruth = np.array([1,1])
-        packetTruth[0,0] = self.label
+        truthPath = self.pathPreface + '_truth.npy'
 
         if os.path.exists(dataPath):
             tmpArr = np.load(dataPath,allow_pickle=False)
             #print(f'tmpArr from file: {tmpArr}')
             tmpArr = np.append(tmpArr,trainingData, axis=1)
-            #print(f'tmpArr appended and saved (Binary): {tmpArr}')
             np.save(dataPath, tmpArr, allow_pickle=False)
+            print(f'dataPacket saved (Binary): {tmpArr}')
         else: 
             np.save(dataPath, trainingData, allow_pickle=False)
-            #print(f'trainingData saved (Binary): {trainingData}')
+            print(f'dataPacket saved (Binary): {trainingData}')
 
         if os.path.exists(truthPath):
             tmpArr = np.load(truthPath,allow_pickle=False)
             #print(f'tmpArr from file: {tmpArr}')
             tmpArr = np.append(tmpArr,packetTruth, axis=1)
-            #print(f'tmpArr appended and saved (Binary): {tmpArr}')
             np.save(truthPath, tmpArr, allow_pickle=False)
+            print(f'packetTruth appended and saved (Binary): {tmpArr}')
         else: 
             np.save(truthPath, packetTruth, allow_pickle=False)
-            #print(f'trainingData saved (Binary): {trainingData}')
+            print(f'packetTruth saved (Binary): {packetTruth}')
 
-    def writetoCSV(self, trainingData, pathTo):
+    def writetoCSV(self, trainingData, packetTruth):
         #Write data to .csv file (text)
-        #TODO: Flatten to 2D before write; expand to 3D after read numpy.reshape()
-        if os.path.exists(pathTo):
-            tmpArr = np.loadtxt(pathTo,dtype=float, delimiter=',')
+        dataPath = self.pathPreface + '.csv'
+        truthPath = self.pathPreface + '_truth.csv'
+        if os.path.exists(dataPath):
+            tmpArr = np.loadtxt(dataPath,dtype=float, delimiter=',')
             #print(f'tmpArr.shape 1: {tmpArr.shape}')
             #print(f'tmpArr: {tmpArr}')
             
@@ -341,13 +340,21 @@ class GetData:
             #print(f'tmpArr.shape 2: {tmpArr.shape}')
             #print(f'tmpArr: {tmpArr}')
 
-            np.savetxt(pathTo, tmpArr, fmt="%f", delimiter=",") 
-            #print(f'tmpArr appended and saved (TXT): {tmpArr}')
-
+            np.savetxt(dataPath, tmpArr, fmt="%f", delimiter=",") 
+            print(f'dataPacket appended and saved (CSV): {tmpArr}')
         else: 
             #tmpArr = np.reshape(trainingData, (trainingData.shape[0] * 4, 4))   #Reshape to a 2-D array
-            np.savetxt(pathTo, trainingData, fmt="%f", delimiter=",")
-            #print(f'tmpArr appended and saved (TXT): {tmpArr}')
+            np.savetxt(dataPath, trainingData, fmt="%f", delimiter=",")
+            print(f'dataPacket appended and saved (CSV): {trainingData}')
+        
+        if os.path.exists(truthPath):
+            tmpArr = np.loadtxt(truthPath,dtype=float, delimiter=',')
+            tmpArr = np.append(tmpArr,packetTruth, axis=1) 
+            np.savetxt(truthPath, tmpArr, fmt="%f", delimiter=",")
+            print(f'packetTruth appended and saved (CSV): {tmpArr}')
+        else: 
+             np.savetxt(truthPath, packetTruth, fmt="%f", delimiter=",")
+             print(f'packetTruth appended and saved (CSV): {packetTruth}')
 
     def plotAcc(self):
         #Arrange the data
