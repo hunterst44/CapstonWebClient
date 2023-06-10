@@ -26,7 +26,8 @@ class GetData:
         self.port = port
         self.packetSize = packetSize
         self.numSensors = numSensors
-        self.AccData = np.zeros([1, self.packetSize * self.numSensors * 3]) #An array of packets (gestures) each gesture is 3 axis * number of sensors times the number of samples per gesture
+        self.packetData = np.zeros([1, self.packetSize * self.numSensors * 3]) #one packet of data corresponding to a gesture - 3 axis * number of sensors times the number of samples per gesture
+        self.packetArr = np.zeros([1, self.packetSize * self.numSensors * 3]) #An array of packets (gestures) used while collecting data for training
         self.packetCount = 0
         self.packetDone = 0
         self.pathPreface = pathPreface 
@@ -75,31 +76,31 @@ class GetData:
         if recvCount < self.packetSize:
         
             X1Acc, Y1Acc, Z1Acc = formatData(binaryData, 0)
-            self.AccData[recvCount,0,0] = X1Acc
-            self.AccData[recvCount,0,1] = Y1Acc
-            self.AccData[recvCount,0,2] = Z1Acc
+            self.packetArr[recvCount,0,0] = X1Acc
+            self.packetArr[recvCount,0,1] = Y1Acc
+            self.packetArr[recvCount,0,2] = Z1Acc
 
             X2Acc, Y2Acc, Z2Acc = formatData(binaryData, 1)
-            self.AccData[recvCount,1,0] = X2Acc
-            self.AccData[recvCount,1,1] = Y2Acc
-            self.AccData[recvCount,1,2] = Z2Acc
+            self.packetArr[recvCount,1,0] = X2Acc
+            self.packetArr[recvCount,1,1] = Y2Acc
+            self.packetArr[recvCount,1,2] = Z2Acc
 
             X3Acc, Y3Acc, Z3Acc = formatData(binaryData, 2)
-            self.AccData[recvCount,2,0] = X3Acc
-            self.AccData[recvCount,2,1] = Y3Acc
-            self.AccData[recvCount,2,2] = Z3Acc
+            self.packetArr[recvCount,2,0] = X3Acc
+            self.packetArr[recvCount,2,1] = Y3Acc
+            self.packetArr[recvCount,2,2] = Z3Acc
 
             X4Acc, Y4Acc, Z4Acc = formatData(binaryData, 3)
-            self.AccData[recvCount,3,0] = X4Acc
-            self.AccData[recvCount,3,1] = Y4Acc
-            self.AccData[recvCount,3,2] = Z4Acc
+            self.packetArr[recvCount,3,0] = X4Acc
+            self.packetArr[recvCount,3,1] = Y4Acc
+            self.packetArr[recvCount,3,2] = Z4Acc
 
-        #print(f'self.AccData: {self.AccData}')
+        #print(f'self.packetArr: {self.packetArr}')
         #print()
-        # print(f'self.AccData:')
+        # print(f'self.packetArr:')
         # for i in range(self.numSensors):
         #     for j in range(3):
-        #         print(f'Sample: {recvCount}, Sensor: {i}, Axis: {j}: {self.AccData[recvCount,i,j]}')
+        #         print(f'Sample: {recvCount}, Sensor: {i}, Axis: {j}: {self.packetArr[recvCount,i,j]}')
         # #     print()
 
 
@@ -209,7 +210,7 @@ class GetData:
                 # for thread in threading.enumerate(): 
                 #     print(thread.name)
                 #print()
-                #print(f'data: {self.AccData}')
+                #print(f'data: {self.packetArr}')
                 #print()
                 
                 if self.getTraining:
@@ -233,37 +234,37 @@ class GetData:
 
     def prepTraining(self):    #Prep the packet for training
 
-        #self.AccData is a three dimensional array (self.packetSize, self.numSensors, Axi[XYZ])
+        #self.packetArr is a three dimensional array (self.packetSize, self.numSensors, Axi[XYZ])
         #Scale Axes to +-1
 
-        trainingData = np.zeros_like(self.AccData)
+        trainingData = np.zeros_like(self.packetArr)
         trainingData = np.resize(trainingData, (self.packetSize,self.numSensors,4))   #Add another spot for the ground truth label
         print(trainingData) 
 
-        #print(f'self.AccData Original: {self.AccData}')  
+        #print(f'self.packetArr Original: {self.packetArr}')  
         #print(f'trainingData Original: {trainingData}') 
         for i in range(self.packetSize):
             #print()
             #print(f'i: {i}')
             for j in range(self.numSensors):
                 #print(f'j: {j}')
-                #print(f'AccData pre-scaled (X): {self.AccData[i, j, 0]}')
-                if self.AccData[i, j, 0]:                   #X axis not zero
-                    trainingData[i, j, 0] = self.AccData[i, j, 0] / 2048
+                #print(f'packetArr pre-scaled (X): {self.packetArr[i, j, 0]}')
+                if self.packetArr[i, j, 0]:                   #X axis not zero
+                    trainingData[i, j, 0] = self.packetArr[i, j, 0] / 2048
                     #print(f'trainingData post-scaled (X): {trainingData[i, j, 0]}')
                 else:
                   trainingData[i, j, 0] = 0.  
                 
-                #print(f'AccData pre-scaled (Y): {self.AccData[i, j, 1]}')
-                if self.AccData[i, j, 1]:                   #Y axis not zero
-                    trainingData[i, j, 1] = self.AccData[i, j, 1] / 2048
+                #print(f'packetArr pre-scaled (Y): {self.packetArr[i, j, 1]}')
+                if self.packetArr[i, j, 1]:                   #Y axis not zero
+                    trainingData[i, j, 1] = self.packetArr[i, j, 1] / 2048
                     #print(f'trainingData post-scaled (Y): {trainingData[i, j, 1]}')
                 else:
                   trainingData[i, j, 1] = 0.
                 
-                #print(f'AccData pre-scaled (Z): {self.AccData[i, j, 2]}')
-                if self.AccData[i, j, 2]:                   #Z axis not zero
-                    trainingData[i, j, 2] = self.AccData[i, j, 2] / 2048 
+                #print(f'packetArr pre-scaled (Z): {self.packetArr[i, j, 2]}')
+                if self.packetArr[i, j, 2]:                   #Z axis not zero
+                    trainingData[i, j, 2] = self.packetArr[i, j, 2] / 2048 
                     #print(f'trainingData post-scaled (Z): {trainingData[i, j, 2]}')
                 else:
                   trainingData[i, j, 2] = 0.
@@ -275,8 +276,8 @@ class GetData:
         #print(f'trainingData scaled Complete: {trainingData}') 
 
         #print(f'trainingData [0,2,0]: {trainingData[0,2,0]}')
-        #print(f'AccData [0,2,0]: {self.AccData[0,2,0]}')
-        #print(f'AccData [0,2,2]: {self.AccData[0,2,2]}')
+        #print(f'packetArr [0,2,0]: {self.packetArr[0,2,0]}')
+        #print(f'packetArr [0,2,2]: {self.packetArr[0,2,2]}')
 
         pathToBinary = self.pathPreface + '.npy'
         pathToCSV = self.pathPreface + '.csv'
@@ -328,76 +329,76 @@ class GetData:
 
         XList1 = [[],[]]
         for i in range(self.packetSize):
-            XList1[0].append(self.AccData[i,0,0])
+            XList1[0].append(self.packetArr[i,0,0])
             XList1[1].append(i)
         #print(f'XList1: {XList1}')
 
         XList2 = [[],[]]
         for i in range(self.packetSize):
-            XList2[0].append(self.AccData[i,1,0])
+            XList2[0].append(self.packetArr[i,1,0])
             XList2[1].append(i)
         #print(f'XList: {XList}')
 
         XList3 = [[],[]]
         for i in range(self.packetSize):
-            XList3[0].append(self.AccData[i,2,0])
+            XList3[0].append(self.packetArr[i,2,0])
             XList3[1].append(i)
         #print(f'XList1: {XList1}')
 
         XList4 = [[],[]]
         for i in range(self.packetSize):
-            XList4[0].append(self.AccData[i,3,0])
+            XList4[0].append(self.packetArr[i,3,0])
             XList4[1].append(i)
         #print(f'XList: {XList}')
 
         YList1 = [[],[]]
         for i in range(self.packetSize):
-            YList1[0].append(self.AccData[i,0,1])
+            YList1[0].append(self.packetArr[i,0,1])
             YList1[1].append(i)
         #print(f'YList: {YList}')
 
         YList2 = [[],[]]
         for i in range(self.packetSize):
-            YList2[0].append(self.AccData[i,1,1])
+            YList2[0].append(self.packetArr[i,1,1])
             YList2[1].append(i)
         #print(f'YList: {YList}')
 
         YList3 = [[],[]]
         for i in range(self.packetSize):
-            YList3[0].append(self.AccData[i,2,1])
+            YList3[0].append(self.packetArr[i,2,1])
             YList3[1].append(i)
         #print(f'XList1: {XList1}')
 
         YList4 = [[],[]]
         for i in range(self.packetSize):
-            YList4[0].append(self.AccData[i,3,1])
+            YList4[0].append(self.packetArr[i,3,1])
             YList4[1].append(i)
 
         ZList1 = [[],[]]
         for i in range(self.packetSize):
-            ZList1[0].append(self.AccData[i,0,2])
+            ZList1[0].append(self.packetArr[i,0,2])
             ZList1[1].append(i)
         #print(f'ZList: {ZList}')
 
         ZList2 = [[],[]]
         for i in range(self.packetSize):
-            ZList2[0].append(self.AccData[i,1,2])
+            ZList2[0].append(self.packetArr[i,1,2])
             ZList2[1].append(i)
         #print(f'ZList2: {ZList2}')
 
         ZList3 = [[],[]]
         for i in range(self.packetSize):
-            ZList3[0].append(self.AccData[i,2,2])
+            ZList3[0].append(self.packetArr[i,2,2])
             ZList3[1].append(i)
         #print(f'XList1: {XList1}')
 
         ZList4 = [[],[]]
         for i in range(self.packetSize):
-            ZList4[0].append(self.AccData[i,3,2])
+            ZList4[0].append(self.packetArr[i,3,2])
             ZList4[1].append(i)
 
         _,axs = plt.subplots(4,3, figsize=(6,4))
-        #axs[0][0].plot(self.AccData[:,1,1])
+        #axs[0][0].plot(self.packetArr[:,1,1])
         axs[0][0].plot(XList1[1],XList1[0])
         axs[0][0].set_title('X Axis')
         axs[0][0].set_ylabel('Sensor 1')
