@@ -38,7 +38,7 @@ class GetData:
     def processData(self, binaryData, recvCount):
       
         #print(f'processData recvCount(): {recvCount}')
-        #print(f'binaryData: {binaryData}')
+        print(f'binaryData: {binaryData}')
 
         #packetStartMS = int(time() * 1000)
         #global processCount
@@ -51,7 +51,7 @@ class GetData:
             #print(f'XAcc Raw: {XAcc}')
             XAcc = XAcc[0] << 8
             #print(f'XAcc Shift: {XAcc}')
-            XAcc1 = struct.unpack("=b", binaryData[0 + (sensorIndex * 6)])  ##LSB is first byte in axis RX; full byte
+            XAcc1 = struct.unpack("=B", binaryData[0 + (sensorIndex * 6)])  ##LSB is first byte in axis RX; full byte
             self.packetData[0,(self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = XAcc + XAcc1[0]
             #print(f'XAcc Final: {XAcc}')
 
@@ -60,17 +60,22 @@ class GetData:
             #print(f'XAcc Raw: {XAcc}')
             YAcc = YAcc[0] << 8
             #print(f'YAcc Shift: {YAcc}')
-            YAcc1 = struct.unpack("=b", binaryData[2 + (sensorIndex * 6)])
+            YAcc1 = struct.unpack("=B", binaryData[2 + (sensorIndex * 6)])
             self.packetData[0, 1 + (self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = YAcc + YAcc1[0]
             #print(f'YAcc Final: {YAcc}')
 
             #Z Axis
             ZAcc = struct.unpack("=b", binaryData[5 + (sensorIndex * 6)])
-            #print(f'XAcc Raw: {XAcc}')
+            print(f'sensor: {sensorIndex}')
+            #print(f'ZAcc Raw: {ZAcc}')
             ZAcc = ZAcc[0] << 8
-            #print(f'ZAcc Shift: {ZAcc}')
-            ZAcc1 = struct.unpack("=b", binaryData[4 + (sensorIndex * 6)])
+            print(f'ZAcc Shift: {ZAcc}')
+            ZAcc1 = struct.unpack("=B", binaryData[4 + (sensorIndex * 6)])
+            ZAcc2 = struct.unpack("=B", binaryData[4])
+            print(f'ZAcc1[0]: {ZAcc1[0]}')
+            print(f'ZAcc2[0]: {ZAcc2[0]}')
             self.packetData[0, 2 + (self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = ZAcc + ZAcc1[0]
+            print(f'ZAcc final: {ZAcc + ZAcc1[0]}')
             #print(f'ZAcc Final: {ZAcc}')
         
         if recvCount < self.packetSize:
@@ -131,7 +136,7 @@ class GetData:
                 a = 0
                 errorCount = 0
                 sampleRxStartMS = int(time.time() * 1000)
-                while a < 24:
+                while a < (self.numSensors * 6):
                     #print(f'while loop a')
                     try:
                         y.append(sock.recv(1))
@@ -155,7 +160,7 @@ class GetData:
                     a += 1 
                 sock.close()
                 
-                print(f'Sample Received')
+                #print(f'Sample Received')
                 sampleRxStopMS = int(time.time() * 1000)
                 sampleRxTimeMS = sampleRxStopMS - sampleRxStartMS
                 print(f'Sample receive time in ms: {sampleRxTimeMS}')
@@ -234,13 +239,13 @@ class GetData:
             #print(f'tmpArr from file: {tmpArr}')
             tmpArr = np.append(tmpArr,trainingData, axis=0)
             np.save(dataPath, tmpArr, allow_pickle=False)
-            print(f'dataPacket shape (Binary): {tmpArr.shape}')
-            print(f'dataPacket saved (Binary): {tmpArr}')
+            #print(f'dataPacket shape (Binary): {tmpArr.shape}')
+            #print(f'dataPacket saved (Binary): {tmpArr}')
             
         else: 
             np.save(dataPath, trainingData, allow_pickle=False)
-            print(f'dataPacket shape (Binary): {trainingData.shape}')
-            print(f'dataPacket saved (Binary): {trainingData}')
+            #print(f'dataPacket shape (Binary): {trainingData.shape}')
+            #print(f'dataPacket saved (Binary): {trainingData}')
 
         #Truth
         if os.path.exists(truthPath):
@@ -248,7 +253,7 @@ class GetData:
             #print(f'tmpArr from file: {tmpArr}')
             tmpArr = np.append(tmpArr,packetTruth, axis=0)
             np.save(truthPath, tmpArr, allow_pickle=False)
-            print(f'packetTruth appended and saved (Binary): {tmpArr}')
+            #print(f'packetTruth appended and saved (Binary): {tmpArr}')
         else: 
             np.save(truthPath, packetTruth, allow_pickle=False)
             print(f'packetTruth saved (Binary): {packetTruth}')
@@ -262,32 +267,32 @@ class GetData:
         #Data
         if os.path.exists(dataPath):
             tmpArr = np.loadtxt(dataPath,dtype=float, delimiter=',', ndmin=2)       
-            print(f'tmpArr.shape 1: {tmpArr.shape}')
-            print(f'tmpArr: {tmpArr}')          
+            #print(f'tmpArr.shape 1: {tmpArr.shape}')
+            #print(f'tmpArr: {tmpArr}')          
             
             tmpArr = np.append(tmpArr,trainingData, axis=0)                  #Append trainingData to tmpArr
             #print(f'tmpArr.shape 2 (CSV): {tmpArr.shape}')
             #print(f'tmpArr (CSV): {tmpArr}')
 
             np.savetxt(dataPath, tmpArr, fmt="%f", delimiter=",") 
-            print(f'dataPacket appended and saved (CSV): {tmpArr}')
+            #print(f'dataPacket appended and saved (CSV): {tmpArr}')
         else: 
             #tmpArr = np.reshape(trainingData, (trainingData.shape[0] * 4, 4))   #Reshape to a 2-D array
             np.savetxt(dataPath, trainingData, fmt="%f", delimiter=",")
-            print(f'dataPacket appended and saved (CSV): {trainingData}')
-            print(f'dataPacket shape: {trainingData.shape}')
+            #print(f'dataPacket appended and saved (CSV): {trainingData}')
+            #print(f'dataPacket shape: {trainingData.shape}')
         
         #Truth
         if os.path.exists(truthPath):
             tmpArr = np.loadtxt(truthPath,dtype=float, delimiter=',',ndmin=2)
             tmpArr = np.append(tmpArr,packetTruth, axis=0) 
             np.savetxt(truthPath, tmpArr, fmt="%f", delimiter=",")
-            print(f'packetTruth appended and saved (CSV): {tmpArr}')
-            print(f'packetTruth shape: {tmpArr.shape}')
+            #print(f'packetTruth appended and saved (CSV): {tmpArr}')
+            #print(f'packetTruth shape: {tmpArr.shape}')
         else: 
              np.savetxt(truthPath, packetTruth, fmt="%f", delimiter=",")
-             print(f'packetTruth appended and saved (CSV): {packetTruth}')
-             print(f'dataPacket shape: {packetTruth.shape}')
+             #print(f'packetTruth appended and saved (CSV): {packetTruth}')
+             #print(f'dataPacket shape: {packetTruth.shape}')
 
     def plotAcc(self):
 
@@ -307,21 +312,21 @@ class GetData:
             for j in range(self.packetSize):
                 XList[0].append(self.packetData[0, 0 + (i * 3) + (j * self.numSensors * 3)])
                 XList[1].append(j)
-                print(f'XList{j}: {XList}')
+                #print(f'XList{j}: {XList}')
             axs[i][0].plot(XList[1], XList[0])
 
             YList = [[],[]]
             for j in range(self.packetSize):
                 YList[0].append(self.packetData[0, 1 + (i * 3) + (j * self.numSensors * 3)])
                 YList[1].append(j)
-                print(f'YList{j}: {YList}')
+                #print(f'YList{j}: {YList}')
             axs[i][1].plot(YList[1], YList[0])
 
             ZList = [[],[]]
             for j in range(self.packetSize):
                 ZList[0].append(self.packetData[0, 2 + (i * 3) + (j * self.numSensors * 3)])
                 ZList[1].append(j)
-                print(f'ZList{j}: {ZList}')
+                #print(f'ZList{j}: {ZList}')
             axs[i][2].plot(ZList[1], ZList[0])
     
         figPath = self.pathPreface + str(self.packetCount) + '_' + str(self.label) + '.png'
@@ -338,7 +343,7 @@ def main():
     #createTrainingData(pathPreface="data/packet5Avg20/training01_upandDown", packetLimit=5, label=1, packetSize=5)
     #createTrainingData(pathPreface="data/packet5Avg20/training02_inandOut", packetLimit=5, label=2, packetSize=5)
 
-    createTrainingData(pathPreface="data/test/test", packetLimit=3, label=0, packetSize=5, numSensors=2)
+    createTrainingData(pathPreface="data/test/test", packetLimit=2, label=0, packetSize=5, numSensors=2)
 
     
 
