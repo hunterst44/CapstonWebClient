@@ -38,7 +38,7 @@ class GetData:
     def processData(self, binaryData, recvCount):
       
         #print(f'processData recvCount(): {recvCount}')
-        print(f'binaryData: {binaryData}')
+        #print(f'binaryData: {binaryData}')
 
         #packetStartMS = int(time() * 1000)
         #global processCount
@@ -66,16 +66,16 @@ class GetData:
 
             #Z Axis
             ZAcc = struct.unpack("=b", binaryData[5 + (sensorIndex * 6)])
-            print(f'sensor: {sensorIndex}')
+            #print(f'sensor: {sensorIndex}')
             #print(f'ZAcc Raw: {ZAcc}')
             ZAcc = ZAcc[0] << 8
-            print(f'ZAcc Shift: {ZAcc}')
+            #print(f'ZAcc Shift: {ZAcc}')
             ZAcc1 = struct.unpack("=B", binaryData[4 + (sensorIndex * 6)])
             ZAcc2 = struct.unpack("=B", binaryData[4])
-            print(f'ZAcc1[0]: {ZAcc1[0]}')
-            print(f'ZAcc2[0]: {ZAcc2[0]}')
+            #print(f'ZAcc1[0]: {ZAcc1[0]}')
+            #print(f'ZAcc2[0]: {ZAcc2[0]}')
             self.packetData[0, 2 + (self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = ZAcc + ZAcc1[0]
-            print(f'ZAcc final: {ZAcc + ZAcc1[0]}')
+            #print(f'ZAcc final: {ZAcc + ZAcc1[0]}')
             #print(f'ZAcc Final: {ZAcc}')
         
         if recvCount < self.packetSize:
@@ -212,7 +212,7 @@ class GetData:
 
     def prepTraining(self):    #Prep the packet for training
 
-        print(self.packetData) 
+        #print(f'self.packetData: {self.packetData}') 
 
         #scale the data to +-1
         for i in range(self.packetData.shape[1]):
@@ -339,11 +339,13 @@ def createTrainingData(*, pathPreface='data/data', label=0, packetLimit=1, packe
 
 def main():
     
-    #createTrainingData(pathPreface="data/packet5Avg20/training00_noMove", packetLimit=5, label=0, packetSize=5)
-    #createTrainingData(pathPreface="data/packet5Avg20/training01_upandDown", packetLimit=5, label=1, packetSize=5)
-    #createTrainingData(pathPreface="data/packet5Avg20/training02_inandOut", packetLimit=5, label=2, packetSize=5)
+    #Get Data for training
+    createTrainingData(pathPreface="data/packet5Avg20/training00_noMove", packetLimit=5, label=0, packetSize=5, numSensors=2)
+    createTrainingData(pathPreface="data/packet5Avg20/training01_upandDown", packetLimit=5, label=1, packetSize=5, numSensors=2)
+    createTrainingData(pathPreface="data/packet5Avg20/training02_inandOut", packetLimit=5, label=2, packetSize=5, numSensors=2)
 
-    createTrainingData(pathPreface="data/test/test", packetLimit=2, label=0, packetSize=5, numSensors=2)
+    #Testing
+    #createTrainingData(pathPreface="data/test/test", packetLimit=2, label=0, packetSize=5, numSensors=2)
 
     
 
