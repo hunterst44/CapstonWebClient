@@ -240,6 +240,7 @@ class GetData:
 
     def prepTraining(self):    #Prep the packet for training
 
+        #TODO add ground treuth labels data
         #self.packetArr is a three dimensional array (self.packetSize, self.numSensors, Axi[XYZ])
         #Scale Axes to +-1
 
@@ -289,24 +290,39 @@ class GetData:
         #print(f'packetArr [0,2,0]: {self.packetArr[0,2,0]}')
         #print(f'packetArr [0,2,2]: {self.packetArr[0,2,2]}')
 
-        pathToBinary = self.pathPreface + '.npy'
+        #pathToBinary = self.pathPreface + '.npy'
         pathToCSV = self.pathPreface + '.csv'
 
         #Write to files
-        self.writetoBinary(self.packetData, pathToBinary)
+        self.writetoBinary(self.packetData)
         self.writetoCSV(self.packetData, pathToCSV)
 
-    def writetoBinary(self,trainingData, pathTo):
+    def writetoBinary(self,trainingData):
         #print(f'trainingData for write: {trainingData}')
         #Write data to .npy file (binary)
-        if os.path.exists(pathTo):
-            tmpArr = np.load(pathTo,allow_pickle=False)
+        dataPath = self.pathPreface + '.npy'
+        truthPath = self.pathPreface + '_truth' + '.npy'
+        packetTruth = np.array([1,1])
+        packetTruth[0,0] = self.label
+
+        if os.path.exists(dataPath):
+            tmpArr = np.load(dataPath,allow_pickle=False)
             #print(f'tmpArr from file: {tmpArr}')
             tmpArr = np.append(tmpArr,trainingData, axis=1)
             #print(f'tmpArr appended and saved (Binary): {tmpArr}')
-            np.save(pathTo, tmpArr, allow_pickle=False)
+            np.save(dataPath, tmpArr, allow_pickle=False)
         else: 
-            np.save(pathTo, trainingData, allow_pickle=False)
+            np.save(dataPath, trainingData, allow_pickle=False)
+            #print(f'trainingData saved (Binary): {trainingData}')
+
+        if os.path.exists(truthPath):
+            tmpArr = np.load(truthPath,allow_pickle=False)
+            #print(f'tmpArr from file: {tmpArr}')
+            tmpArr = np.append(tmpArr,packetTruth, axis=1)
+            #print(f'tmpArr appended and saved (Binary): {tmpArr}')
+            np.save(truthPath, tmpArr, allow_pickle=False)
+        else: 
+            np.save(truthPath, packetTruth, allow_pickle=False)
             #print(f'trainingData saved (Binary): {trainingData}')
 
     def writetoCSV(self, trainingData, pathTo):
@@ -337,12 +353,10 @@ class GetData:
         #Arrange the data
         #time.sleep(2)
 
-
-
-        # XList1 = [[],[]]
+        # XList = [[],[]]
         # for i in range(self.packetSize):
-        #     XList1[0].append(self.packetArr[i,0,0])
-        #     XList1[1].append(i)
+        #     XList[0].append(self.packetData[0,0 + (i * self.numSensors * 3)])
+        #     XList[1].append(i)
         # #print(f'XList1: {XList1}')
 
         # XList2 = [[],[]]
@@ -409,19 +423,38 @@ class GetData:
         #     ZList4[0].append(self.packetArr[i,3,2])
         #     ZList4[1].append(i)
 
-        _,axs = plt.subplots(self.numSensors,3, figsize=(6,4))
-        #axs[0][0].plot(self.packetArr[:,1,1])
+        _,axs = plt.subplots(self.numSensors,3, figsize=(12,8))
+        
+        #Axis labels
+        axs[0][0].set_title('X Axis')
+        axs[0][1].set_title('Y Axis')
+        axs[0][2].set_title('Z Axis')
+        
         for i in range(self.numSensors):
-            #labels
-            axs[0][0].set_title('X Axis')
-            axs[0][1].set_title('Y Axis')
-            axs[0][2].set_title('Z Axis')
+            # Sensor labels
             axs[i][0].set_ylabel(f'Sensor {i}')
 
             #Data
-            axs[i][0].plot(self.packetData[0, 0 + (i * 3)], i)
-            axs[i][1].plot(self.packetData[0, 0 + (i * 3)], i)
-            axs[i][2].plot(self.packetData[0, 0 + (i * 3)], i)
+            XList = [[],[]]
+            for j in range(self.packetSize):
+                XList[0].append(self.packetData[0, 0 + (i * 3) + (j * self.numSensors * 3)])
+                XList[1].append(j)
+                print(f'XList{j}: {XList}')
+            axs[i][0].plot(XList[0], YList[1])
+
+            YList = [[],[]]
+            for j in range(self.packetSize):
+                YList[0].append(self.packetData[0, 1 + (i * 3) + (j * self.numSensors * 3)])
+                YList[1].append(j)
+                print(f'YList{j}: {ZList}')
+            axs[i][1].plot(YList[0], YList[1])
+
+            ZList = [[],[]]
+            for j in range(self.packetSize):
+                ZList[0].append(self.packetData[0, 2 + (i * 3) + (j * self.numSensors * 3)])
+                ZList[1].append(j)
+                print(f'ZList{j}: {ZList}')
+            axs[i][2].plot(ZList[0], ZList[1])
             
 
             # axs[1][0].plot(XList2[1],XList2[0])
