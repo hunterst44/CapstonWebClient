@@ -76,35 +76,6 @@ class GetData:
         if recvCount < self.packetSize:
             for i in range(self.numSensors):
                 formatData(binaryData, i)
-            
-            # X1Acc, Y1Acc, Z1Acc = formatData(binaryData, 0)
-            # self.packetData[0,0 + (recvCount * 3)] = X1Acc
-            # self.packetData[0,1 + (recvCount * 3)] = Y1Acc
-            # self.packetData[0,2 + (recvCount * 3)] = Z1Acc
-
-            # X2Acc, Y2Acc, Z2Acc = formatData(binaryData, 1)
-            # self.packetData[0,0 + (recvCount * 3)] = X2Acc
-            # self.packetData[recvCount,1,1] = Y2Acc
-            # self.packetData[recvCount,1,2] = Z2Acc
-
-            # X3Acc, Y3Acc, Z3Acc = formatData(binaryData, 2)
-            # self.packetData[recvCount,2,0] = X3Acc
-            # self.packetData[recvCount,2,1] = Y3Acc
-            # self.packetData[recvCount,2,2] = Z3Acc
-
-            # X4Acc, Y4Acc, Z4Acc = formatData(binaryData, 3)
-            # self.packetData[recvCount,3,0] = X4Acc
-            # self.packetData[recvCount,3,1] = Y4Acc
-            # self.packetData[recvCount,3,2] = Z4Acc
-
-        #print(f'self.packetArr: {self.packetArr}')
-        #print()
-        # print(f'self.packetArr:')
-        # for i in range(self.numSensors):
-        #     for j in range(3):
-        #         print(f'Sample: {recvCount}, Sensor: {i}, Axis: {j}: {self.packetArr[recvCount,i,j]}')
-        # #     print()
-
 
     def socketLoop(self, recvCount): 
 
@@ -138,7 +109,7 @@ class GetData:
                     time.sleep(0.1)
                 
                 packetStartMS = int(time.time() * 1000)
-                print(f'Start packet time: {packetStartMS}')
+                #print(f'Start packet time: {packetStartMS}')
 
             while recvCount < self.packetSize:             
 
@@ -204,8 +175,8 @@ class GetData:
                 print(f'Packet Done')
                 packetStopMS = int(time.time() * 1000)
                 packetTimeMS = packetStopMS - packetStartMS
-                print(f'packetStart: {packetStartMS}')
-                print(f'packetStopMS: {packetStopMS}')
+                #print(f'packetStart: {packetStartMS}')
+                #print(f'packetStopMS: {packetStopMS}')
                 print(f'packet processing time in ms: {packetTimeMS}')
                 # for thread in threading.enumerate(): 
                 #     print(thread.name)
@@ -236,62 +207,16 @@ class GetData:
 
     def prepTraining(self):    #Prep the packet for training
 
-        #TODO add ground treuth labels data
-        #self.packetArr is a three dimensional array (self.packetSize, self.numSensors, Axi[XYZ])
-        #Scale Axes to +-1
-
-        #trainingData = np.zeros_like(self.packetArr)
-        #trainingData = np.resize(trainingData, (self.packetSize,self.numSensors,4))   #Add another spot for the ground truth label
         print(self.packetData) 
 
         #scale the data to +-1
-        for feature in self.packetData:
-            feature = feature / 2048
-
+        for i in range(self.packetData.shape[1]):
+            self.packetData[0,i] = self.packetData[0,i] / 2048
+        #print(f'self.packetData.shape: {self.packetData.shape}')
         #Get ground truth labels
-        packetTruth = np.array([1,1])
+        packetTruth = np.zeros([1,1])
+        #print(f'packetTruth.shape: {packetTruth.shape}')
         packetTruth[0,0] = self.label
-
-        # #print(f'self.packetArr Original: {self.packetArr}')  
-        # #print(f'trainingData Original: {trainingData}') 
-        # for i in range(self.packetSize):
-        #     #print()
-        #     #print(f'i: {i}')
-        #     for j in range(self.numSensors):
-        #         #print(f'j: {j}')
-        #         #print(f'packetArr pre-scaled (X): {self.packetArr[i, j, 0]}')
-        #         if self.packetArr[i, j, 0]:                   #X axis not zero
-        #             trainingData[i, j, 0] = self.packetArr[i, j, 0] / 2048
-        #             #print(f'trainingData post-scaled (X): {trainingData[i, j, 0]}')
-        #         else:
-        #           trainingData[i, j, 0] = 0.  
-                
-        #         #print(f'packetArr pre-scaled (Y): {self.packetArr[i, j, 1]}')
-        #         if self.packetArr[i, j, 1]:                   #Y axis not zero
-        #             trainingData[i, j, 1] = self.packetArr[i, j, 1] / 2048
-        #             #print(f'trainingData post-scaled (Y): {trainingData[i, j, 1]}')
-        #         else:
-        #           trainingData[i, j, 1] = 0.
-                
-        #         #print(f'packetArr pre-scaled (Z): {self.packetArr[i, j, 2]}')
-        #         if self.packetArr[i, j, 2]:                   #Z axis not zero
-        #             trainingData[i, j, 2] = self.packetArr[i, j, 2] / 2048 
-        #             #print(f'trainingData post-scaled (Z): {trainingData[i, j, 2]}')
-        #         else:
-        #           trainingData[i, j, 2] = 0.
-
-        #         #print(f'trainingData scaled: {trainingData}')    
-
-        #         trainingData[i,j,3] = self.label          #Add ground truth label
-
-        #print(f'trainingData scaled Complete: {trainingData}') 
-
-        #print(f'trainingData [0,2,0]: {trainingData[0,2,0]}')
-        #print(f'packetArr [0,2,0]: {self.packetArr[0,2,0]}')
-        #print(f'packetArr [0,2,2]: {self.packetArr[0,2,2]}')
-
-        #pathToBinary = self.pathPreface + '.npy'
-        #pathToCSV = self.pathPreface + '.csv'
 
         #Write to files
         self.writetoBinary(self.packetData, packetTruth)
@@ -303,20 +228,25 @@ class GetData:
         dataPath = self.pathPreface + '.npy'
         truthPath = self.pathPreface + '_truth.npy'
 
+        #Data
         if os.path.exists(dataPath):
             tmpArr = np.load(dataPath,allow_pickle=False)
             #print(f'tmpArr from file: {tmpArr}')
-            tmpArr = np.append(tmpArr,trainingData, axis=1)
+            tmpArr = np.append(tmpArr,trainingData, axis=0)
             np.save(dataPath, tmpArr, allow_pickle=False)
+            print(f'dataPacket shape (Binary): {tmpArr.shape}')
             print(f'dataPacket saved (Binary): {tmpArr}')
+            
         else: 
             np.save(dataPath, trainingData, allow_pickle=False)
+            print(f'dataPacket shape (Binary): {trainingData.shape}')
             print(f'dataPacket saved (Binary): {trainingData}')
 
+        #Truth
         if os.path.exists(truthPath):
             tmpArr = np.load(truthPath,allow_pickle=False)
             #print(f'tmpArr from file: {tmpArr}')
-            tmpArr = np.append(tmpArr,packetTruth, axis=1)
+            tmpArr = np.append(tmpArr,packetTruth, axis=0)
             np.save(truthPath, tmpArr, allow_pickle=False)
             print(f'packetTruth appended and saved (Binary): {tmpArr}')
         else: 
@@ -325,20 +255,19 @@ class GetData:
 
     def writetoCSV(self, trainingData, packetTruth):
         #Write data to .csv file (text)
+        #print(f'CSV write training data')
         dataPath = self.pathPreface + '.csv'
         truthPath = self.pathPreface + '_truth.csv'
+        
+        #Data
         if os.path.exists(dataPath):
-            tmpArr = np.loadtxt(dataPath,dtype=float, delimiter=',')
-            #print(f'tmpArr.shape 1: {tmpArr.shape}')
-            #print(f'tmpArr: {tmpArr}')
+            tmpArr = np.loadtxt(dataPath,dtype=float, delimiter=',', ndmin=2)       
+            print(f'tmpArr.shape 1: {tmpArr.shape}')
+            print(f'tmpArr: {tmpArr}')          
             
-            #TwoDtrainingData = np.reshape(trainingData, (trainingData.shape[0] * 4, 4))  #Shape trainingData to 2-D array for CSV
-            #print(f'TwoDtrainingData Shape: {TwoDtrainingData.shape}')   
-            #print(f'TwoDtrainingData: {TwoDtrainingData}')            
-            
-            tmpArr = np.append(tmpArr,trainingData, axis=1)                  #Append trainingData to tmpArr
-            #print(f'tmpArr.shape 2: {tmpArr.shape}')
-            #print(f'tmpArr: {tmpArr}')
+            tmpArr = np.append(tmpArr,trainingData, axis=0)                  #Append trainingData to tmpArr
+            #print(f'tmpArr.shape 2 (CSV): {tmpArr.shape}')
+            #print(f'tmpArr (CSV): {tmpArr}')
 
             np.savetxt(dataPath, tmpArr, fmt="%f", delimiter=",") 
             print(f'dataPacket appended and saved (CSV): {tmpArr}')
@@ -346,89 +275,21 @@ class GetData:
             #tmpArr = np.reshape(trainingData, (trainingData.shape[0] * 4, 4))   #Reshape to a 2-D array
             np.savetxt(dataPath, trainingData, fmt="%f", delimiter=",")
             print(f'dataPacket appended and saved (CSV): {trainingData}')
+            print(f'dataPacket shape: {trainingData.shape}')
         
+        #Truth
         if os.path.exists(truthPath):
-            tmpArr = np.loadtxt(truthPath,dtype=float, delimiter=',')
-            tmpArr = np.append(tmpArr,packetTruth, axis=1) 
+            tmpArr = np.loadtxt(truthPath,dtype=float, delimiter=',',ndmin=2)
+            tmpArr = np.append(tmpArr,packetTruth, axis=0) 
             np.savetxt(truthPath, tmpArr, fmt="%f", delimiter=",")
             print(f'packetTruth appended and saved (CSV): {tmpArr}')
+            print(f'packetTruth shape: {tmpArr.shape}')
         else: 
              np.savetxt(truthPath, packetTruth, fmt="%f", delimiter=",")
              print(f'packetTruth appended and saved (CSV): {packetTruth}')
+             print(f'dataPacket shape: {packetTruth.shape}')
 
     def plotAcc(self):
-        #Arrange the data
-        #time.sleep(2)
-
-        # XList = [[],[]]
-        # for i in range(self.packetSize):
-        #     XList[0].append(self.packetData[0,0 + (i * self.numSensors * 3)])
-        #     XList[1].append(i)
-        # #print(f'XList1: {XList1}')
-
-        # XList2 = [[],[]]
-        # for i in range(self.packetSize):
-        #     XList2[0].append(self.packetArr[i,1,0])
-        #     XList2[1].append(i)
-        # #print(f'XList: {XList}')
-
-        # XList3 = [[],[]]
-        # for i in range(self.packetSize):
-        #     XList3[0].append(self.packetArr[i,2,0])
-        #     XList3[1].append(i)
-        # #print(f'XList1: {XList1}')
-
-        # XList4 = [[],[]]
-        # for i in range(self.packetSize):
-        #     XList4[0].append(self.packetArr[i,3,0])
-        #     XList4[1].append(i)
-        # #print(f'XList: {XList}')
-
-        # YList1 = [[],[]]
-        # for i in range(self.packetSize):
-        #     YList1[0].append(self.packetArr[i,0,1])
-        #     YList1[1].append(i)
-        # #print(f'YList: {YList}')
-
-        # YList2 = [[],[]]
-        # for i in range(self.packetSize):
-        #     YList2[0].append(self.packetArr[i,1,1])
-        #     YList2[1].append(i)
-        # #print(f'YList: {YList}')
-
-        # YList3 = [[],[]]
-        # for i in range(self.packetSize):
-        #     YList3[0].append(self.packetArr[i,2,1])
-        #     YList3[1].append(i)
-        # #print(f'XList1: {XList1}')
-
-        # YList4 = [[],[]]
-        # for i in range(self.packetSize):
-        #     YList4[0].append(self.packetArr[i,3,1])
-        #     YList4[1].append(i)
-
-        # ZList1 = [[],[]]
-        # for i in range(self.packetSize):
-        #     ZList1[0].append(self.packetArr[i,0,2])
-        #     ZList1[1].append(i)
-        # #print(f'ZList: {ZList}')
-
-        # ZList2 = [[],[]]
-        # for i in range(self.packetSize):
-        #     ZList2[0].append(self.packetArr[i,1,2])
-        #     ZList2[1].append(i)
-        # #print(f'ZList2: {ZList2}')
-
-        # ZList3 = [[],[]]
-        # for i in range(self.packetSize):
-        #     ZList3[0].append(self.packetArr[i,2,2])
-        #     ZList3[1].append(i)
-        # #print(f'XList1: {XList1}')
-
-        # ZList4 = [[],[]]
-        # for i in range(self.packetSize):
-        #     ZList4[0].append(self.packetArr[i,3,2])
-        #     ZList4[1].append(i)
 
         _,axs = plt.subplots(self.numSensors,3, figsize=(12,8))
         
@@ -447,41 +308,28 @@ class GetData:
                 XList[0].append(self.packetData[0, 0 + (i * 3) + (j * self.numSensors * 3)])
                 XList[1].append(j)
                 print(f'XList{j}: {XList}')
-            axs[i][0].plot(XList[0], YList[1])
+            axs[i][0].plot(XList[1], XList[0])
 
             YList = [[],[]]
             for j in range(self.packetSize):
                 YList[0].append(self.packetData[0, 1 + (i * 3) + (j * self.numSensors * 3)])
                 YList[1].append(j)
-                print(f'YList{j}: {ZList}')
-            axs[i][1].plot(YList[0], YList[1])
+                print(f'YList{j}: {YList}')
+            axs[i][1].plot(YList[1], YList[0])
 
             ZList = [[],[]]
             for j in range(self.packetSize):
                 ZList[0].append(self.packetData[0, 2 + (i * 3) + (j * self.numSensors * 3)])
                 ZList[1].append(j)
                 print(f'ZList{j}: {ZList}')
-            axs[i][2].plot(ZList[0], ZList[1])
-            
-
-            # axs[1][0].plot(XList2[1],XList2[0])
-            # axs[1][1].plot(YList2[1],YList2[0])
-            # axs[1][2].plot(ZList2[1],ZList2[0])
-            # axs[2][0].plot(XList3[1],XList3[0])
-            # axs[2][0].set_ylabel('Sensor 3')
-            # axs[2][1].plot(YList3[1],YList3[0])
-            # axs[2][2].plot(ZList3[1],ZList3[0])
-            # axs[3][0].plot(XList4[1],XList4[0])
-            # axs[3][0].set_ylabel('Sensor 4')
-            # axs[3][1].plot(YList4[1],YList4[0])
-            # axs[3][2].plot(ZList4[1],ZList4[0])
+            axs[i][2].plot(ZList[1], ZList[0])
     
         figPath = self.pathPreface + str(self.packetCount) + '_' + str(self.label) + '.png'
         plt.savefig(figPath)
         #plt.show()            
 
-def createTrainingData(*, pathPreface='data/data', label=0, packetLimit=1, packetSize=10):
-    trgData = GetData(packetSize=packetSize, pathPreface=pathPreface, label=label, getTraining=True, packetLimit=packetLimit)
+def createTrainingData(*, pathPreface='data/data', label=0, packetLimit=1, packetSize=10, numSensors=4):
+    trgData = GetData(packetSize=packetSize, pathPreface=pathPreface, label=label, getTraining=True, packetLimit=packetLimit, numSensors=numSensors)
     trgData.socketLoop(0)
 
 def main():
@@ -490,7 +338,7 @@ def main():
     #createTrainingData(pathPreface="data/packet5Avg20/training01_upandDown", packetLimit=5, label=1, packetSize=5)
     #createTrainingData(pathPreface="data/packet5Avg20/training02_inandOut", packetLimit=5, label=2, packetSize=5)
 
-    createTrainingData(pathPreface="data/test/test", packetLimit=5, label=0, packetSize=5)
+    createTrainingData(pathPreface="data/test/test", packetLimit=3, label=0, packetSize=5, numSensors=2)
 
     
 
