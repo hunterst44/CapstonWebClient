@@ -36,6 +36,11 @@ class GetData:
         self.packetLimit = packetLimit
 
     def processData(self, binaryData, recvCount):
+        
+
+
+
+
         #print(f'processData recvCount(): {recvCount}')
         #print(f'binaryData: {binaryData}')
 
@@ -51,7 +56,7 @@ class GetData:
             XAcc = XAcc[0] << 8
             #print(f'XAcc Shift: {XAcc}')
             XAcc1 = struct.unpack("=b", binaryData[0 + (sensorIndex * 6)])  ##LSB is first byte in axis RX; full byte
-            XAcc = XAcc + XAcc1[0]
+            self.packetData[0,(self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = XAcc + XAcc1[0]
             #print(f'XAcc Final: {XAcc}')
 
             #Y Axis
@@ -60,7 +65,7 @@ class GetData:
             YAcc = YAcc[0] << 8
             #print(f'YAcc Shift: {YAcc}')
             YAcc1 = struct.unpack("=b", binaryData[2 + (sensorIndex * 6)])
-            YAcc = YAcc + YAcc1[0]
+            self.packetData[0, 1 + (self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = YAcc + YAcc1[0]
             #print(f'YAcc Final: {YAcc}')
 
             #Z Axis
@@ -69,31 +74,32 @@ class GetData:
             ZAcc = ZAcc[0] << 8
             #print(f'ZAcc Shift: {ZAcc}')
             ZAcc1 = struct.unpack("=b", binaryData[4 + (sensorIndex * 6)])
-            ZAcc = ZAcc + ZAcc1[0]
+            self.packetData[0, 2 + (self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = ZAcc + ZAcc1[0]
             #print(f'ZAcc Final: {ZAcc}')
-            return XAcc, YAcc, ZAcc
         
         if recvCount < self.packetSize:
+            for i in range(self.numSensors):
+                formatData(binaryData, i)
         
-            X1Acc, Y1Acc, Z1Acc = formatData(binaryData, 0)
-            self.packetArr[recvCount,0,0] = X1Acc
-            self.packetArr[recvCount,0,1] = Y1Acc
-            self.packetArr[recvCount,0,2] = Z1Acc
+            # X1Acc, Y1Acc, Z1Acc = formatData(binaryData, 0)
+            # self.packetData[0,0 + (recvCount * 3)] = X1Acc
+            # self.packetData[0,1 + (recvCount * 3)] = Y1Acc
+            # self.packetData[0,2 + (recvCount * 3)] = Z1Acc
 
-            X2Acc, Y2Acc, Z2Acc = formatData(binaryData, 1)
-            self.packetArr[recvCount,1,0] = X2Acc
-            self.packetArr[recvCount,1,1] = Y2Acc
-            self.packetArr[recvCount,1,2] = Z2Acc
+            # X2Acc, Y2Acc, Z2Acc = formatData(binaryData, 1)
+            # self.packetData[0,0 + (recvCount * 3)] = X2Acc
+            # self.packetData[recvCount,1,1] = Y2Acc
+            # self.packetData[recvCount,1,2] = Z2Acc
 
-            X3Acc, Y3Acc, Z3Acc = formatData(binaryData, 2)
-            self.packetArr[recvCount,2,0] = X3Acc
-            self.packetArr[recvCount,2,1] = Y3Acc
-            self.packetArr[recvCount,2,2] = Z3Acc
+            # X3Acc, Y3Acc, Z3Acc = formatData(binaryData, 2)
+            # self.packetData[recvCount,2,0] = X3Acc
+            # self.packetData[recvCount,2,1] = Y3Acc
+            # self.packetData[recvCount,2,2] = Z3Acc
 
-            X4Acc, Y4Acc, Z4Acc = formatData(binaryData, 3)
-            self.packetArr[recvCount,3,0] = X4Acc
-            self.packetArr[recvCount,3,1] = Y4Acc
-            self.packetArr[recvCount,3,2] = Z4Acc
+            # X4Acc, Y4Acc, Z4Acc = formatData(binaryData, 3)
+            # self.packetData[recvCount,3,0] = X4Acc
+            # self.packetData[recvCount,3,1] = Y4Acc
+            # self.packetData[recvCount,3,2] = Z4Acc
 
         #print(f'self.packetArr: {self.packetArr}')
         #print()
@@ -139,8 +145,6 @@ class GetData:
                 print(f'Start packet time: {packetStartMS}')
 
             while recvCount < self.packetSize:             
-                #TO DO: Get packetData into ProcessData function and get data out again...
-                packetData = np.zeros([1, self.packetSize * self.numSensors * 3])
 
                 sock = socket.socket()
                 sock.connect((self.host, self.port))
@@ -220,10 +224,13 @@ class GetData:
                     # 1 Alternate up and down
                     # 2 Out and in alternately
                     metaDataTimeStartMs = int(time.time() * 1000)
+                    #Append the data to the packet array
+                    np.append(self.packetArr,self.packetData, axis=1) 
                     self.prepTraining()
                     self.plotAcc()
                     metaDataTimeStopMs = int(time.time() * 1000)
                     print(f'metaData Time Save to files and image [ms]: {metaDataTimeStopMs - metaDataTimeStartMs}')
+                    
                 
                 print(f'Completed packet: {self.packetCount + 1} of {self.packetLimit} packets')
                 self.packetCount += 1
@@ -237,41 +244,47 @@ class GetData:
         #self.packetArr is a three dimensional array (self.packetSize, self.numSensors, Axi[XYZ])
         #Scale Axes to +-1
 
-        trainingData = np.zeros_like(self.packetArr)
-        trainingData = np.resize(trainingData, (self.packetSize,self.numSensors,4))   #Add another spot for the ground truth label
+        #trainingData = np.zeros_like(self.packetArr)
+        #trainingData = np.resize(trainingData, (self.packetSize,self.numSensors,4))   #Add another spot for the ground truth label
         print(trainingData) 
 
-        #print(f'self.packetArr Original: {self.packetArr}')  
-        #print(f'trainingData Original: {trainingData}') 
-        for i in range(self.packetSize):
-            #print()
-            #print(f'i: {i}')
-            for j in range(self.numSensors):
-                #print(f'j: {j}')
-                #print(f'packetArr pre-scaled (X): {self.packetArr[i, j, 0]}')
-                if self.packetArr[i, j, 0]:                   #X axis not zero
-                    trainingData[i, j, 0] = self.packetArr[i, j, 0] / 2048
-                    #print(f'trainingData post-scaled (X): {trainingData[i, j, 0]}')
-                else:
-                  trainingData[i, j, 0] = 0.  
-                
-                #print(f'packetArr pre-scaled (Y): {self.packetArr[i, j, 1]}')
-                if self.packetArr[i, j, 1]:                   #Y axis not zero
-                    trainingData[i, j, 1] = self.packetArr[i, j, 1] / 2048
-                    #print(f'trainingData post-scaled (Y): {trainingData[i, j, 1]}')
-                else:
-                  trainingData[i, j, 1] = 0.
-                
-                #print(f'packetArr pre-scaled (Z): {self.packetArr[i, j, 2]}')
-                if self.packetArr[i, j, 2]:                   #Z axis not zero
-                    trainingData[i, j, 2] = self.packetArr[i, j, 2] / 2048 
-                    #print(f'trainingData post-scaled (Z): {trainingData[i, j, 2]}')
-                else:
-                  trainingData[i, j, 2] = 0.
+        for feature in self.packetData:
+            feature = feature / 2048
 
-                #print(f'trainingData scaled: {trainingData}')    
 
-                trainingData[i,j,3] = self.label          #Add ground truth label
+
+
+        # #print(f'self.packetArr Original: {self.packetArr}')  
+        # #print(f'trainingData Original: {trainingData}') 
+        # for i in range(self.packetSize):
+        #     #print()
+        #     #print(f'i: {i}')
+        #     for j in range(self.numSensors):
+        #         #print(f'j: {j}')
+        #         #print(f'packetArr pre-scaled (X): {self.packetArr[i, j, 0]}')
+        #         if self.packetArr[i, j, 0]:                   #X axis not zero
+        #             trainingData[i, j, 0] = self.packetArr[i, j, 0] / 2048
+        #             #print(f'trainingData post-scaled (X): {trainingData[i, j, 0]}')
+        #         else:
+        #           trainingData[i, j, 0] = 0.  
+                
+        #         #print(f'packetArr pre-scaled (Y): {self.packetArr[i, j, 1]}')
+        #         if self.packetArr[i, j, 1]:                   #Y axis not zero
+        #             trainingData[i, j, 1] = self.packetArr[i, j, 1] / 2048
+        #             #print(f'trainingData post-scaled (Y): {trainingData[i, j, 1]}')
+        #         else:
+        #           trainingData[i, j, 1] = 0.
+                
+        #         #print(f'packetArr pre-scaled (Z): {self.packetArr[i, j, 2]}')
+        #         if self.packetArr[i, j, 2]:                   #Z axis not zero
+        #             trainingData[i, j, 2] = self.packetArr[i, j, 2] / 2048 
+        #             #print(f'trainingData post-scaled (Z): {trainingData[i, j, 2]}')
+        #         else:
+        #           trainingData[i, j, 2] = 0.
+
+        #         #print(f'trainingData scaled: {trainingData}')    
+
+        #         trainingData[i,j,3] = self.label          #Add ground truth label
 
         #print(f'trainingData scaled Complete: {trainingData}') 
 
