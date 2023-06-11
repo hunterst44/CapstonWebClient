@@ -219,9 +219,9 @@ class GetData:
             self.packetData[0,i] = self.packetData[0,i] / 2048
         #print(f'self.packetData.shape: {self.packetData.shape}')
         #Get ground truth labels
-        packetTruth = np.zeros([1,1], dtype=int)
+        packetTruth = np.zeros([1,], dtype=int)
         #print(f'packetTruth.shape: {packetTruth.shape}')
-        packetTruth[0,0] = self.label
+        packetTruth[0] = self.label
         print(f'packetTruth: {packetTruth}')
 
         #Write to files
@@ -230,7 +230,7 @@ class GetData:
 
     def writetoBinary(self,trainingData, packetTruth):
         #print(f'trainingData for write: {trainingData}')
-        #Write data to .npy file (binary)
+        #Write data to .npy file (binary) -- faster
         dataPath = self.pathPreface + '.npy'
         truthPath = self.pathPreface + '_truth.npy'
 
@@ -252,20 +252,20 @@ class GetData:
         if os.path.exists(truthPath):
             tmpArr = np.load(truthPath,allow_pickle=False)
             #print(f'tmpArr from file: {tmpArr}')
-            tmpArr = np.append(tmpArr,packetTruth, axis=0)
+            tmpArr = np.append(tmpArr,packetTruth)
             np.save(truthPath, tmpArr, allow_pickle=False)
-            #print(f'packetTruth appended and saved (Binary): {tmpArr}')
+            print(f'packetTruth appended and saved (Binary): {tmpArr}')
         else: 
             np.save(truthPath, packetTruth, allow_pickle=False)
             print(f'packetTruth saved (Binary): {packetTruth}')
 
     def writetoCSV(self, trainingData, packetTruth):
-        #Write data to .csv file (text)
+        #Write data to .csv file (text) - human readable
         #print(f'CSV write training data')
         dataPath = self.pathPreface + '.csv'
         truthPath = self.pathPreface + '_truth.csv'
         
-        #Data
+        #Data - 2D array axis 0 (rows) are gestures, axis 1 (cols) are features within a gesture
         if os.path.exists(dataPath):
             tmpArr = np.loadtxt(dataPath,dtype=float, delimiter=',', ndmin=2)       
             #print(f'tmpArr.shape 1: {tmpArr.shape}')
@@ -283,17 +283,17 @@ class GetData:
             #print(f'dataPacket appended and saved (CSV): {trainingData}')
             #print(f'dataPacket shape: {trainingData.shape}')
         
-        #Truth
+        #Truth - 1D Array of same length as data
         if os.path.exists(truthPath):
-            tmpArr = np.loadtxt(truthPath,dtype=int, delimiter=',',ndmin=2)
-            tmpArr = np.append(tmpArr,packetTruth, axis=0) 
+            tmpArr = np.loadtxt(truthPath,dtype=int, delimiter=',')
+            tmpArr = np.append(tmpArr,packetTruth) 
             np.savetxt(truthPath, tmpArr, fmt="%d", delimiter=",")
-            #print(f'packetTruth appended and saved (CSV): {tmpArr}')
-            #print(f'packetTruth shape: {tmpArr.shape}')
+            print(f'packetTruth appended and saved (CSV): {tmpArr}')
+            print(f'packetTruth shape: {tmpArr.shape}')
         else: 
              np.savetxt(truthPath, packetTruth, fmt="%d", delimiter=",")
-             #print(f'packetTruth appended and saved (CSV): {packetTruth}')
-             #print(f'dataPacket shape: {packetTruth.shape}')
+             print(f'packetTruth appended and saved (CSV): {packetTruth}')
+             print(f'dataPacket shape: {packetTruth.shape}')
 
     def plotAcc(self):
 
@@ -332,7 +332,8 @@ class GetData:
     
         figPath = self.pathPreface + str(self.packetCount) + '_' + str(self.label) + '.png'
         plt.savefig(figPath)
-        #plt.show()            
+        #plt.show()   
+        plt.close         
 
 def createTrainingData(*, pathPreface='data/data', label=0, packetLimit=1, packetSize=10, numSensors=4):
     trgData = GetData(packetSize=packetSize, pathPreface=pathPreface, label=label, getTraining=True, packetLimit=packetLimit, numSensors=numSensors)
@@ -341,12 +342,12 @@ def createTrainingData(*, pathPreface='data/data', label=0, packetLimit=1, packe
 def main():
     
     #Get Data for training
-    createTrainingData(pathPreface="data/packet5Avg20/training00_noMove", packetLimit=5, label=0, packetSize=5, numSensors=2)
-    createTrainingData(pathPreface="data/packet5Avg20/training01_upandDown", packetLimit=5, label=1, packetSize=5, numSensors=2)
-    createTrainingData(pathPreface="data/packet5Avg20/training02_inandOut", packetLimit=5, label=2, packetSize=5, numSensors=2)
+    # createTrainingData(pathPreface="data/packet5Avg20/training00_noMove", packetLimit=15, label=0, packetSize=5, numSensors=2)
+    # createTrainingData(pathPreface="data/packet5Avg20/training01_upandDown", packetLimit=15, label=1, packetSize=5, numSensors=2)
+    # createTrainingData(pathPreface="data/packet5Avg20/training02_inandOut", packetLimit=15, label=2, packetSize=5, numSensors=2)
 
     #Testing
-    #createTrainingData(pathPreface="data/test/test", packetLimit=2, label=0, packetSize=5, numSensors=2)
+    createTrainingData(pathPreface="data/test/test", packetLimit=10, label=0, packetSize=5, numSensors=2)
 
     
 

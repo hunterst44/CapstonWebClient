@@ -1156,8 +1156,8 @@ def getAccDataBinary(dataPathList, truthPathList):
     # print("Binary Data")
     dataArr = np.empty([1,30])
     dataArr[0,0] = 99.
-    truthArr = np.empty([1,1])
-    truthArr[0,0] = 99.
+    truthArr = np.empty([1,])
+    truthArr[0] = 99
 
     for path in dataPathList:
         # print("****")
@@ -1180,7 +1180,7 @@ def getAccDataBinary(dataPathList, truthPathList):
             # print(path)
             tmpArr = np.load(path,allow_pickle=False)
             
-            if truthArr[0,0] == 99.:
+            if truthArr[0] == 99:
                 truthArr = tmpArr
             else:
                 #print(f'tmpArr shape: {tmpArr.shape}')
@@ -1195,8 +1195,8 @@ def getAccDataBinary(dataPathList, truthPathList):
     #print(f'dataArr from file: {dataArr}')
     #print(f'truthArr shape: {truthArr.shape}')
     #print(f'truthArr from file: {truthArr}')
-    # print(f'dataIndex: {dataIndex.shape}')
-    # print(f'truthArr from file: {dataIndex}')
+    # print(f'dataIndex shape: {dataIndex.shape}')
+    # print(f'dataIndex: {dataIndex}')
 
     dataTmp = dataArr.copy()
     truthTmp = truthArr.copy()
@@ -1207,7 +1207,7 @@ def getAccDataBinary(dataPathList, truthPathList):
     # print(f'dataArr shape: {dataArr.shape}')
     #print(f'dataArr from file: {dataArr}')
     # print(f'truthArr shape: {truthArr.shape}')
-    print(f'truthArr from file: {truthArr}')
+    print(f'truthArr randomized: {truthArr}')
     # print(f'dataIndex: {dataIndex.shape}')
     # print(f'truthArr from file: {dataIndex}')
 
@@ -1242,7 +1242,7 @@ def getAccDataCSV(dataPathList, truthPathList):
         if os.path.exists(path):
             # print("****")
             # print(path)
-            tmpArr = np.loadtxt(path,dtype=float, delimiter=',', ndmin = 2)
+            tmpArr = np.loadtxt(path,dtype=int, delimiter=',', ndmin = 2)
             
             if truthArr[0,0] == 99.:
                 truthArr = tmpArr
@@ -1284,19 +1284,19 @@ def AccModel01():
     #X_test, y_test = spiral_data(samples=100, classes=3)
     
     X,y = getAccDataBinary(["data\packet5Avg20\\training00_noMove.npy","data\packet5Avg20\\training01_upandDown.npy","data\packet5Avg20\\training02_inandOut.npy"], ["data\packet5Avg20\\training00_noMove_truth.npy","data\packet5Avg20\\training01_upandDown_truth.npy","data\packet5Avg20\\training02_inandOut_truth.npy"])
-
-    EPOCHS = 100
-    BATCH_SIZE = None
+    #y = y.reshape(y.shape[0])  #reshape truth data only if truth data is formatted as 2-D
+    EPOCHS = 500
+    BATCH_SIZE = 1
     
     #Instanstiate the model
     model = Model()
     
     #Add layers
     #Input is 15 features (3 Axis * 5 samples)
-    model.add(Layer_Dense(30,90, weight_regularizer_l2=5e-4, bias_regularizer_l2=5e-4))
+    model.add(Layer_Dense(30,150, weight_regularizer_l2=5e-4, bias_regularizer_l2=5e-4))
     model.add(Activation_ReLu())
     model.add(Layer_Dropout(0.1))
-    model.add(Layer_Dense(90,3))
+    model.add(Layer_Dense(150,3))
     model.add(Activation_Softmax())
     
     model.set(
@@ -1308,22 +1308,61 @@ def AccModel01():
     model.finalize()
     
     #model.train(X,y, validation_data=(X_test, y_test),epochs=EPOCHS, batch_size=BATCH_SIZE, print_every=5)
-    model.train(X,y, epochs=EPOCHS, batch_size=BATCH_SIZE, print_every=50)
+    model.train(X,y, epochs=EPOCHS, batch_size=BATCH_SIZE, print_every=1000)
     
     parameters = model.get_parameters()
-    print(f'parameters: {parameters}')
+    #print(f'parameters: {parameters}')
     
     model.save('data/AccModel01')
 
 def Acc01prediction():
     #Create Dataset
     X,y = getAccDataBinary(["data\packet5Avg20\\training00_noMove.npy","data\packet5Avg20\\training01_upandDown.npy","data\packet5Avg20\\training02_inandOut.npy"], ["data\packet5Avg20\\training00_noMove_truth.npy","data\packet5Avg20\\training01_upandDown_truth.npy","data\packet5Avg20\\training02_inandOut_truth.npy"])
-
+   
     model = Model.load('data/AccModel01')
     
     confidences = model.predict(X)
     predictions = model.output_layer_activation.predictions(confidences)
     print(predictions)
+
+# def convertTruthBinary(truthPathList):
+#     #One time function to convert truth data to a 1-D array - done automatically in socketClient from now on
+#     for path in truthPathList:
+#         if os.path.exists(path):
+#             # print("****")
+#             # print(path)
+#             y = np.load(path,allow_pickle=False)
+#             print(y)
+#             print(y.shape)
+#             y = y.reshape(y.shape[0])  #reshape truth data only if truth data is formatted as 2-D
+#             print(y)
+#             print(y.shape)
+#             np.save(path, y, allow_pickle=False)
+#     for path in truthPathList:   #Check that the file was written to properly
+#         if os.path.exists(path):
+#            y = np.load(path,allow_pickle=False)
+#           print(y)
+#           print(y.shape)
+
+def convertTruthCSV(truthPathList):
+    #One time function to convert truth data to a 1-D array - done automatically in socketClient from now on
+    for path in truthPathList:
+        if os.path.exists(path):
+            # print("****")
+            # print(path)
+            y = np.loadtxt(path,dtype=int, delimiter=',') 
+            print(y)
+            print(y.shape)
+            y = y.reshape(y.shape[0])  #reshape truth data only if truth data is formatted as 2-D
+            print(y)
+            print(y.shape)
+            np.savetxt(path, y, fmt="%d", delimiter=",")
+    for path in truthPathList:   #Check that the file was written to properly
+         if os.path.exists(path):
+            y = np.loadtxt(path,dtype=int, delimiter=',') 
+            print(y)
+            print(y.shape)
+
 
 def main():
     #RegressionNoValid()
@@ -1338,6 +1377,8 @@ def main():
     #getAccData(["data\packet5Avg20/\/training00_noMove.npy","data\packet5Avg20\/training01_upandDown.npy","data\packet5Avg20\/training02_inandOut.npy"])
     #dataArr, truthArr = getAccDataCSV(['data\packet5Avg20\\training00_noMove.csv',"data\packet5Avg20\\training01_upandDown.csv","data\packet5Avg20\\training02_inandOut.csv"], ['data\packet5Avg20\\training00_noMove_truth.csv',"data\packet5Avg20\\training01_upandDown_truth.csv","data\packet5Avg20\\training02_inandOut_truth.csv"])
     #dataArrBin, truthArrBin = getAccDataBinary(["data\packet5Avg20\\training00_noMove.npy","data\packet5Avg20\\training01_upandDown.npy","data\packet5Avg20\\training02_inandOut.npy"], ["data\packet5Avg20\\training00_noMove_truth.npy","data\packet5Avg20\\training01_upandDown_truth.npy","data\packet5Avg20\\training02_inandOut_truth.npy"])
-    AccModel01()
-    #Acc01prediction()
+    #AccModel01()
+    Acc01prediction()
+    #convertTruthCSV(["data\packet5Avg20\\training00_noMove_truth.csv","data\packet5Avg20\\training01_upandDown_truth.csv","data\packet5Avg20\\training02_inandOut_truth.csv"])
+
 if __name__ == "__main__": main()
