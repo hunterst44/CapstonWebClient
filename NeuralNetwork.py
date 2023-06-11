@@ -1150,56 +1150,6 @@ def prediction():
     predictions = model.output_layer_activation.predictions(confidences)
     print(predictions)
 
-def AccModel01():
-    #Create Dataset
-    #TODO: Create data and validation arrays
-        # X Data is a randomized 1D array of features in groups of 15 (3 axis * 5 samples)
-        # y ground truth is the list of the classes of the data - see spiral_data as an example
-    #X,y = spiral_data(samples=1000, classes=3)
-    #X_test, y_test = spiral_data(samples=100, classes=3)
-    
-    X,y = getAccDataBinary(["data\packet5Avg20\\training00_noMove.npy","data\packet5Avg20\\training01_upandDown.npy","data\packet5Avg20\\training02_inandOut.npy"], ["data\packet5Avg20\\training00_noMove_truth.npy","data\packet5Avg20\\training01_upandDown_truth.npy","data\packet5Avg20\\training02_inandOut_truth.npy"])
-
-    EPOCHS = 10
-    BATCH_SIZE = 15
-    
-    #Instanstiate the model
-    model = Model()
-    
-    #Add layers
-    #Input is 15 features (3 Axis * 5 samples)
-    model.add(Layer_Dense(30,900, weight_regularizer_l2=5e-4, bias_regularizer_l2=5e-4))
-    model.add(Activation_ReLu())
-    model.add(Layer_Dropout(0.1))
-    model.add(Layer_Dense(900,3))
-    model.add(Activation_Softmax())
-    
-    model.set(
-        loss=Loss_CategoricalCrossEntropy(),
-        optimizer=Optimizer_Adam(learning_rate=0.05, decay=5e-5),
-        accuracy=Accuracy_Categorical()
-    )
-    
-    model.finalize()
-    
-    #model.train(X,y, validation_data=(X_test, y_test),epochs=EPOCHS, batch_size=BATCH_SIZE, print_every=5)
-    model.train(X,y, epochs=EPOCHS, batch_size=BATCH_SIZE, print_every=50)
-    
-    parameters = model.get_parameters()
-    #print(parameters)
-    
-    model.save('data/AccModel01')
-
-def Acc01prediction():
-    #Create Dataset
-    X,y = getAccDataBinary(["data\packet5Avg20\\training00_noMove.npy","data\packet5Avg20\\training01_upandDown.npy","data\packet5Avg20\\training02_inandOut.npy"], ["data\packet5Avg20\\training00_noMove_truth.npy","data\packet5Avg20\\training01_upandDown_truth.npy","data\packet5Avg20\\training02_inandOut_truth.npy"])
-
-    model = Model.load('data/AccModel01')
-    
-    confidences = model.predict(X)
-    predictions = model.output_layer_activation.predictions(confidences)
-    print(predictions)
-
 def getAccDataBinary(dataPathList, truthPathList):
     # print()
     # print("**######################################**")
@@ -1324,6 +1274,56 @@ def getAccDataCSV(dataPathList, truthPathList):
     #print(f'truthArr from file: {truthArr}')
 
     return dataArr, truthArr
+
+def AccModel01():
+    #Create Dataset
+    #TODO: Create data and validation arrays
+        # X Data is a randomized 1D array of features in groups of 15 (3 axis * 5 samples)
+        # y ground truth is the list of the classes of the data - see spiral_data as an example
+    #X,y = spiral_data(samples=1000, classes=3)
+    #X_test, y_test = spiral_data(samples=100, classes=3)
+    
+    X,y = getAccDataBinary(["data\packet5Avg20\\training00_noMove.npy","data\packet5Avg20\\training01_upandDown.npy","data\packet5Avg20\\training02_inandOut.npy"], ["data\packet5Avg20\\training00_noMove_truth.npy","data\packet5Avg20\\training01_upandDown_truth.npy","data\packet5Avg20\\training02_inandOut_truth.npy"])
+
+    EPOCHS = 100
+    BATCH_SIZE = None
+    
+    #Instanstiate the model
+    model = Model()
+    
+    #Add layers
+    #Input is 15 features (3 Axis * 5 samples)
+    model.add(Layer_Dense(30,90, weight_regularizer_l2=5e-4, bias_regularizer_l2=5e-4))
+    model.add(Activation_ReLu())
+    model.add(Layer_Dropout(0.1))
+    model.add(Layer_Dense(90,3))
+    model.add(Activation_Softmax())
+    
+    model.set(
+        loss=Loss_CategoricalCrossEntropy(),
+        optimizer=Optimizer_Adam(learning_rate=0.05, decay=5e-5),
+        accuracy=Accuracy_Categorical()
+    )
+    
+    model.finalize()
+    
+    #model.train(X,y, validation_data=(X_test, y_test),epochs=EPOCHS, batch_size=BATCH_SIZE, print_every=5)
+    model.train(X,y, epochs=EPOCHS, batch_size=BATCH_SIZE, print_every=50)
+    
+    parameters = model.get_parameters()
+    print(f'parameters: {parameters}')
+    
+    model.save('data/AccModel01')
+
+def Acc01prediction():
+    #Create Dataset
+    X,y = getAccDataBinary(["data\packet5Avg20\\training00_noMove.npy","data\packet5Avg20\\training01_upandDown.npy","data\packet5Avg20\\training02_inandOut.npy"], ["data\packet5Avg20\\training00_noMove_truth.npy","data\packet5Avg20\\training01_upandDown_truth.npy","data\packet5Avg20\\training02_inandOut_truth.npy"])
+
+    model = Model.load('data/AccModel01')
+    
+    confidences = model.predict(X)
+    predictions = model.output_layer_activation.predictions(confidences)
+    print(predictions)
 
 def main():
     #RegressionNoValid()

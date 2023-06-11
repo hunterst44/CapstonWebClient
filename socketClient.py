@@ -219,9 +219,10 @@ class GetData:
             self.packetData[0,i] = self.packetData[0,i] / 2048
         #print(f'self.packetData.shape: {self.packetData.shape}')
         #Get ground truth labels
-        packetTruth = np.zeros([1,1])
+        packetTruth = np.zeros([1,1], dtype=int)
         #print(f'packetTruth.shape: {packetTruth.shape}')
         packetTruth[0,0] = self.label
+        print(f'packetTruth: {packetTruth}')
 
         #Write to files
         self.writetoBinary(self.packetData, packetTruth)
@@ -284,13 +285,13 @@ class GetData:
         
         #Truth
         if os.path.exists(truthPath):
-            tmpArr = np.loadtxt(truthPath,dtype=float, delimiter=',',ndmin=2)
+            tmpArr = np.loadtxt(truthPath,dtype=int, delimiter=',',ndmin=2)
             tmpArr = np.append(tmpArr,packetTruth, axis=0) 
-            np.savetxt(truthPath, tmpArr, fmt="%f", delimiter=",")
+            np.savetxt(truthPath, tmpArr, fmt="%d", delimiter=",")
             #print(f'packetTruth appended and saved (CSV): {tmpArr}')
             #print(f'packetTruth shape: {tmpArr.shape}')
         else: 
-             np.savetxt(truthPath, packetTruth, fmt="%f", delimiter=",")
+             np.savetxt(truthPath, packetTruth, fmt="%d", delimiter=",")
              #print(f'packetTruth appended and saved (CSV): {packetTruth}')
              #print(f'dataPacket shape: {packetTruth.shape}')
 
