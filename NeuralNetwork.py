@@ -1158,18 +1158,20 @@ def AccModel01():
     #X,y = spiral_data(samples=1000, classes=3)
     #X_test, y_test = spiral_data(samples=100, classes=3)
     
-    EPOCHS = 1000
-    BATCH_SIZE = 250
+    X,y = getAccDataBinary(["data\packet5Avg20\\training00_noMove.npy","data\packet5Avg20\\training01_upandDown.npy","data\packet5Avg20\\training02_inandOut.npy"], ["data\packet5Avg20\\training00_noMove_truth.npy","data\packet5Avg20\\training01_upandDown_truth.npy","data\packet5Avg20\\training02_inandOut_truth.npy"])
+
+    EPOCHS = 10
+    BATCH_SIZE = 15
     
     #Instanstiate the model
     model = Model()
     
     #Add layers
     #Input is 15 features (3 Axis * 5 samples)
-    model.add(Layer_Dense(15,225, weight_regularizer_l2=5e-4, bias_regularizer_l2=5e-4))
+    model.add(Layer_Dense(30,900, weight_regularizer_l2=5e-4, bias_regularizer_l2=5e-4))
     model.add(Activation_ReLu())
     model.add(Layer_Dropout(0.1))
-    model.add(Layer_Dense(225,3))
+    model.add(Layer_Dense(900,3))
     model.add(Activation_Softmax())
     
     model.set(
@@ -1181,36 +1183,147 @@ def AccModel01():
     model.finalize()
     
     #model.train(X,y, validation_data=(X_test, y_test),epochs=EPOCHS, batch_size=BATCH_SIZE, print_every=5)
+    model.train(X,y, epochs=EPOCHS, batch_size=BATCH_SIZE, print_every=50)
     
     parameters = model.get_parameters()
-    print(parameters)
+    #print(parameters)
     
     model.save('data/AccModel01')
 
+def Acc01prediction():
+    #Create Dataset
+    X,y = getAccDataBinary(["data\packet5Avg20\\training00_noMove.npy","data\packet5Avg20\\training01_upandDown.npy","data\packet5Avg20\\training02_inandOut.npy"], ["data\packet5Avg20\\training00_noMove_truth.npy","data\packet5Avg20\\training01_upandDown_truth.npy","data\packet5Avg20\\training02_inandOut_truth.npy"])
 
+    model = Model.load('data/AccModel01')
+    
+    confidences = model.predict(X)
+    predictions = model.output_layer_activation.predictions(confidences)
+    print(predictions)
 
-def getAccDataBinary(pathList):
-    for path in pathList:
+def getAccDataBinary(dataPathList, truthPathList):
+    # print()
+    # print("**######################################**")
+    # print("Binary Data")
+    dataArr = np.empty([1,30])
+    dataArr[0,0] = 99.
+    truthArr = np.empty([1,1])
+    truthArr[0,0] = 99.
+
+    for path in dataPathList:
+        # print("****")
+        # print(path)
         if os.path.exists(path):
+            #print("****")
+            #print(path)
             tmpArr = np.load(path,allow_pickle=False)
-            print("****")
-            print(path)
-            print(f'tmpArr shape: {tmpArr.shape}')
-            print(f'tmpArr from file: {tmpArr}')
-            print()
-            print()
 
-def getAccDataCSV(pathList):
-    for path in pathList:
+            if dataArr[0,0] == 99.:
+                dataArr = tmpArr
+            else:
+                #print(f'tmpArr shape: {tmpArr.shape}')
+                #print(f'tmpArr from file: {tmpArr}')
+                dataArr = np.append(dataArr, tmpArr,axis=0)
+
+    for path in truthPathList:
         if os.path.exists(path):
-            print("****")
-            print(path)
-            tmpArr = np.loadtxt(path,dtype=float, delimiter=',')
+            # print("****")
+            # print(path)
+            tmpArr = np.load(path,allow_pickle=False)
+            
+            if truthArr[0,0] == 99.:
+                truthArr = tmpArr
+            else:
+                #print(f'tmpArr shape: {tmpArr.shape}')
+                #print(f'tmpArr: {tmpArr}')
+                truthArr = np.append(truthArr, tmpArr,axis=0)
 
-            print(f'tmpArr shape: {tmpArr.shape}')
-            print(f'tmpArr from file: {tmpArr}')
-            print()
-            print()
+    #Get random index
+    dataIndex = np.arange(0 , dataArr.shape[0])
+    np.random.shuffle(dataIndex)
+
+    #print(f'dataArr shape: {dataArr.shape}')
+    #print(f'dataArr from file: {dataArr}')
+    #print(f'truthArr shape: {truthArr.shape}')
+    #print(f'truthArr from file: {truthArr}')
+    # print(f'dataIndex: {dataIndex.shape}')
+    # print(f'truthArr from file: {dataIndex}')
+
+    dataTmp = dataArr.copy()
+    truthTmp = truthArr.copy()
+    for i in range(dataArr.shape[0]):
+        dataArr[dataIndex[i]] = dataTmp[i]
+        truthArr[dataIndex[i]] = truthTmp[i]
+
+    # print(f'dataArr shape: {dataArr.shape}')
+    #print(f'dataArr from file: {dataArr}')
+    # print(f'truthArr shape: {truthArr.shape}')
+    print(f'truthArr from file: {truthArr}')
+    # print(f'dataIndex: {dataIndex.shape}')
+    # print(f'truthArr from file: {dataIndex}')
+
+    
+    return dataArr, truthArr
+
+def getAccDataCSV(dataPathList, truthPathList):
+    # print()
+    # print("**######################################**")
+    # print("Text Data")
+    dataArr = np.empty([1,30])
+    dataArr[0,0] = 99.
+    truthArr = np.empty([1,1])
+    truthArr[0,0] = 99.
+    print(f'truthArr init: {truthArr}')
+    print(f'dataArr init: {truthArr}')
+    for path in dataPathList:
+        if os.path.exists(path):
+            # print("****")
+            # print(path)
+            tmpArr = np.loadtxt(path,dtype=float, delimiter=',', ndmin = 2)
+
+            if dataArr[0,0] == 99.:
+                dataArr = tmpArr
+            else:
+                #print(f'tmpArr shape: {tmpArr.shape}')
+                #print(f'tmpArr from file: {tmpArr}')
+                dataArr = np.append(dataArr, tmpArr,axis=0)
+            
+        
+    for path in truthPathList:
+        if os.path.exists(path):
+            # print("****")
+            # print(path)
+            tmpArr = np.loadtxt(path,dtype=float, delimiter=',', ndmin = 2)
+            
+            if truthArr[0,0] == 99.:
+                truthArr = tmpArr
+            else:
+                # print(f'tmpArr shape: {tmpArr.shape}')
+                # print(f'tmpArr: {tmpArr}')
+                truthArr = np.append(truthArr, tmpArr,axis=0)
+
+    #Get random index
+    dataIndex = np.arange(0 , dataArr.shape[0])
+    np.random.shuffle(dataIndex)
+
+    #print(f'dataArr shape: {dataArr.shape}')
+    #print(f'dataArr from file: {dataArr}')
+    #print(f'truthArr shape: {truthArr.shape}')
+    #print(f'truthArr from file: {truthArr}')
+    # print(f'dataIndex: {dataIndex.shape}')
+    # print(f'truthArr from file: {dataIndex}')
+
+    dataTmp = dataArr.copy()
+    truthTmp = truthArr.copy()
+    for i in range(dataArr.shape[0]):
+        dataArr[dataIndex[i]] = dataTmp[i]
+        truthArr[dataIndex[i]] = truthTmp[i]
+
+    #print(f'dataArr shape: {dataArr.shape}')
+    #print(f'dataArr from file: {dataArr}')
+    #print(f'truthArr shape: {truthArr.shape}')
+    #print(f'truthArr from file: {truthArr}')
+
+    return dataArr, truthArr
 
 def main():
     #RegressionNoValid()
@@ -1223,6 +1336,8 @@ def main():
     # print(X)
     # print(y)
     #getAccData(["data\packet5Avg20/\/training00_noMove.npy","data\packet5Avg20\/training01_upandDown.npy","data\packet5Avg20\/training02_inandOut.npy"])
-    getAccDataCSV(["data\packet5Avg20\\training00_noMove.csv","data\packet5Avg20\\training01_upandDown.csv","data\packet5Avg20\\training02_inandOut.csv"])
-    #getAccDataBinary(["data\/test/test.npy"])
+    #dataArr, truthArr = getAccDataCSV(['data\packet5Avg20\\training00_noMove.csv',"data\packet5Avg20\\training01_upandDown.csv","data\packet5Avg20\\training02_inandOut.csv"], ['data\packet5Avg20\\training00_noMove_truth.csv',"data\packet5Avg20\\training01_upandDown_truth.csv","data\packet5Avg20\\training02_inandOut_truth.csv"])
+    #dataArrBin, truthArrBin = getAccDataBinary(["data\packet5Avg20\\training00_noMove.npy","data\packet5Avg20\\training01_upandDown.npy","data\packet5Avg20\\training02_inandOut.npy"], ["data\packet5Avg20\\training00_noMove_truth.npy","data\packet5Avg20\\training01_upandDown_truth.npy","data\packet5Avg20\\training02_inandOut_truth.npy"])
+    #AccModel01()
+    Acc01prediction()
 if __name__ == "__main__": main()
