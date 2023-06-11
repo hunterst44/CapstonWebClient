@@ -1338,6 +1338,6 @@ def main():
     #getAccData(["data\packet5Avg20/\/training00_noMove.npy","data\packet5Avg20\/training01_upandDown.npy","data\packet5Avg20\/training02_inandOut.npy"])
     #dataArr, truthArr = getAccDataCSV(['data\packet5Avg20\\training00_noMove.csv',"data\packet5Avg20\\training01_upandDown.csv","data\packet5Avg20\\training02_inandOut.csv"], ['data\packet5Avg20\\training00_noMove_truth.csv',"data\packet5Avg20\\training01_upandDown_truth.csv","data\packet5Avg20\\training02_inandOut_truth.csv"])
     #dataArrBin, truthArrBin = getAccDataBinary(["data\packet5Avg20\\training00_noMove.npy","data\packet5Avg20\\training01_upandDown.npy","data\packet5Avg20\\training02_inandOut.npy"], ["data\packet5Avg20\\training00_noMove_truth.npy","data\packet5Avg20\\training01_upandDown_truth.npy","data\packet5Avg20\\training02_inandOut_truth.npy"])
-    #AccModel01()
-    Acc01prediction()
+    AccModel01()
+    #Acc01prediction()
 if __name__ == "__main__": main()
