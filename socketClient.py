@@ -342,12 +342,18 @@ def createTrainingData(*, pathPreface='data/data', label=0, packetLimit=1, packe
 def main():
     
     #Get Data for training
-    # createTrainingData(pathPreface="data/packet5Avg20/training00_noMove", packetLimit=15, label=0, packetSize=5, numSensors=2)
-    # createTrainingData(pathPreface="data/packet5Avg20/training01_upandDown", packetLimit=15, label=1, packetSize=5, numSensors=2)
-    # createTrainingData(pathPreface="data/packet5Avg20/training02_inandOut", packetLimit=15, label=2, packetSize=5, numSensors=2)
+    createTrainingData(pathPreface="data/packet5Avg20/training00_noMove", packetLimit=20, label=0, packetSize=5, numSensors=2)
+    createTrainingData(pathPreface="data/packet5Avg20/training00_noMove_Test", packetLimit=2, label=0, packetSize=5, numSensors=2)
+
+    createTrainingData(pathPreface="data/packet5Avg20/training01_upandDown", packetLimit=20, label=1, packetSize=5, numSensors=2)
+    createTrainingData(pathPreface="data/packet5Avg20/training01_upandDown_Test", packetLimit=2, label=1, packetSize=5, numSensors=2)
+
+    createTrainingData(pathPreface="data/packet5Avg20/training02_inandOut", packetLimit=20, label=2, packetSize=5, numSensors=2)
+    createTrainingData(pathPreface="data/packet5Avg20/training02_inandOut_Test", packetLimit=2, label=2, packetSize=5, numSensors=2)
+    
 
     #Testing
-    createTrainingData(pathPreface="data/test/test", packetLimit=10, label=0, packetSize=5, numSensors=2)
+    #createTrainingData(pathPreface="data/test/test", packetLimit=10, label=0, packetSize=5, numSensors=2)
 
     
 
