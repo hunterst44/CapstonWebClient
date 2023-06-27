@@ -17,7 +17,8 @@ import time
 import threading
 from threading import Thread
 import matplotlib.pyplot as plt 
-import os.path          
+import os.path 
+import NeuralNetwork         
 
 class GetData:
     
@@ -188,6 +189,8 @@ class GetData:
                 #print()
                 #print(f'data: {self.packetArr}')
                 #print()
+
+                np.append(self.packetArr,self.packetData, axis=1) 
                 
                 if self.getTraining:
                     #Save data for training
@@ -197,11 +200,18 @@ class GetData:
                     # 2 Out and in alternately
                     metaDataTimeStartMs = int(time.time() * 1000)
                     #Append the data to the packet array
-                    np.append(self.packetArr,self.packetData, axis=1) 
                     self.prepTraining()
                     self.plotAcc()
                     metaDataTimeStopMs = int(time.time() * 1000)
-                    print(f'metaData Time Save to files and image [ms]: {metaDataTimeStopMs - metaDataTimeStartMs}')   
+                    print(f'metaData Time Save to files and image [ms]: {metaDataTimeStopMs - metaDataTimeStartMs}')
+                else:   ##Not training so just need to ouput data for prediction
+                    print(f'Making Prediction...') 
+                    predictionStartMs = int(time.time() * 1000)
+                    prediction = NeuralNetwork.realTimePrediction(self.packetData) 
+                    predictionStopMS = int(time.time() * 1000)
+                    predictionTimeMS = predictionStopMS - predictionStartMs
+                    print(f'It\'s {prediction}') 
+                    print(f'Time to predict: {predictionTimeMS}')
                 
                 print(f'Completed packet: {self.packetCount + 1} of {self.packetLimit} packets')
                 self.packetCount += 1

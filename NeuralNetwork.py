@@ -1325,6 +1325,16 @@ def Acc01prediction():
     predictions = model.output_layer_activation.predictions(confidences)
     print(predictions)
 
+def realTimePrediction(packetData):
+     #Create Dataset
+    model = Model.load('data/AccModel01')
+    
+    confidences = model.predict(packetData)
+    predictions = model.output_layer_activation.predictions(confidences)
+    print(predictions)
+
+    return predictions
+
 # def convertTruthBinary(truthPathList):
 #     #One time function to convert truth data to a 1-D array - done automatically in socketClient from now on
 #     for path in truthPathList:
