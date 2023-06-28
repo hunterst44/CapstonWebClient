@@ -208,6 +208,7 @@ class GetData:
                 #socketLoop(recvCount)
 
             if recvCount == self.packetSize and self.getTraining:                      # Once we've received 5 packets
+                dataThread.join()
                 while threading.active_count() > 1:    #wait for the last threads to finish processing
                     #print(f'threading.active_count(): {threading.active_count()}')
                     pass
