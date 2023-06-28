@@ -14,6 +14,7 @@ import math
 import pickle
 import copy
 import os.path
+import socketClient
 
 nnfs.init()
 
@@ -1325,13 +1326,17 @@ def Acc01prediction():
     predictions = model.output_layer_activation.predictions(confidences)
     print(predictions)
 
-def realTimePrediction(packetData):
+def realTimePrediction(packetData, predictions):
      #Create Dataset
+    predictionStartMs = int(time.time() * 1000)
     model = Model.load('data/AccModel01')
     
     confidences = model.predict(packetData)
     predictions = model.output_layer_activation.predictions(confidences)
-    print(predictions)
+    predictionStopMS = int(time.time() * 1000)
+    predictionTimeMS = predictionStopMS - predictionStartMs
+    print(f'It\'s {predictions}') 
+    print(f'Time to predict: {predictionTimeMS}')
 
     return predictions
 

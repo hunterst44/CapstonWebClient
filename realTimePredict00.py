@@ -5,6 +5,7 @@ import socketClient
 
 dataStream = socketClient.GetData(packetSize=5, label=0, getTraining=False, numSensors=2, packetLimit=1000)
 dataStream.socketLoop(0)
+print(f'It\'s {dataStream.predictions}') 
 
 
 

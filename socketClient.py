@@ -28,13 +28,14 @@ class GetData:
         self.packetSize = packetSize
         self.numSensors = numSensors
         self.packetData = np.zeros([1, self.packetSize * self.numSensors * 3]) #one packet of data corresponding to a gesture - 3 axis * number of sensors times the number of samples per gesture
-        self.packetArr = np.zeros([1, self.packetSize * self.numSensors * 3]) #An array of packets (gestures) used while collecting data for training
+        #self.packetArr = np.zeros([1, self.packetSize * self.numSensors * 3]) #An array of packets (gestures) used while collecting data for training
         self.packetCount = 0
         self.packetDone = 0
         self.pathPreface = pathPreface 
         self.label = label
         self.getTraining = getTraining
         self.packetLimit = packetLimit
+        self.predictions = []
 
     def processData(self, binaryData, recvCount):
       
@@ -48,30 +49,30 @@ class GetData:
             #print(f'recvCount: {recvCount}')
             #Parse binary data and recombine into ints
             #X Axis
-            XAcc = struct.unpack("=b", binaryData[1 + (sensorIndex * 6)])  ##MSB is second byte in axis RX; Just a nibble
+            XAcc = struct.unpack("=b", binaryData[1 + (sensorIndex * 3 * self.numSensors)])  ##MSB is second byte in axis RX; Just a nibble
             #print(f'XAcc Raw: {XAcc}')
             XAcc = XAcc[0] << 8
             #print(f'XAcc Shift: {XAcc}')
-            XAcc1 = struct.unpack("=B", binaryData[0 + (sensorIndex * 6)])  ##LSB is first byte in axis RX; full byte
+            XAcc1 = struct.unpack("=B", binaryData[0 + (sensorIndex * 3 * self.numSensors)])  ##LSB is first byte in axis RX; full byte
             self.packetData[0,(self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = XAcc + XAcc1[0]
             #print(f'XAcc Final: {XAcc}')
 
             #Y Axis
-            YAcc = struct.unpack("=b", binaryData[3 + (sensorIndex * 6)])
+            YAcc = struct.unpack("=b", binaryData[3 + (sensorIndex * 3 * self.numSensors)])
             #print(f'XAcc Raw: {XAcc}')
             YAcc = YAcc[0] << 8
             #print(f'YAcc Shift: {YAcc}')
-            YAcc1 = struct.unpack("=B", binaryData[2 + (sensorIndex * 6)])
+            YAcc1 = struct.unpack("=B", binaryData[2 + (sensorIndex * 3 * self.numSensors)])
             self.packetData[0, 1 + (self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = YAcc + YAcc1[0]
             #print(f'YAcc Final: {YAcc}')
 
             #Z Axis
-            ZAcc = struct.unpack("=b", binaryData[5 + (sensorIndex * 6)])
+            ZAcc = struct.unpack("=b", binaryData[5 + (sensorIndex * 3 * self.numSensors)])
             #print(f'sensor: {sensorIndex}')
             #print(f'ZAcc Raw: {ZAcc}')
             ZAcc = ZAcc[0] << 8
             #print(f'ZAcc Shift: {ZAcc}')
-            ZAcc1 = struct.unpack("=B", binaryData[4 + (sensorIndex * 6)])
+            ZAcc1 = struct.unpack("=B", binaryData[4 + (sensorIndex * 3 * self.numSensors)])
             ZAcc2 = struct.unpack("=B", binaryData[4])
             #print(f'ZAcc1[0]: {ZAcc1[0]}')
             #print(f'ZAcc2[0]: {ZAcc2[0]}')
@@ -83,9 +84,10 @@ class GetData:
             for i in range(self.numSensors):
                 formatData(binaryData, i)
 
-    def socketLoop(self, recvCount): 
+    def socketLoop(self, recvCount): #recvCount counts samples in a packet in training mode; in prediction mode it is the index for the corcular buffer
 
         packetStartMS = 0
+        firstFive = 0 #flip to one after first five sample are in to start predictions
 
         while self.packetCount < self.packetLimit:                   #keep getting packets until the packetLimit is reaches   
             if recvCount == 0:
@@ -113,10 +115,11 @@ class GetData:
                     time.sleep(1)
                     print('Go!')
                     time.sleep(0.1)
-                
-                packetStartMS = int(time.time() * 1000)
-                #print(f'Start packet time: {packetStartMS}')
 
+                    
+                    #print(f'Start packet time: {packetStartMS}')
+            
+            packetStartMS = int(time.time() * 1000)    
             while recvCount < self.packetSize:             
 
                 sock = socket.socket()
@@ -166,14 +169,45 @@ class GetData:
                 sampleRxTimeMS = sampleRxStopMS - sampleRxStartMS
                 print(f'Sample receive time in ms: {sampleRxTimeMS}')
                 
-                #print(f'Start preocessData() thread for sample: {recvCount}' )
+                print(f'Start preocessData() thread for sample: {recvCount}' )
+                # if self.getTraining is False:  #while predicting make sure all threads are done before starting another
+                #     while threading.active_count() > 1:    #wait for the last threads to finish processing
+                #         print(f'threading.active_count(): {threading.active_count()}')
+                #         pass
+                
                 dataThread = Thread(target=self.processData, args=(y, recvCount,))
                 dataThread.start()
-                recvCount += 1
+
+                if self.getTraining:
+                    recvCount += 1
+                else:       
+                    if firstFive:
+                        dataThread.join()    #wait for the data to be proccessed in the other thread
+                        print(f'Making Prediction...') 
+                        #predictionStartMs = int(time.time() * 1000)
+
+                        NnInput = np.roll(self.packetData, (self.packetSize-1) - recvCount)  #roll the packetData circular array to put them in the right order
+                        predictThread.join()   #Ensure last prediction is done before proceeding
+                        
+                        predictThread = Thread(target=NeuralNetwork.realTimePrediction, args=(NnInput, self.predictions,))
+                        predictThread.start()
+                        #self.predictions = NeuralNetwork.realTimePrediction(NnInput) 
+
+                        # predictionStopMS = int(time.time() * 1000)
+                        # predictionTimeMS = predictionStopMS - predictionStartMs
+                        # print(f'It\'s {self.predictions}') 
+                        # print(f'Time to predict: {predictionTimeMS}')
+                        
+                    if recvCount == self.packetSize - 1:    #reset recvCount to 0 if a full packet is received
+                        firstFive = 1                       #Enable first five so a prediction will be made on next pass
+                        recvCount = 0                       
+                    else: 
+                        recvCount += 1                      #Advance recvCount
+    
                 #print(f'Completed Rx of sample: {recvCount}' )
                 #socketLoop(recvCount)
 
-            if recvCount == self.packetSize:                      # Once we've received 5 packets
+            if recvCount == self.packetSize and self.getTraining:                      # Once we've received 5 packets
                 while threading.active_count() > 1:    #wait for the last threads to finish processing
                     #print(f'threading.active_count(): {threading.active_count()}')
                     pass
@@ -189,34 +223,21 @@ class GetData:
                 #print()
                 #print(f'data: {self.packetArr}')
                 #print()
-
-                np.append(self.packetArr,self.packetData, axis=1) 
-                
-                if self.getTraining:
-                    #Save data for training
-                    #Training Label codes
-                    # 0 Not movinng - Environmental movements
-                    # 1 Alternate up and down
-                    # 2 Out and in alternately
-                    metaDataTimeStartMs = int(time.time() * 1000)
-                    #Append the data to the packet array
-                    self.prepTraining()
-                    self.plotAcc()
-                    metaDataTimeStopMs = int(time.time() * 1000)
-                    print(f'metaData Time Save to files and image [ms]: {metaDataTimeStopMs - metaDataTimeStartMs}')
-                else:   ##Not training so just need to ouput data for prediction
-                    print(f'Making Prediction...') 
-                    predictionStartMs = int(time.time() * 1000)
-                    prediction = NeuralNetwork.realTimePrediction(self.packetData) 
-                    predictionStopMS = int(time.time() * 1000)
-                    predictionTimeMS = predictionStopMS - predictionStartMs
-                    print(f'It\'s {prediction}') 
-                    print(f'Time to predict: {predictionTimeMS}')
-                
-                print(f'Completed packet: {self.packetCount + 1} of {self.packetLimit} packets')
+                #np.append(self.packetArr,self.packetData, axis=1) 
+                #Save data for training
+                #Training Label codes
+                # 0 Not movinng - Environmental movements
+                # 1 Alternate up and down
+                # 2 Out and in alternately
+                metaDataTimeStartMs = int(time.time() * 1000)
+                #Append the data to the packet array
+                self.prepTraining()
+                self.plotAcc()
                 self.packetCount += 1
                 recvCount = 0    #Reset recvCount to get the next packet
-        
+                metaDataTimeStopMs = int(time.time() * 1000)
+                print(f'metaData Time Save to files and image [ms]: {metaDataTimeStopMs - metaDataTimeStartMs}')
+
         self.packetCount = 0            
         return 0
 
