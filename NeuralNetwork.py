@@ -983,6 +983,10 @@ class Model:
     @staticmethod
     def load(path):
         with open(path, 'rb') as f:
+            test = pickle.Unpickler(f)
+            print(f'pickle attributes: {dir(test)}')
+           # print(f'pickle class: {test.find_class("NeuralNetwork", "Model")}')
+           # test.find_class("NeuralNetwork", "Model")
             model = pickle.load(f)
             
         return model
@@ -1330,6 +1334,7 @@ def realTimePrediction(packetData, predictions):
      #Create Dataset
     predictionStartMs = int(time.time() * 1000)
     model = Model.load('data/AccModel01')
+    print(f'model: {model}')
     
     confidences = model.predict(packetData)
     predictions = model.output_layer_activation.predictions(confidences)
@@ -1379,21 +1384,21 @@ def convertTruthCSV(truthPathList):
             print(y.shape)
 
 
-def main():
-    #RegressionNoValid()
-    #binaryLogisticValid()
-    #CategoricalCrossEntropy()
-    #batchModel()
-    #testLoadModel()
-    #prediction()
-    # X,y = spiral_data(samples=1000, classes=3)
-    # print(X)
-    # print(y)
-    #getAccData(["data\packet5Avg20/\/training00_noMove.npy","data\packet5Avg20\/training01_upandDown.npy","data\packet5Avg20\/training02_inandOut.npy"])
-    #dataArr, truthArr = getAccDataCSV(['data\packet5Avg20\\training00_noMove.csv',"data\packet5Avg20\\training01_upandDown.csv","data\packet5Avg20\\training02_inandOut.csv"], ['data\packet5Avg20\\training00_noMove_truth.csv',"data\packet5Avg20\\training01_upandDown_truth.csv","data\packet5Avg20\\training02_inandOut_truth.csv"])
-    #dataArrBin, truthArrBin = getAccDataBinary(["data\packet5Avg20\\training00_noMove.npy","data\packet5Avg20\\training01_upandDown.npy","data\packet5Avg20\\training02_inandOut.npy"], ["data\packet5Avg20\\training00_noMove_truth.npy","data\packet5Avg20\\training01_upandDown_truth.npy","data\packet5Avg20\\training02_inandOut_truth.npy"])
-    #AccModel01()
-    Acc01prediction()
-    #convertTruthCSV(["data\packet5Avg20\\training00_noMove_truth.csv","data\packet5Avg20\\training01_upandDown_truth.csv","data\packet5Avg20\\training02_inandOut_truth.csv"])
+# def main():
+#     #RegressionNoValid()
+#     #binaryLogisticValid()
+#     #CategoricalCrossEntropy()
+#     #batchModel()
+#     #testLoadModel()
+#     #prediction()
+#     # X,y = spiral_data(samples=1000, classes=3)
+#     # print(X)
+#     # print(y)
+#     #getAccData(["data\packet5Avg20/\/training00_noMove.npy","data\packet5Avg20\/training01_upandDown.npy","data\packet5Avg20\/training02_inandOut.npy"])
+#     #dataArr, truthArr = getAccDataCSV(['data\packet5Avg20\\training00_noMove.csv',"data\packet5Avg20\\training01_upandDown.csv","data\packet5Avg20\\training02_inandOut.csv"], ['data\packet5Avg20\\training00_noMove_truth.csv',"data\packet5Avg20\\training01_upandDown_truth.csv","data\packet5Avg20\\training02_inandOut_truth.csv"])
+#     #dataArrBin, truthArrBin = getAccDataBinary(["data\packet5Avg20\\training00_noMove.npy","data\packet5Avg20\\training01_upandDown.npy","data\packet5Avg20\\training02_inandOut.npy"], ["data\packet5Avg20\\training00_noMove_truth.npy","data\packet5Avg20\\training01_upandDown_truth.npy","data\packet5Avg20\\training02_inandOut_truth.npy"])
+#     #AccModel01()
+#     Acc01prediction()
+#     #convertTruthCSV(["data\packet5Avg20\\training00_noMove_truth.csv","data\packet5Avg20\\training01_upandDown_truth.csv","data\packet5Avg20\\training02_inandOut_truth.csv"])
 
-if __name__ == "__main__": main()
+# if __name__ == "__main__": main()

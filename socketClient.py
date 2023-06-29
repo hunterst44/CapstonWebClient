@@ -18,11 +18,12 @@ import threading
 from threading import Thread
 import matplotlib.pyplot as plt 
 import os.path 
-import NeuralNetwork         
+import NeuralNetwork
+from NeuralNetwork import Model as Model         
 
 class GetData:
     
-    def __init__(self, *, host="192.168.1.65", port=80, packetSize=5, numSensors=4, pathPreface='data/data', label=0, getTraining=True, packetLimit=100):
+    def __init__(self, *, host="192.168.1.77", port=80, packetSize=5, numSensors=4, pathPreface='data/data', label=0, getTraining=True, packetLimit=100):
         self.host = host
         self.port = port
         self.packetSize = packetSize
@@ -55,7 +56,7 @@ class GetData:
             #print(f'XAcc Shift: {XAcc}')
             XAcc1 = struct.unpack("=B", binaryData[0 + (sensorIndex * 3 * self.numSensors)])  ##LSB is first byte in axis RX; full byte
             self.packetData[0,(self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = XAcc + XAcc1[0]
-            #print(f'XAcc Final: {XAcc}')
+            print(f'XAcc Final: {XAcc}')
 
             #Y Axis
             YAcc = struct.unpack("=b", binaryData[3 + (sensorIndex * 3 * self.numSensors)])
@@ -64,7 +65,7 @@ class GetData:
             #print(f'YAcc Shift: {YAcc}')
             YAcc1 = struct.unpack("=B", binaryData[2 + (sensorIndex * 3 * self.numSensors)])
             self.packetData[0, 1 + (self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = YAcc + YAcc1[0]
-            #print(f'YAcc Final: {YAcc}')
+            print(f'YAcc Final: {YAcc}')
 
             #Z Axis
             ZAcc = struct.unpack("=b", binaryData[5 + (sensorIndex * 3 * self.numSensors)])
@@ -78,7 +79,7 @@ class GetData:
             #print(f'ZAcc2[0]: {ZAcc2[0]}')
             self.packetData[0, 2 + (self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = ZAcc + ZAcc1[0]
             #print(f'ZAcc final: {ZAcc + ZAcc1[0]}')
-            #print(f'ZAcc Final: {ZAcc}')
+            print(f'ZAcc Final: {ZAcc}')
         
         if recvCount < self.packetSize:
             for i in range(self.numSensors):
@@ -187,7 +188,12 @@ class GetData:
                         #predictionStartMs = int(time.time() * 1000)
 
                         NnInput = np.roll(self.packetData, (self.packetSize-1) - recvCount)  #roll the packetData circular array to put them in the right order
-                        predictThread.join()   #Ensure last prediction is done before proceeding
+                        try:
+                            predictThread.join()   #Ensure last prediction is done before proceeding
+                        except:
+                            print("predictThread doesn't exist yet")
+
+                        #model = NeuralNetwork.Model.load('data/AccModel01')    
                         
                         predictThread = Thread(target=NeuralNetwork.realTimePrediction, args=(NnInput, self.predictions,))
                         predictThread.start()
@@ -371,22 +377,22 @@ def createTrainingData(*, pathPreface='data/data', label=0, packetLimit=1, packe
     trgData = GetData(packetSize=packetSize, pathPreface=pathPreface, label=label, getTraining=True, packetLimit=packetLimit, numSensors=numSensors)
     trgData.socketLoop(0)
 
-def main():
+# def main():
     
-    #Get Data for training
-    createTrainingData(pathPreface="data/packet5Avg20/training00_noMove", packetLimit=20, label=0, packetSize=5, numSensors=2)
-    createTrainingData(pathPreface="data/packet5Avg20/training00_noMove_Test", packetLimit=2, label=0, packetSize=5, numSensors=2)
+#     #Get Data for training
+#     createTrainingData(pathPreface="data/packet5Avg20/training00_noMove", packetLimit=20, label=0, packetSize=5, numSensors=2)
+#     createTrainingData(pathPreface="data/packet5Avg20/training00_noMove_Test", packetLimit=2, label=0, packetSize=5, numSensors=2)
 
-    createTrainingData(pathPreface="data/packet5Avg20/training01_upandDown", packetLimit=20, label=1, packetSize=5, numSensors=2)
-    createTrainingData(pathPreface="data/packet5Avg20/training01_upandDown_Test", packetLimit=2, label=1, packetSize=5, numSensors=2)
+#     createTrainingData(pathPreface="data/packet5Avg20/training01_upandDown", packetLimit=20, label=1, packetSize=5, numSensors=2)
+#     createTrainingData(pathPreface="data/packet5Avg20/training01_upandDown_Test", packetLimit=2, label=1, packetSize=5, numSensors=2)
 
-    createTrainingData(pathPreface="data/packet5Avg20/training02_inandOut", packetLimit=20, label=2, packetSize=5, numSensors=2)
-    createTrainingData(pathPreface="data/packet5Avg20/training02_inandOut_Test", packetLimit=2, label=2, packetSize=5, numSensors=2)
-    
-
-    #Testing
-    #createTrainingData(pathPreface="data/test/test", packetLimit=10, label=0, packetSize=5, numSensors=2)
-
+#     createTrainingData(pathPreface="data/packet5Avg20/training02_inandOut", packetLimit=20, label=2, packetSize=5, numSensors=2)
+#     createTrainingData(pathPreface="data/packet5Avg20/training02_inandOut_Test", packetLimit=2, label=2, packetSize=5, numSensors=2)
     
 
-if __name__ == "__main__": main()
+#     #Testing
+#     #createTrainingData(pathPreface="data/test/test", packetLimit=10, label=0, packetSize=5, numSensors=2)
+
+    
+
+# if __name__ == "__main__": main()
