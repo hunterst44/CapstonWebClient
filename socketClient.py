@@ -19,7 +19,7 @@ from threading import Thread
 import matplotlib.pyplot as plt 
 import os.path 
 import NeuralNetwork
-from NeuralNetwork import Model as Model         
+import dill         
 
 class GetData:
     
@@ -166,9 +166,7 @@ class GetData:
                 sock.close()
                 
                 #print(f'Sample Received')
-                sampleRxStopMS = int(time.time() * 1000)
-                sampleRxTimeMS = sampleRxStopMS - sampleRxStartMS
-                print(f'Sample receive time in ms: {sampleRxTimeMS}')
+                
                 
                 print(f'Start preocessData() thread for sample: {recvCount}' )
                 # if self.getTraining is False:  #while predicting make sure all threads are done before starting another
@@ -180,20 +178,28 @@ class GetData:
                 dataThread.start()
 
                 if self.getTraining:
+                    sampleRxStopMS = int(time.time() * 1000)
+                    sampleRxTimeMS = sampleRxStopMS - sampleRxStartMS
+                    print(f'Sample receive time in ms: {sampleRxTimeMS}')
                     recvCount += 1
+
+                #Sample is received make a prediction    
                 else:       
-                    if firstFive:
+                    if firstFive:   #wait for full packet before doing prediction
+
                         dataThread.join()    #wait for the data to be proccessed in the other thread
                         print(f'Making Prediction...') 
                         #predictionStartMs = int(time.time() * 1000)
+                        
+                        #scale the data to +-1
+                        for i in range(self.packetData.shape[1]):
+                            self.packetData[0,i] = self.packetData[0,i] / 2048
 
                         NnInput = np.roll(self.packetData, (self.packetSize-1) - recvCount)  #roll the packetData circular array to put them in the right order
                         try:
                             predictThread.join()   #Ensure last prediction is done before proceeding
                         except:
-                            print("predictThread doesn't exist yet")
-
-                        #model = NeuralNetwork.Model.load('data/AccModel01')    
+                            print("predictThread doesn't exist yet")   
                         
                         predictThread = Thread(target=NeuralNetwork.realTimePrediction, args=(NnInput, self.predictions,))
                         predictThread.start()
@@ -209,10 +215,15 @@ class GetData:
                         recvCount = 0                       
                     else: 
                         recvCount += 1                      #Advance recvCount
+                    
+                    sampleRxStopMS = int(time.time() * 1000)
+                    sampleRxTimeMS = sampleRxStopMS - sampleRxStartMS
+                    print(f'Sample receive time in ms: {sampleRxTimeMS}')
     
                 #print(f'Completed Rx of sample: {recvCount}' )
                 #socketLoop(recvCount)
 
+            #training data packet is ready
             if recvCount == self.packetSize and self.getTraining:                      # Once we've received 5 packets
                 dataThread.join()
                 while threading.active_count() > 1:    #wait for the last threads to finish processing
@@ -260,7 +271,7 @@ class GetData:
         packetTruth = np.zeros([1,], dtype=int)
         #print(f'packetTruth.shape: {packetTruth.shape}')
         packetTruth[0] = self.label
-        print(f'packetTruth: {packetTruth}')
+        #print(f'packetTruth: {packetTruth}')
 
         #Write to files
         self.writetoBinary(self.packetData, packetTruth)
@@ -292,10 +303,10 @@ class GetData:
             #print(f'tmpArr from file: {tmpArr}')
             tmpArr = np.append(tmpArr,packetTruth)
             np.save(truthPath, tmpArr, allow_pickle=False)
-            print(f'packetTruth appended and saved (Binary): {tmpArr}')
+            #print(f'packetTruth appended and saved (Binary): {tmpArr}')
         else: 
             np.save(truthPath, packetTruth, allow_pickle=False)
-            print(f'packetTruth saved (Binary): {packetTruth}')
+            #print(f'packetTruth saved (Binary): {packetTruth}')
 
     def writetoCSV(self, trainingData, packetTruth):
         #Write data to .csv file (text) - human readable
@@ -380,19 +391,21 @@ def createTrainingData(*, pathPreface='data/data', label=0, packetLimit=1, packe
 # def main():
     
 #     #Get Data for training
-#     createTrainingData(pathPreface="data/packet5Avg20/training00_noMove", packetLimit=20, label=0, packetSize=5, numSensors=2)
-#     createTrainingData(pathPreface="data/packet5Avg20/training00_noMove_Test", packetLimit=2, label=0, packetSize=5, numSensors=2)
+#     # createTrainingData(pathPreface="data/packet5Avg20/training00_noMove", packetLimit=20, label=0, packetSize=5, numSensors=2)
+#     # createTrainingData(pathPreface="data/packet5Avg20/training00_noMove_Test", packetLimit=2, label=0, packetSize=5, numSensors=2)
 
-#     createTrainingData(pathPreface="data/packet5Avg20/training01_upandDown", packetLimit=20, label=1, packetSize=5, numSensors=2)
-#     createTrainingData(pathPreface="data/packet5Avg20/training01_upandDown_Test", packetLimit=2, label=1, packetSize=5, numSensors=2)
+#     # createTrainingData(pathPreface="data/packet5Avg20/training01_upandDown", packetLimit=20, label=1, packetSize=5, numSensors=2)
+#     # createTrainingData(pathPreface="data/packet5Avg20/training01_upandDown_Test", packetLimit=2, label=1, packetSize=5, numSensors=2)
 
-#     createTrainingData(pathPreface="data/packet5Avg20/training02_inandOut", packetLimit=20, label=2, packetSize=5, numSensors=2)
-#     createTrainingData(pathPreface="data/packet5Avg20/training02_inandOut_Test", packetLimit=2, label=2, packetSize=5, numSensors=2)
+#     # createTrainingData(pathPreface="data/packet5Avg20/training02_inandOut", packetLimit=20, label=2, packetSize=5, numSensors=2)
+#     # createTrainingData(pathPreface="data/packet5Avg20/training02_inandOut_Test", packetLimit=2, label=2, packetSize=5, numSensors=2)
     
-
 #     #Testing
 #     #createTrainingData(pathPreface="data/test/test", packetLimit=10, label=0, packetSize=5, numSensors=2)
 
+#     # model = NeuralNetwork.Model.load("data/AccModel01Dill")
+#     # parameters = model.get_parameters()
+#     # print(f'Model: {parameters}')
     
 
 # if __name__ == "__main__": main()
