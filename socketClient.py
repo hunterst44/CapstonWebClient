@@ -23,7 +23,7 @@ import dill
 
 class GetData:
     
-    def __init__(self, *, host="192.168.1.77", port=80, packetSize=5, numSensors=4, pathPreface='data/data', label=0, getTraining=True, packetLimit=100):
+    def __init__(self, *, host="192.168.1.76", port=80, packetSize=5, numSensors=4, pathPreface='data/data', label=0, getTraining=True, packetLimit=100):
         self.host = host
         self.port = port
         self.packetSize = packetSize
@@ -40,8 +40,8 @@ class GetData:
 
     def processData(self, binaryData, recvCount):
       
-        #print(f'processData recvCount(): {recvCount}')
-        #print(f'binaryData: {binaryData}')
+        print(f'processData recvCount(): {recvCount}')
+        print(f'binaryData: {binaryData}')
 
         #packetStartMS = int(time() * 1000)
         #global processCount
@@ -56,7 +56,7 @@ class GetData:
             #print(f'XAcc Shift: {XAcc}')
             XAcc1 = struct.unpack("=B", binaryData[0 + (sensorIndex * 3 * self.numSensors)])  ##LSB is first byte in axis RX; full byte
             self.packetData[0,(self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = XAcc + XAcc1[0]
-            print(f'XAcc Final: {XAcc}')
+            print(f'XAcc Final: {XAcc + XAcc1[0]}')
 
             #Y Axis
             YAcc = struct.unpack("=b", binaryData[3 + (sensorIndex * 3 * self.numSensors)])
@@ -65,7 +65,7 @@ class GetData:
             #print(f'YAcc Shift: {YAcc}')
             YAcc1 = struct.unpack("=B", binaryData[2 + (sensorIndex * 3 * self.numSensors)])
             self.packetData[0, 1 + (self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = YAcc + YAcc1[0]
-            print(f'YAcc Final: {YAcc}')
+            print(f'YAcc Final: {YAcc + YAcc1[0]}')
 
             #Z Axis
             ZAcc = struct.unpack("=b", binaryData[5 + (sensorIndex * 3 * self.numSensors)])
@@ -75,11 +75,12 @@ class GetData:
             #print(f'ZAcc Shift: {ZAcc}')
             ZAcc1 = struct.unpack("=B", binaryData[4 + (sensorIndex * 3 * self.numSensors)])
             ZAcc2 = struct.unpack("=B", binaryData[4])
+            #print(f'ZAcc1 Raw: {ZAcc1}')
             #print(f'ZAcc1[0]: {ZAcc1[0]}')
             #print(f'ZAcc2[0]: {ZAcc2[0]}')
             self.packetData[0, 2 + (self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = ZAcc + ZAcc1[0]
-            #print(f'ZAcc final: {ZAcc + ZAcc1[0]}')
-            print(f'ZAcc Final: {ZAcc}')
+            print(f'ZAcc final: {ZAcc + ZAcc1[0]}')
+            #print(f'ZAcc Final: {ZAcc}')
         
         if recvCount < self.packetSize:
             for i in range(self.numSensors):

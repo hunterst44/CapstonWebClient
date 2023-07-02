@@ -1327,20 +1327,6 @@ def Acc01prediction():
     predictions = model.output_layer_activation.predictions(confidences)
     print(predictions)
 
-def realTimePrediction(packetData, predictions):
-     #Create Dataset
-    predictionStartMs = int(time.time() * 1000)
-    model = Model.load('data/AccModel01Dill')
-    #print(f'model: {model}')
-    
-    confidences = model.predict(packetData)
-    predictions = model.output_layer_activation.predictions(confidences)
-    predictionStopMS = int(time.time() * 1000)
-    predictionTimeMS = predictionStopMS - predictionStartMs
-    print(f'It\'s {predictions}') 
-    print(f'Time to predict: {predictionTimeMS}')
-
-    return predictions
 
 # def convertTruthBinary(truthPathList):
 #     #One time function to convert truth data to a 1-D array - done automatically in socketClient from now on
@@ -1387,6 +1373,61 @@ def convertPickletoDill():
     #Open a file and dump the model data
     with open("data/AccModel01Dill", 'wb') as f:
         dill.dump(model, f)
+
+def train3Gestures(basePath):
+    #Create Dataset
+    #TODO: Create data and validation arrays
+        # X Data is a randomized 1D array of features in groups of 15 (3 axis * 5 samples)
+        # y ground truth is the list of the classes of the data - see spiral_data as an example
+    #X,y = spiral_data(samples=1000, classes=3)
+    #X_test, y_test = spiral_data(samples=100, classes=3)
+    
+    X,y = getAccDataBinary([basePath + "noMove.npy", basePath + "upandDown.npy", basePath + "inandOut.npy"], [basePath + "noMove_truth.npy", basePath + "upandDown_truth.npy", basePath + "inandOut_truth.npy"])
+    #y = y.reshape(y.shape[0])  #reshape truth data only if truth data is formatted as 2-D
+    EPOCHS = 500
+    BATCH_SIZE = 1
+    
+    #Instanstiate the model
+    model = Model()
+    
+    #Add layers
+    #Input is 15 features (3 Axis * 5 samples)
+    model.add(Layer_Dense(30,150, weight_regularizer_l2=5e-4, bias_regularizer_l2=5e-4))
+    model.add(Activation_ReLu())
+    model.add(Layer_Dropout(0.1))
+    model.add(Layer_Dense(150,3))
+    model.add(Activation_Softmax())
+    
+    model.set(
+        loss=Loss_CategoricalCrossEntropy(),
+        optimizer=Optimizer_Adam(learning_rate=0.05, decay=5e-5),
+        accuracy=Accuracy_Categorical()
+    )
+    
+    model.finalize()
+    
+    #model.train(X,y, validation_data=(X_test, y_test),epochs=EPOCHS, batch_size=BATCH_SIZE, print_every=5)
+    model.train(X,y, epochs=EPOCHS, batch_size=BATCH_SIZE, print_every=1000)
+    
+    parameters = model.get_parameters()
+    #print(f'parameters: {parameters}')
+    
+    model.save(basePath + "model")
+
+def realTimePrediction(packetData, predictions, basePath):
+     #Create Dataset
+    predictionStartMs = int(time.time() * 1000)
+    model = Model.load(basePath + "model")
+    #print(f'model: {model}')
+    
+    confidences = model.predict(packetData)
+    predictions = model.output_layer_activation.predictions(confidences)
+    predictionStopMS = int(time.time() * 1000)
+    predictionTimeMS = predictionStopMS - predictionStartMs
+    print(f'It\'s {predictions}') 
+    print(f'Time to predict: {predictionTimeMS}')
+
+    return predictions
 
 
 def main():
