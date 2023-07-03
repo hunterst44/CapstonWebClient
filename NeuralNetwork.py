@@ -1410,7 +1410,7 @@ def train3Gestures(basePath):
     model.train(X,y, epochs=EPOCHS, batch_size=BATCH_SIZE, print_every=1000)
     
     parameters = model.get_parameters()
-    #print(f'parameters: {parameters}')
+    print(f'parameters: {parameters}')
     
     model.save(basePath + "model")
 
@@ -1426,7 +1426,7 @@ def realTimePrediction(packetData, predictions, basePath):
     #Write Confidences to binary
     if os.path.exists(confidencesPath):
         tmpArr = np.load(confidencesPath,allow_pickle=False)
-        #print(f'tmpArr from file: {tmpArr}')
+        print(f'confidences from file: {tmpArr}')
         tmpArr = np.append(tmpArr,confidences, axis=0)
         np.save(confidencesPath, tmpArr, allow_pickle=False)
         #print(f'dataPacket shape (Binary): {tmpArr.shape}')
@@ -1443,7 +1443,7 @@ def realTimePrediction(packetData, predictions, basePath):
     #Write predictions to binary
     if os.path.exists(predictionsPath):
         tmpArr = np.load(predictionsPath,allow_pickle=False)
-        #print(f'tmpArr from file: {tmpArr}')
+        print(f'tpredictions from file: {tmpArr}')
         tmpArr = np.append(tmpArr,predictions, axis=0)
         np.save(predictionsPath, tmpArr, allow_pickle=False)
         #print(f'dataPacket shape (Binary): {tmpArr.shape}')
@@ -1457,6 +1457,9 @@ def realTimePrediction(packetData, predictions, basePath):
     predictionTimeMS = predictionStopMS - predictionStartMs
     print(f'It\'s {predictions}') 
     print(f'Time to predict: {predictionTimeMS}')
+
+    print(f'packet after prediction: {packetData}')
+
 
     return predictions
 

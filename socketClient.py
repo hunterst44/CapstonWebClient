@@ -55,7 +55,10 @@ class GetData:
             XAcc = XAcc[0] << 8
             #print(f'XAcc Shift: {XAcc}')
             XAcc1 = struct.unpack("=B", binaryData[0 + (sensorIndex * 3 * self.numSensors)])  ##LSB is first byte in axis RX; full byte
-            self.packetData[0,(self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = XAcc + XAcc1[0]
+            if self.getTraining is False:
+                self.packetData[0,(self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = (XAcc + XAcc1[0]) / 2048
+            else:
+                self.packetData[0,(self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = XAcc + XAcc1[0]
             print(f'XAcc Final: {XAcc + XAcc1[0]}')
 
             #Y Axis
@@ -64,7 +67,10 @@ class GetData:
             YAcc = YAcc[0] << 8
             #print(f'YAcc Shift: {YAcc}')
             YAcc1 = struct.unpack("=B", binaryData[2 + (sensorIndex * 3 * self.numSensors)])
-            self.packetData[0, 1 + (self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = YAcc + YAcc1[0]
+            if self.getTraining is False:
+                self.packetData[0, 1 + (self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = (YAcc + YAcc1[0])/2048
+            else:       
+                self.packetData[0, 1 + (self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = YAcc + YAcc1[0]
             print(f'YAcc Final: {YAcc + YAcc1[0]}')
 
             #Z Axis
@@ -78,13 +84,25 @@ class GetData:
             #print(f'ZAcc1 Raw: {ZAcc1}')
             #print(f'ZAcc1[0]: {ZAcc1[0]}')
             #print(f'ZAcc2[0]: {ZAcc2[0]}')
-            self.packetData[0, 2 + (self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = ZAcc + ZAcc1[0]
+            if self.getTraining is False:
+                self.packetData[0, 2 + (self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = (ZAcc + ZAcc1[0]) /2048
+            else:
+                self.packetData[0, 2 + (self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = ZAcc + ZAcc1[0]
             print(f'ZAcc final: {ZAcc + ZAcc1[0]}')
             #print(f'ZAcc Final: {ZAcc}')
         
         if recvCount < self.packetSize:
             for i in range(self.numSensors):
                 formatData(binaryData, i)
+
+        print(f'packet after fresh data insertion: {self.packetData}')
+
+        # if self.getTraining is False:
+        #     #scale the data to +-1
+        #     for i in range(self.packetData.shape[1]):
+        #         print(f'packetData[0, {i}] (before): {self.packetData[0,i]}') 
+        #         self.packetData[0,i] = self.packetData[0,i] / 2048
+        #         print(f'packetData[0, {i}] (scaled): {self.packetData[0,i]}')
 
     def socketLoop(self, recvCount): #recvCount counts samples in a packet in training mode; in prediction mode it is the index for the corcular buffer
 
@@ -188,20 +206,25 @@ class GetData:
                     if firstFive:   #wait for full packet before doing prediction
 
                         dataThread.join()    #wait for the data to be proccessed in the other thread
-                        print(f'Making Prediction...') 
+                        
                         #predictionStartMs = int(time.time() * 1000)
                         
                         #scale the data to +-1
-                        for i in range(self.packetData.shape[1]):
-                            self.packetData[0,i] = self.packetData[0,i] / 2048
+                        # for i in range(self.packetData.shape[1]):
+                        #     print(f'packetData[0, {i}] (before): {self.packetData[0,i]}') 
+                        #     self.packetData[0,i] = self.packetData[0,i] / 2048
+                        #     print(f'packetData[0, {i}] (scaled): {self.packetData[0,i]}')
 
-                        NnInput = np.roll(self.packetData, (self.packetSize-1) - recvCount)  #roll the packetData circular array to put them in the right order
+
+                        NNINput = np.roll(self.packetData, (3 * self.numSensors)*(self.packetSize-1) - recvCount)  #roll the packetData circular array to put them in the right order
                         try:
                             predictThread.join()   #Ensure last prediction is done before proceeding
                         except:
                             print("predictThread doesn't exist yet")   
-                        
-                        predictThread = Thread(target=NeuralNetwork.realTimePrediction, args=(NnInput, self.predictions, "data/trainGestures3Classes/"))
+                        self.plotAcc()   #take the packet now hot off the press
+                        print(f'Input to NN (rolled): {NNINput}')
+                        print(f'Making Prediction...{recvCount}') 
+                        predictThread = Thread(target=NeuralNetwork.realTimePrediction, args=(NNINput, self.predictions, self.pathPreface))
                         predictThread.start()
                         #self.predictions = NeuralNetwork.realTimePrediction(NnInput) 
 
