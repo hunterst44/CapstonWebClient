@@ -37,6 +37,8 @@ class GetData:
         self.getTraining = getTraining
         self.packetLimit = packetLimit
         self.predictions = []
+        self.plotTimer = int(time.time() * 1000)   #Used to make timed plots of input data for plots
+        self.plotCounter = 0 #counts how many plots have been made
 
     def processData(self, binaryData, recvCount):
       
@@ -220,8 +222,15 @@ class GetData:
                         try:
                             predictThread.join()   #Ensure last prediction is done before proceeding
                         except:
-                            print("predictThread doesn't exist yet")   
-                        self.plotAcc()   #take the packet now hot off the press
+                            print("predictThread doesn't exist yet")
+
+                        #Make a plot every 5 seconds
+                        plotTimerCheck = int(time.time() * 1000)
+                        if (plotTimerCheck - self.plotTimer) > 5000 and self.plotCounter < 20:  
+                            self.plotCounter += 1     
+                            self.plotAcc()   #take the packet now hot off the press
+                            self.plotTimer = int(time.time() * 1000)   #reset plotTimer
+
                         print(f'Input to NN (rolled): {NNINput}')
                         print(f'Making Prediction...{recvCount}') 
                         predictThread = Thread(target=NeuralNetwork.realTimePrediction, args=(NNINput, self.predictions, self.pathPreface))
@@ -401,9 +410,14 @@ class GetData:
                 ZList[1].append(j)
                 #print(f'ZList{j}: {ZList}')
             axs[i][2].plot(ZList[1], ZList[0])
-    
-        figPath = self.pathPreface + str(self.packetCount) + '_' + str(self.label) + '.png'
-        plt.savefig(figPath)
+
+        if self.getTraining:    
+            figPath = self.pathPreface + str(self.packetCount) + '_' + str(self.label) + '.png'
+            plt.savefig(figPath)
+        else:
+            figPath = self.pathPreface + "PredPlots/" + str(self.plotCounter) + '_' + str(self.predictions[0]) + '.png'
+            plt.savefig(figPath)
+            
         #plt.show()   
         plt.close         
 

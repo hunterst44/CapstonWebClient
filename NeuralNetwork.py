@@ -1426,7 +1426,7 @@ def realTimePrediction(packetData, predictions, basePath):
     #Write Confidences to binary
     if os.path.exists(confidencesPath):
         tmpArr = np.load(confidencesPath,allow_pickle=False)
-        print(f'confidences from file: {tmpArr}')
+        #print(f'confidences from file: {tmpArr}')
         tmpArr = np.append(tmpArr,confidences, axis=0)
         np.save(confidencesPath, tmpArr, allow_pickle=False)
         #print(f'dataPacket shape (Binary): {tmpArr.shape}')
@@ -1443,7 +1443,7 @@ def realTimePrediction(packetData, predictions, basePath):
     #Write predictions to binary
     if os.path.exists(predictionsPath):
         tmpArr = np.load(predictionsPath,allow_pickle=False)
-        print(f'tpredictions from file: {tmpArr}')
+        print(f'Predictions from file: {tmpArr}')
         tmpArr = np.append(tmpArr,predictions, axis=0)
         np.save(predictionsPath, tmpArr, allow_pickle=False)
         #print(f'dataPacket shape (Binary): {tmpArr.shape}')
@@ -1455,7 +1455,14 @@ def realTimePrediction(packetData, predictions, basePath):
 
     predictionStopMS = int(time.time() * 1000)
     predictionTimeMS = predictionStopMS - predictionStartMs
-    print(f'It\'s {predictions}') 
+
+    print(f'prediction raw {predictions}') 
+
+    if confidences[predictions[0]] < 0.9:  #default to no movement unless 90% confident
+        predictions[0] = 0
+    
+    print(f'prediction final: {predictions}') 
+
     print(f'Time to predict: {predictionTimeMS}')
 
     print(f'packet after prediction: {packetData}')
@@ -1463,24 +1470,72 @@ def realTimePrediction(packetData, predictions, basePath):
 
     return predictions
 
+def trainOrientation(basePath, pathList):
+    #Create Dataset
+    #TODO: Create data and validation arrays
+        # X Data is a randomized 1D array of features in groups of 15 (3 axis * 5 samples)
+        # y ground truth is the list of the classes of the data - see spiral_data as an example
+    #X,y = spiral_data(samples=1000, classes=3)
+    #X_test, y_test = spiral_data(samples=100, classes=3)
 
-def main():
-    #RegressionNoValid()
-    #binaryLogisticValid()
-    #CategoricalCrossEntropy()
-    #batchModel()
-    #testLoadModel()
-    #prediction()
-    # X,y = spiral_data(samples=1000, classes=3)
-    # print(X)
-    # print(y)
-    #getAccData(["data\packet5Avg20/\/training00_noMove.npy","data\packet5Avg20\/training01_upandDown.npy","data\packet5Avg20\/training02_inandOut.npy"])
-    #dataArr, truthArr = getAccDataCSV(['data\packet5Avg20\\training00_noMove.csv',"data\packet5Avg20\\training01_upandDown.csv","data\packet5Avg20\\training02_inandOut.csv"], ['data\packet5Avg20\\training00_noMove_truth.csv',"data\packet5Avg20\\training01_upandDown_truth.csv","data\packet5Avg20\\training02_inandOut_truth.csv"])
-    #dataArrBin, truthArrBin = getAccDataBinary(["data\packet5Avg20\\training00_noMove.npy","data\packet5Avg20\\training01_upandDown.npy","data\packet5Avg20\\training02_inandOut.npy"], ["data\packet5Avg20\\training00_noMove_truth.npy","data\packet5Avg20\\training01_upandDown_truth.npy","data\packet5Avg20\\training02_inandOut_truth.npy"])
-    #AccModel01()
-    #Acc01prediction()
-    #convertTruthCSV(["data\packet5Avg20\\training00_noMove_truth.csv","data\packet5Avg20\\training01_upandDown_truth.csv","data\packet5Avg20\\training02_inandOut_truth.csv"])
+    dataPathList = pathList
+    for item in dataPathList:
+        item = item + ".npy"
+    
+    labelPathList = pathList
+    for item in labelPathList:
+        item = item + "_truth.npy"
+    
+    X,y = getAccDataBinary(dataPathList, labelPathList)
+    #y = y.reshape(y.shape[0])  #reshape truth data only if truth data is formatted as 2-D
+    EPOCHS = 500
+    BATCH_SIZE = 1
+    
+    #Instanstiate the model
+    model = Model()
+    
+    #Add layers
+    #Input is 15 features (3 Axis * 5 samples)
+    model.add(Layer_Dense(30,300, weight_regularizer_l2=5e-4, bias_regularizer_l2=5e-4))
+    model.add(Activation_ReLu())
+    model.add(Layer_Dropout(0.1))
+    model.add(Layer_Dense(300,13))
+    model.add(Activation_Softmax())
+    
+    model.set(
+        loss=Loss_CategoricalCrossEntropy(),
+        optimizer=Optimizer_Adam(learning_rate=0.05, decay=5e-5),
+        accuracy=Accuracy_Categorical()
+    )
+    
+    model.finalize()
+    
+    #model.train(X,y, validation_data=(X_test, y_test),epochs=EPOCHS, batch_size=BATCH_SIZE, print_every=5)
+    model.train(X,y, epochs=EPOCHS, batch_size=BATCH_SIZE, print_every=1000)
+    
+    parameters = model.get_parameters()
+    print(f'parameters: {parameters}')
+    
+    model.save(basePath + "model")
 
-    convertPickletoDill()
 
-if __name__ == "__main__": main()
+# def main():
+#     #RegressionNoValid()
+#     #binaryLogisticValid()
+#     #CategoricalCrossEntropy()
+#     #batchModel()
+#     #testLoadModel()
+#     #prediction()
+#     # X,y = spiral_data(samples=1000, classes=3)
+#     # print(X)
+#     # print(y)
+#     #getAccData(["data\packet5Avg20/\/training00_noMove.npy","data\packet5Avg20\/training01_upandDown.npy","data\packet5Avg20\/training02_inandOut.npy"])
+#     #dataArr, truthArr = getAccDataCSV(['data\packet5Avg20\\training00_noMove.csv',"data\packet5Avg20\\training01_upandDown.csv","data\packet5Avg20\\training02_inandOut.csv"], ['data\packet5Avg20\\training00_noMove_truth.csv',"data\packet5Avg20\\training01_upandDown_truth.csv","data\packet5Avg20\\training02_inandOut_truth.csv"])
+#     #dataArrBin, truthArrBin = getAccDataBinary(["data\packet5Avg20\\training00_noMove.npy","data\packet5Avg20\\training01_upandDown.npy","data\packet5Avg20\\training02_inandOut.npy"], ["data\packet5Avg20\\training00_noMove_truth.npy","data\packet5Avg20\\training01_upandDown_truth.npy","data\packet5Avg20\\training02_inandOut_truth.npy"])
+#     #AccModel01()
+#     #Acc01prediction()
+#     #convertTruthCSV(["data\packet5Avg20\\training00_noMove_truth.csv","data\packet5Avg20\\training01_upandDown_truth.csv","data\packet5Avg20\\training02_inandOut_truth.csv"])
+
+#     #convertPickletoDill()
+
+# if __name__ == "__main__": main()
