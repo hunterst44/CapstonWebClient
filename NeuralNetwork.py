@@ -1421,8 +1421,38 @@ def realTimePrediction(packetData, predictions, basePath):
     #print(f'model: {model}')
     
     confidences = model.predict(packetData)
+    
+    confidencesPath = basePath + "confidences.npy"
+    #Write Confidences to binary
+    if os.path.exists(confidencesPath):
+        tmpArr = np.load(confidencesPath,allow_pickle=False)
+        #print(f'tmpArr from file: {tmpArr}')
+        tmpArr = np.append(tmpArr,confidences, axis=0)
+        np.save(confidencesPath, tmpArr, allow_pickle=False)
+        #print(f'dataPacket shape (Binary): {tmpArr.shape}')
+        #print(f'dataPacket saved (Binary): {tmpArr}')   
+    else: 
+        np.save(confidencesPath, confidences, allow_pickle=False)
+        #print(f'dataPacket shape (Binary): {trainingData.shape}')
+        #print(f'dataPacket saved (Binary): {trainingData}')
+
     print(f'Confidences: {confidences}') 
+
+    predictionsPath = basePath + "predictions.npy"
     predictions = model.output_layer_activation.predictions(confidences)
+    #Write predictions to binary
+    if os.path.exists(predictionsPath):
+        tmpArr = np.load(predictionsPath,allow_pickle=False)
+        #print(f'tmpArr from file: {tmpArr}')
+        tmpArr = np.append(tmpArr,predictions, axis=0)
+        np.save(predictionsPath, tmpArr, allow_pickle=False)
+        #print(f'dataPacket shape (Binary): {tmpArr.shape}')
+        #print(f'dataPacket saved (Binary): {tmpArr}')   
+    else: 
+        np.save(predictionsPath, predictions, allow_pickle=False)
+        #print(f'dataPacket shape (Binary): {trainingData.shape}')
+        #print(f'dataPacket saved (Binary): {trainingData}')
+
     predictionStopMS = int(time.time() * 1000)
     predictionTimeMS = predictionStopMS - predictionStartMs
     print(f'It\'s {predictions}') 

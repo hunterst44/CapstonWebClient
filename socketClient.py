@@ -162,7 +162,6 @@ class GetData:
                         else:
                             print(f'Fatal Error: SocketBroken')
                             return -1
-
                     a += 1 
                 sock.close()
                 
