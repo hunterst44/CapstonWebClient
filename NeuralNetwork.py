@@ -1421,6 +1421,7 @@ def realTimePrediction(packetData, predictions, basePath):
     #print(f'model: {model}')
     
     confidences = model.predict(packetData)
+    print(f'Confidences: {confidences}') 
     predictions = model.output_layer_activation.predictions(confidences)
     predictionStopMS = int(time.time() * 1000)
     predictionTimeMS = predictionStopMS - predictionStartMs

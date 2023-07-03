@@ -202,7 +202,7 @@ class GetData:
                         except:
                             print("predictThread doesn't exist yet")   
                         
-                        predictThread = Thread(target=NeuralNetwork.realTimePrediction, args=(NnInput, self.predictions,))
+                        predictThread = Thread(target=NeuralNetwork.realTimePrediction, args=(NnInput, self.predictions, "data/trainGestures3Classes/"))
                         predictThread.start()
                         #self.predictions = NeuralNetwork.realTimePrediction(NnInput) 
 
