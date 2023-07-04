@@ -23,7 +23,7 @@ import dill
 
 class GetData:
     
-    def __init__(self, *, host="192.168.1.76", port=80, packetSize=5, numSensors=4, pathPreface='data/data', label=0, getTraining=True, packetLimit=100):
+    def __init__(self, *, host="192.168.1.76", port=80, packetSize=5, numSensors=4, pathPreface='data/data', labelPath="Test", label=0, getTraining=True, packetLimit=100):
         self.host = host
         self.port = port
         self.packetSize = packetSize
@@ -33,6 +33,7 @@ class GetData:
         self.packetCount = 0
         self.packetDone = 0
         self.pathPreface = pathPreface 
+        self.labelPath = labelPath
         self.label = label
         self.getTraining = getTraining
         self.packetLimit = packetLimit
@@ -121,13 +122,20 @@ class GetData:
                     print('********************************************') 
                     print('********************************************') 
                     print('Creating training data.')
-                    
-                    if self.label == 0:
-                        print('Get ready to perform gesture: 0 No movement')
-                    elif self.label == 1:
-                        print('Get ready to perform gesture: 1 Alternate up and down')
-                    elif self.label == 2:
-                        print('Get ready to perform gesture: 2 Out and in together')
+                    print(f'packetNumber: {self.packetCount} of {self.packetLimit}')
+                    print('') 
+                    print('') 
+                    print(f'packetNumber: {self.packetCount} of {self.packetLimit}')
+                    print('') 
+                    print('') 
+                    print(f'Get ready to perform gesture: {self.label}, {self.labelPath}')
+                    print(f'packetNumber: {self.packetCount} of {self.packetLimit}')
+                    # if self.label == 0:
+                    #     print('Get ready to perform gesture: 0 No movement')
+                    # elif self.label == 1:
+                    #     print('Get ready to perform gesture: 1 Alternate up and down')
+                    # elif self.label == 2:
+                    #     print('Get ready to perform gesture: 2 Out and in together')
                     
                     print('In 3...')
                     time.sleep(1)
@@ -312,8 +320,8 @@ class GetData:
     def writetoBinary(self,trainingData, packetTruth):
         #print(f'trainingData for write: {trainingData}')
         #Write data to .npy file (binary) -- faster
-        dataPath = self.pathPreface + '.npy'
-        truthPath = self.pathPreface + '_truth.npy'
+        dataPath = self.pathPreface + self.labelPath + '.npy'
+        truthPath = self.pathPreface + self.labelPath + '_truth.npy'
 
         #Data
         if os.path.exists(dataPath):
@@ -332,19 +340,19 @@ class GetData:
         #Truth
         if os.path.exists(truthPath):
             tmpArr = np.load(truthPath,allow_pickle=False)
-            #print(f'tmpArr from file: {tmpArr}')
+            print(f'Binary truths from file: {tmpArr}')
             tmpArr = np.append(tmpArr,packetTruth)
             np.save(truthPath, tmpArr, allow_pickle=False)
-            #print(f'packetTruth appended and saved (Binary): {tmpArr}')
+            print(f'packetTruth appended and saved (Binary): {tmpArr}')
         else: 
             np.save(truthPath, packetTruth, allow_pickle=False)
-            #print(f'packetTruth saved (Binary): {packetTruth}')
+            print(f'packetTruth saved (Binary): {packetTruth}')
 
     def writetoCSV(self, trainingData, packetTruth):
         #Write data to .csv file (text) - human readable
         #print(f'CSV write training data')
-        dataPath = self.pathPreface + '.csv'
-        truthPath = self.pathPreface + '_truth.csv'
+        dataPath = self.pathPreface + self.labelPath + '.csv'
+        truthPath = self.pathPreface + self.labelPath + '_truth.csv'
         
         #Data - 2D array axis 0 (rows) are gestures, axis 1 (cols) are features within a gesture
         if os.path.exists(dataPath):
@@ -369,12 +377,12 @@ class GetData:
             tmpArr = np.loadtxt(truthPath,dtype=int, delimiter=',')
             tmpArr = np.append(tmpArr,packetTruth) 
             np.savetxt(truthPath, tmpArr, fmt="%d", delimiter=",")
-            print(f'packetTruth appended and saved (CSV): {tmpArr}')
-            print(f'packetTruth shape: {tmpArr.shape}')
+            #print(f'packetTruth appended and saved (CSV): {tmpArr}')
+            #print(f'packetTruth shape: {tmpArr.shape}')
         else: 
              np.savetxt(truthPath, packetTruth, fmt="%d", delimiter=",")
-             print(f'packetTruth appended and saved (CSV): {packetTruth}')
-             print(f'dataPacket shape: {packetTruth.shape}')
+             #print(f'packetTruth appended and saved (CSV): {packetTruth}')
+             #print(f'dataPacket shape: {packetTruth.shape}')
 
     def plotAcc(self):
 
@@ -412,17 +420,18 @@ class GetData:
             axs[i][2].plot(ZList[1], ZList[0])
 
         if self.getTraining:    
-            figPath = self.pathPreface + str(self.packetCount) + '_' + str(self.label) + '.png'
+            figPath = self.pathPreface + self.labelPath + str(self.packetCount) + '_' + str(self.label) + '.png'
             plt.savefig(figPath)
         else:
-            figPath = self.pathPreface + "PredPlots/" + str(self.plotCounter) + '_' + str(self.predictions[0]) + '.png'
-            plt.savefig(figPath)
+            figPath = self.pathPreface + "PredPlots/" + str(self.plotCounter) + '.png'
             
+            plt.savefig(figPath)
+
         #plt.show()   
         plt.close         
 
-def createTrainingData(*, pathPreface='data/data', label=0, packetLimit=1, packetSize=10, numSensors=4):
-    trgData = GetData(packetSize=packetSize, pathPreface=pathPreface, label=label, getTraining=True, packetLimit=packetLimit, numSensors=numSensors)
+def createTrainingData(*, pathPreface='data/data', labelPath="test", label=0, packetLimit=1, packetSize=10, numSensors=4):
+    trgData = GetData(packetSize=packetSize, pathPreface=pathPreface, labelPath=labelPath, label=label, getTraining=True, packetLimit=packetLimit, numSensors=numSensors)
     trgData.socketLoop(0)
 
 # def main():

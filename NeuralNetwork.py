@@ -830,12 +830,12 @@ class Model:
                     self.optimizer.update_params(layer)
                 self.optimizer.post_update_params()
                 
-                if not step % print_every or step == train_steps - 1:
-                    print(f'Step: {step}, ' + 
-                        f'acc: {accuracy:.3f}, ' + 
-                        f'loss: {loss:.3f}, ' + 
-                        f'data_loss: {data_loss:.3f}, ' + f'regularization loss: {regularization_loss:.3f}, ' + 
-                        f'lr: {self.optimizer.current_learning_rate}')
+                # if not step % print_every or step == train_steps - 1:
+                #     print(f'Step: {step}, ' + 
+                #         f'acc: {accuracy:.3f}, ' + 
+                #         f'loss: {loss:.3f}, ' + 
+                #         f'data_loss: {data_loss:.3f}, ' + f'regularization loss: {regularization_loss:.3f}, ' + 
+                #         f'lr: {self.optimizer.current_learning_rate}')
         
             #Get and print epoch loss and accuracy
             epoch_data_loss, epoch_regularization_loss = self.loss.calculate_accumulated(include_regularization=True)
@@ -1165,8 +1165,8 @@ def getAccDataBinary(dataPathList, truthPathList):
         # print("****")
         # print(path)
         if os.path.exists(path):
-            #print("****")
-            #print(path)
+            print("****")
+            print(path)
             tmpArr = np.load(path,allow_pickle=False)
 
             if dataArr[0,0] == 99.:
@@ -1178,8 +1178,8 @@ def getAccDataBinary(dataPathList, truthPathList):
 
     for path in truthPathList:
         if os.path.exists(path):
-            # print("****")
-            # print(path)
+            print("****")
+            print(path)
             tmpArr = np.load(path,allow_pickle=False)
             
             if truthArr[0] == 99:
@@ -1206,12 +1206,12 @@ def getAccDataBinary(dataPathList, truthPathList):
         dataArr[dataIndex[i]] = dataTmp[i]
         truthArr[dataIndex[i]] = truthTmp[i]
 
-    # print(f'dataArr shape: {dataArr.shape}')
-    #print(f'dataArr from file: {dataArr}')
-    # print(f'truthArr shape: {truthArr.shape}')
+    print(f'dataArr shape: {dataArr.shape}')
+    print(f'dataArr from file: {dataArr}')
+    print(f'truthArr shape: {truthArr.shape}')
     print(f'truthArr randomized: {truthArr}')
-    # print(f'dataIndex: {dataIndex.shape}')
-    # print(f'truthArr from file: {dataIndex}')
+    print(f'dataIndex shape: {dataIndex.shape}')
+    print(f'dataIndex from file: {dataIndex}')
 
     
     return dataArr, truthArr
@@ -1426,10 +1426,10 @@ def realTimePrediction(packetData, predictions, basePath):
     #Write Confidences to binary
     if os.path.exists(confidencesPath):
         tmpArr = np.load(confidencesPath,allow_pickle=False)
-        #print(f'confidences from file: {tmpArr}')
+        print(f'confidences from file: {tmpArr}')
         tmpArr = np.append(tmpArr,confidences, axis=0)
         np.save(confidencesPath, tmpArr, allow_pickle=False)
-        #print(f'dataPacket shape (Binary): {tmpArr.shape}')
+        print(f'confidences shape (Binary): {tmpArr.shape}')
         #print(f'dataPacket saved (Binary): {tmpArr}')   
     else: 
         np.save(confidencesPath, confidences, allow_pickle=False)
@@ -1440,35 +1440,45 @@ def realTimePrediction(packetData, predictions, basePath):
 
     predictionsPath = basePath + "predictions.npy"
     predictions = model.output_layer_activation.predictions(confidences)
+    print(f'Current Prediction: {predictions}')
+    #print(f'Current Prediction: {predictions[0]}')
+
+    predList = []
+    index = 0
+    for prediction in predictions:
+        predList.append(prediction)
+        print(f'Prediction loop: {prediction}')
+        index += 1
+
+    if confidences[0, predList[0]] < 0.9:  #default to no movement unless 90% confident
+        predList[0] = 0
+
+    print(f'Current Prediction: {predictions}')
     #Write predictions to binary
     if os.path.exists(predictionsPath):
         tmpArr = np.load(predictionsPath,allow_pickle=False)
+        #print(f'Predictions from file shape: {tmpArr.shape()}')
         print(f'Predictions from file: {tmpArr}')
-        tmpArr = np.append(tmpArr,predictions, axis=0)
+        tmpArr = np.append(tmpArr,predList, axis=0)
         np.save(predictionsPath, tmpArr, allow_pickle=False)
-        #print(f'dataPacket shape (Binary): {tmpArr.shape}')
-        #print(f'dataPacket saved (Binary): {tmpArr}')   
+        print(f'dataPacket shape (Binary): {tmpArr.shape}')
+        print(f'dataPacket saved (Binary): {tmpArr}')   
     else: 
-        np.save(predictionsPath, predictions, allow_pickle=False)
-        #print(f'dataPacket shape (Binary): {trainingData.shape}')
-        #print(f'dataPacket saved (Binary): {trainingData}')
+        np.save(predictionsPath, predList, allow_pickle=False)
+        print(f'dataPacket shape (Binary): {predList.shape}')
+        print(f'dataPacket saved (Binary): {predList}')
 
     predictionStopMS = int(time.time() * 1000)
     predictionTimeMS = predictionStopMS - predictionStartMs
 
-    print(f'prediction raw {predictions}') 
 
-    if confidences[predictions[0]] < 0.9:  #default to no movement unless 90% confident
-        predictions[0] = 0
-    
-    print(f'prediction final: {predictions}') 
+    print(f'prediction final: {predList[0]}') 
 
     print(f'Time to predict: {predictionTimeMS}')
 
     print(f'packet after prediction: {packetData}')
 
-
-    return predictions
+    return predList
 
 def trainOrientation(basePath, pathList):
     #Create Dataset
@@ -1478,15 +1488,21 @@ def trainOrientation(basePath, pathList):
     #X,y = spiral_data(samples=1000, classes=3)
     #X_test, y_test = spiral_data(samples=100, classes=3)
 
-    dataPathList = pathList
-    for item in dataPathList:
-        item = item + ".npy"
+    dataPathList = pathList.copy()
+    truthPathList = pathList.copy()
+    for i in range(len(dataPathList)):
+        dataPathList[i] = dataPathList[i] + ".npy"
+
+    print(f'data Paths: {dataPathList}')  
     
-    labelPathList = pathList
-    for item in labelPathList:
-        item = item + "_truth.npy"
+    for i in range(len(truthPathList)):
+        truthPathList[i] = truthPathList[i] + "_truth.npy"
+
+    print(f'truth Paths: {truthPathList}')  
     
-    X,y = getAccDataBinary(dataPathList, labelPathList)
+    X,y = getAccDataBinary(dataPathList, truthPathList)
+
+    print(f'truths array for model: {y}') 
     #y = y.reshape(y.shape[0])  #reshape truth data only if truth data is formatted as 2-D
     EPOCHS = 500
     BATCH_SIZE = 1
