@@ -226,7 +226,7 @@ class GetData:
                         #     print(f'packetData[0, {i}] (scaled): {self.packetData[0,i]}')
 
 
-                        NNINput = np.roll(self.packetData, (3 * self.numSensors)*(self.packetSize-1) - recvCount)  #roll the packetData circular array to put them in the right order
+                        NNINput = np.roll(self.packetData, (3 * self.numSensors)*(self.packetSize - recvCount - 1))  #roll the packetData circular array to put them in the right order
                         try:
                             predictThread.join()   #Ensure last prediction is done before proceeding
                         except:
