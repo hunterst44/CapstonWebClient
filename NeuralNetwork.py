@@ -1410,7 +1410,7 @@ def train3Gestures(basePath):
     model.train(X,y, epochs=EPOCHS, batch_size=BATCH_SIZE, print_every=1000)
     
     parameters = model.get_parameters()
-    print(f'parameters: {parameters}')
+    #print(f'parameters: {parameters}')
     
     model.save(basePath + "model")
 
@@ -1426,10 +1426,10 @@ def realTimePrediction(packetData, predictions, basePath):
     #Write Confidences to binary
     if os.path.exists(confidencesPath):
         tmpArr = np.load(confidencesPath,allow_pickle=False)
-        print(f'confidences from file: {tmpArr}')
+        #print(f'confidences from file: {tmpArr}')
         tmpArr = np.append(tmpArr,confidences, axis=0)
         np.save(confidencesPath, tmpArr, allow_pickle=False)
-        print(f'confidences shape (Binary): {tmpArr.shape}')
+        #print(f'confidences shape (Binary): {tmpArr.shape}')
         #print(f'dataPacket saved (Binary): {tmpArr}')   
     else: 
         np.save(confidencesPath, confidences, allow_pickle=False)
@@ -1447,7 +1447,7 @@ def realTimePrediction(packetData, predictions, basePath):
     index = 0
     for prediction in predictions:
         predList.append(prediction)
-        print(f'Prediction loop: {prediction}')
+        #print(f'Prediction loop: {prediction}')
         index += 1
 
     if confidences[0, predList[0]] < 0.9:  #default to no movement unless 90% confident
@@ -1458,15 +1458,15 @@ def realTimePrediction(packetData, predictions, basePath):
     if os.path.exists(predictionsPath):
         tmpArr = np.load(predictionsPath,allow_pickle=False)
         #print(f'Predictions from file shape: {tmpArr.shape()}')
-        print(f'Predictions from file: {tmpArr}')
+        #print(f'Predictions from file: {tmpArr}')
         tmpArr = np.append(tmpArr,predList, axis=0)
         np.save(predictionsPath, tmpArr, allow_pickle=False)
-        print(f'dataPacket shape (Binary): {tmpArr.shape}')
-        print(f'dataPacket saved (Binary): {tmpArr}')   
+        #print(f'dataPacket shape (Binary): {tmpArr.shape}')
+        #print(f'dataPacket saved (Binary): {tmpArr}')   
     else: 
         np.save(predictionsPath, predList, allow_pickle=False)
-        print(f'dataPacket shape (Binary): {predList.shape}')
-        print(f'dataPacket saved (Binary): {predList}')
+        #print(f'dataPacket shape (Binary): {predList.shape}')
+        #print(f'dataPacket saved (Binary): {predList}')
 
     predictionStopMS = int(time.time() * 1000)
     predictionTimeMS = predictionStopMS - predictionStartMs
@@ -1476,7 +1476,7 @@ def realTimePrediction(packetData, predictions, basePath):
 
     print(f'Time to predict: {predictionTimeMS}')
 
-    print(f'packet after prediction: {packetData}')
+    #print(f'packet after prediction: {packetData}')
 
     return predList
 
