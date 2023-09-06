@@ -53,46 +53,68 @@ class GetData:
             #print(f'recvCount: {recvCount}')
             #Parse binary data and recombine into ints
             #X Axis
-            XAcc = struct.unpack("=b", binaryData[1 + (sensorIndex * 3 * self.numSensors)])  ##MSB is second byte in axis RX; Just a nibble
-            #print(f'XAcc Raw: {XAcc}')
-            XAcc = XAcc[0] << 8
-            #print(f'XAcc Shift: {XAcc}')
-            XAcc1 = struct.unpack("=B", binaryData[0 + (sensorIndex * 3 * self.numSensors)])  ##LSB is first byte in axis RX; full byte
+            XAcc = struct.unpack("=b", binaryData[0 + (sensorIndex * 3 * self.numSensors)])  ##MSB is second byte in axis RX; Just a nibble
             if self.getTraining is False:
-                self.packetData[0,(self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = (XAcc + XAcc1[0]) / 2048
+                self.packetData[0,(self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = XAcc / 255
             else:
-                self.packetData[0,(self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = XAcc + XAcc1[0]
-            #print(f'XAcc Final: {XAcc + XAcc1[0]}')
+                self.packetData[0,(self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = XAcc
 
             #Y Axis
-            YAcc = struct.unpack("=b", binaryData[3 + (sensorIndex * 3 * self.numSensors)])
-            #print(f'XAcc Raw: {XAcc}')
-            YAcc = YAcc[0] << 8
-            #print(f'YAcc Shift: {YAcc}')
-            YAcc1 = struct.unpack("=B", binaryData[2 + (sensorIndex * 3 * self.numSensors)])
+            YAcc = struct.unpack("=b", binaryData[1 + (sensorIndex * 3 * self.numSensors)])
             if self.getTraining is False:
-                self.packetData[0, 1 + (self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = (YAcc + YAcc1[0])/2048
+                self.packetData[0, 1 + (self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = YAcc / 255
             else:       
-                self.packetData[0, 1 + (self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = YAcc + YAcc1[0]
-            #print(f'YAcc Final: {YAcc + YAcc1[0]}')
+                self.packetData[0, 1 + (self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = YAcc
 
             #Z Axis
-            ZAcc = struct.unpack("=b", binaryData[5 + (sensorIndex * 3 * self.numSensors)])
-            #print(f'sensor: {sensorIndex}')
-            #print(f'ZAcc Raw: {ZAcc}')
-            ZAcc = ZAcc[0] << 8
-            #print(f'ZAcc Shift: {ZAcc}')
-            ZAcc1 = struct.unpack("=B", binaryData[4 + (sensorIndex * 3 * self.numSensors)])
-            ZAcc2 = struct.unpack("=B", binaryData[4])
-            #print(f'ZAcc1 Raw: {ZAcc1}')
-            #print(f'ZAcc1[0]: {ZAcc1[0]}')
-            #print(f'ZAcc2[0]: {ZAcc2[0]}')
+            ZAcc = struct.unpack("=b", binaryData[2 + (sensorIndex * 3 * self.numSensors)])
             if self.getTraining is False:
-                self.packetData[0, 2 + (self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = (ZAcc + ZAcc1[0]) /2048
+                self.packetData[0, 2 + (self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = ZAcc / 255
             else:
-                self.packetData[0, 2 + (self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = ZAcc + ZAcc1[0]
-            #print(f'ZAcc final: {ZAcc + ZAcc1[0]}')
-            #print(f'ZAcc Final: {ZAcc}')
+                self.packetData[0, 2 + (self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = ZAcc
+
+
+
+            # XAcc = struct.unpack("=b", binaryData[1 + (sensorIndex * 3 * self.numSensors)])  ##MSB is second byte in axis RX; Just a nibble
+            # #print(f'XAcc Raw: {XAcc}')
+            # XAcc = XAcc[0] << 8
+            # #print(f'XAcc Shift: {XAcc}')
+            # XAcc1 = struct.unpack("=B", binaryData[0 + (sensorIndex * 3 * self.numSensors)])  ##LSB is first byte in axis RX; full byte
+            # if self.getTraining is False:
+            #     self.packetData[0,(self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = (XAcc + XAcc1[0]) / 2048
+            # else:
+            #     self.packetData[0,(self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = XAcc + XAcc1[0]
+            # #print(f'XAcc Final: {XAcc + XAcc1[0]}')
+
+            # #Y Axis
+            # YAcc = struct.unpack("=b", binaryData[3 + (sensorIndex * 3 * self.numSensors)])
+            # #print(f'XAcc Raw: {XAcc}')
+            # YAcc = YAcc[0] << 8
+            # #print(f'YAcc Shift: {YAcc}')
+            # YAcc1 = struct.unpack("=B", binaryData[2 + (sensorIndex * 3 * self.numSensors)])
+            # if self.getTraining is False:
+            #     self.packetData[0, 1 + (self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = (YAcc + YAcc1[0])/2048
+            # else:       
+            #     self.packetData[0, 1 + (self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = YAcc + YAcc1[0]
+            # #print(f'YAcc Final: {YAcc + YAcc1[0]}')
+
+            # #Z Axis
+            # ZAcc = struct.unpack("=b", binaryData[5 + (sensorIndex * 3 * self.numSensors)])
+            # #print(f'sensor: {sensorIndex}')
+            # #print(f'ZAcc Raw: {ZAcc}')
+            # ZAcc = ZAcc[0] << 8
+            # #print(f'ZAcc Shift: {ZAcc}')
+            # ZAcc1 = struct.unpack("=B", binaryData[4 + (sensorIndex * 3 * self.numSensors)])
+            # ZAcc2 = struct.unpack("=B", binaryData[4])
+            # #print(f'ZAcc1 Raw: {ZAcc1}')
+            # #print(f'ZAcc1[0]: {ZAcc1[0]}')
+            # #print(f'ZAcc2[0]: {ZAcc2[0]}')
+            # if self.getTraining is False:
+            #     self.packetData[0, 2 + (self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = (ZAcc + ZAcc1[0]) /2048
+            # else:
+            #     self.packetData[0, 2 + (self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = ZAcc + ZAcc1[0]
+            # #print(f'ZAcc final: {ZAcc + ZAcc1[0]}')
+            # #print(f'ZAcc Final: {ZAcc}')
         
         if recvCount < self.packetSize:
             for i in range(self.numSensors):
@@ -170,7 +192,7 @@ class GetData:
                 a = 0
                 errorCount = 0
                 sampleRxStartMS = int(time.time() * 1000)
-                while a < (self.numSensors * 6):
+                while a < (self.numSensors * 3):                #Number of sensors * the number of bytes per sample
                     #print(f'while loop a')
                     try:
                         y.append(sock.recv(1))
@@ -267,14 +289,14 @@ class GetData:
             if recvCount == self.packetSize and self.getTraining:                      # Once we've received 5 packets
                 dataThread.join()
                 while threading.active_count() > 1:    #wait for the last threads to finish processing
-                    #print(f'threading.active_count(): {threading.active_count()}')
+                    print(f'threading.active_count(): {threading.active_count()}')
                     pass
                 
                 print(f'Packet Done')
                 packetStopMS = int(time.time() * 1000)
                 packetTimeMS = packetStopMS - packetStartMS
-                #print(f'packetStart: {packetStartMS}')
-                #print(f'packetStopMS: {packetStopMS}')
+                print(f'packetStart: {packetStartMS}')
+                print(f'packetStopMS: {packetStopMS}')
                 print(f'packet processing time in ms: {packetTimeMS}')
                 # for thread in threading.enumerate(): 
                 #     print(thread.name)
@@ -305,7 +327,7 @@ class GetData:
 
         #scale the data to +-1
         for i in range(self.packetData.shape[1]):
-            self.packetData[0,i] = self.packetData[0,i] / 2048
+            self.packetData[0,i] = self.packetData[0,i] / 255
         #print(f'self.packetData.shape: {self.packetData.shape}')
         #Get ground truth labels
         packetTruth = np.zeros([1,], dtype=int)

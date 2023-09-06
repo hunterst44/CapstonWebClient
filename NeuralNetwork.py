@@ -1507,30 +1507,35 @@ def trainOrientation(basePath, pathList):
     EPOCHS = 500
     BATCH_SIZE = 1
     
-    #Instanstiate the model
-    model = Model()
-    
-    #Add layers
-    #Input is 15 features (3 Axis * 5 samples)
-    model.add(Layer_Dense(30,300, weight_regularizer_l2=5e-4, bias_regularizer_l2=5e-4))
-    model.add(Activation_ReLu())
-    model.add(Layer_Dropout(0.1))
-    model.add(Layer_Dense(300,13))
-    model.add(Activation_Softmax())
-    
-    model.set(
-        loss=Loss_CategoricalCrossEntropy(),
-        optimizer=Optimizer_Adam(learning_rate=0.05, decay=5e-5),
-        accuracy=Accuracy_Categorical()
-    )
-    
-    model.finalize()
+    if os.path.exists(basePath + "model"):     #Use the existing model if it exists
+        model = Model.load(basePath + "model")
+
+        model.finalize()
+
+    else:                                     #Or create a new one
+        model = Model()   #Instanstiate the model
+        
+        #Add layers
+        #Input is 15 features (3 Axis * 5 samples)
+        model.add(Layer_Dense(30,300, weight_regularizer_l2=5e-4, bias_regularizer_l2=5e-4))
+        model.add(Activation_ReLu())
+        model.add(Layer_Dropout(0.1))
+        model.add(Layer_Dense(300,13))
+        model.add(Activation_Softmax())
+        
+        model.set(
+            loss=Loss_CategoricalCrossEntropy(),
+            optimizer=Optimizer_Adam(learning_rate=0.05, decay=5e-5),
+            accuracy=Accuracy_Categorical()
+        )
+        
+        model.finalize()
     
     #model.train(X,y, validation_data=(X_test, y_test),epochs=EPOCHS, batch_size=BATCH_SIZE, print_every=5)
     model.train(X,y, epochs=EPOCHS, batch_size=BATCH_SIZE, print_every=1000)
     
-    parameters = model.get_parameters()
-    print(f'parameters: {parameters}')
+    #parameters = model.get_parameters()
+    #print(f'parameters: {parameters}')
     
     model.save(basePath + "model")
 
