@@ -43,8 +43,8 @@ class GetData:
 
     def processData(self, binaryData, recvCount):
       
-        print(f'processData recvCount(): {recvCount}')
-        print(f'binaryData: {binaryData}')
+        # print(f'processData recvCount(): {recvCount}')
+        # print(f'binaryData: {binaryData}')
 
         #packetStartMS = int(time() * 1000)
         #global processCount
@@ -62,7 +62,7 @@ class GetData:
                 self.packetData[0,(self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = (XAcc + XAcc1[0]) / 2048
             else:
                 self.packetData[0,(self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = XAcc + XAcc1[0]
-            print(f'XAcc Final: {XAcc + XAcc1[0]}')
+            #print(f'XAcc Final: {XAcc + XAcc1[0]}')
 
             #Y Axis
             YAcc = struct.unpack("=b", binaryData[3 + (sensorIndex * 3 * self.numSensors)])
@@ -74,7 +74,7 @@ class GetData:
                 self.packetData[0, 1 + (self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = (YAcc + YAcc1[0])/2048
             else:       
                 self.packetData[0, 1 + (self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = YAcc + YAcc1[0]
-            print(f'YAcc Final: {YAcc + YAcc1[0]}')
+            #print(f'YAcc Final: {YAcc + YAcc1[0]}')
 
             #Z Axis
             ZAcc = struct.unpack("=b", binaryData[5 + (sensorIndex * 3 * self.numSensors)])
@@ -91,14 +91,14 @@ class GetData:
                 self.packetData[0, 2 + (self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = (ZAcc + ZAcc1[0]) /2048
             else:
                 self.packetData[0, 2 + (self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = ZAcc + ZAcc1[0]
-            print(f'ZAcc final: {ZAcc + ZAcc1[0]}')
+            #print(f'ZAcc final: {ZAcc + ZAcc1[0]}')
             #print(f'ZAcc Final: {ZAcc}')
         
         if recvCount < self.packetSize:
             for i in range(self.numSensors):
                 formatData(binaryData, i)
 
-        print(f'packet after fresh data insertion: {self.packetData}')
+        #print(f'packet after fresh data insertion: {self.packetData}')
 
         # if self.getTraining is False:
         #     #scale the data to +-1
@@ -107,7 +107,7 @@ class GetData:
         #         self.packetData[0,i] = self.packetData[0,i] / 2048
         #         print(f'packetData[0, {i}] (scaled): {self.packetData[0,i]}')
 
-    def socketLoop(self, recvCount): #recvCount counts samples in a packet in training mode; in prediction mode it is the index for the corcular buffer
+    def socketLoop(self, recvCount): #recvCount counts samples in a packet in training mode; in prediction mode it is the index for the circular buffer
 
         packetStartMS = 0
         firstFive = 0 #flip to one after first five sample are in to start predictions
@@ -195,7 +195,7 @@ class GetData:
                 
                 #print(f'Sample Received')
                 
-                
+                print()
                 print(f'Start preocessData() thread for sample: {recvCount}' )
                 # if self.getTraining is False:  #while predicting make sure all threads are done before starting another
                 #     while threading.active_count() > 1:    #wait for the last threads to finish processing
@@ -239,7 +239,7 @@ class GetData:
                             self.plotAcc()   #take the packet now hot off the press
                             self.plotTimer = int(time.time() * 1000)   #reset plotTimer
 
-                        print(f'Input to NN (rolled): {NNINput}')
+                        #print(f'Input to NN (rolled): {NNINput}')
                         print(f'Making Prediction...{recvCount}') 
                         predictThread = Thread(target=NeuralNetwork.realTimePrediction, args=(NNINput, self.predictions, self.pathPreface))
                         predictThread.start()

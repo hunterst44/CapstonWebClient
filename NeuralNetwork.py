@@ -1436,11 +1436,11 @@ def realTimePrediction(packetData, predictions, basePath):
         #print(f'dataPacket shape (Binary): {trainingData.shape}')
         #print(f'dataPacket saved (Binary): {trainingData}')
 
-    print(f'Confidences: {confidences}') 
+    #print(f'Confidences: {confidences}') 
 
     predictionsPath = basePath + "predictions.npy"
     predictions = model.output_layer_activation.predictions(confidences)
-    print(f'Current Prediction: {predictions}')
+    #print(f'Current Prediction: {predictions}')
     #print(f'Current Prediction: {predictions[0]}')
 
     predList = []
@@ -1453,7 +1453,7 @@ def realTimePrediction(packetData, predictions, basePath):
     if confidences[0, predList[0]] < 0.9:  #default to no movement unless 90% confident
         predList[0] = 0
 
-    print(f'Current Prediction: {predictions}')
+    #print(f'Current Prediction: {predictions}')
     #Write predictions to binary
     if os.path.exists(predictionsPath):
         tmpArr = np.load(predictionsPath,allow_pickle=False)
