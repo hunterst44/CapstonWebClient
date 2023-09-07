@@ -51,25 +51,38 @@ class GetData:
 
         def formatData(binaryData, sensorIndex):
             #print(f'recvCount: {recvCount}')
+            print(f'binaryData: {binaryData}')
             #Parse binary data and recombine into ints
             #X Axis
-            XAcc = struct.unpack("=b", binaryData[0 + (sensorIndex * 3 * self.numSensors)])  ##MSB is second byte in axis RX; Just a nibble
+
+            print(f'sensor: {sensorIndex}')
+            print(f'XIndex: {0 + (sensorIndex * 3 * self.numSensors)}')
+
+
+            XAccTuple = struct.unpack("=b", binaryData[0 + (sensorIndex * 3)])  ##MSB is second byte in axis RX; Just a nibble
+            XAcc = XAccTuple[0]
+            #XAcc = float(int(binaryData[0 + (sensorIndex * 3 * self.numSensors)]),0)
+            print(f'XAcc Raw: {XAcc}')
             if self.getTraining is False:
-                self.packetData[0,(self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = XAcc / 255
+                self.packetData[0,(self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = XAcc / 127
             else:
                 self.packetData[0,(self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = XAcc
 
             #Y Axis
-            YAcc = struct.unpack("=b", binaryData[1 + (sensorIndex * 3 * self.numSensors)])
+            YAccTuple = struct.unpack("=b", binaryData[1 + (sensorIndex * 3)])
+            YAcc = YAccTuple[0]
+            print(f'YAcc Raw: {YAcc}')
             if self.getTraining is False:
-                self.packetData[0, 1 + (self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = YAcc / 255
+                self.packetData[0, 1 + (self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = YAcc / 127
             else:       
                 self.packetData[0, 1 + (self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = YAcc
 
             #Z Axis
-            ZAcc = struct.unpack("=b", binaryData[2 + (sensorIndex * 3 * self.numSensors)])
+            ZAccTuple = struct.unpack("=b", binaryData[2 + (sensorIndex * 3)])
+            ZAcc = ZAccTuple[0]
+            print(f'ZAcc Raw: {ZAcc}')
             if self.getTraining is False:
-                self.packetData[0, 2 + (self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = ZAcc / 255
+                self.packetData[0, 2 + (self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = ZAcc / 127
             else:
                 self.packetData[0, 2 + (self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = ZAcc
 
@@ -295,9 +308,10 @@ class GetData:
                 print(f'Packet Done')
                 packetStopMS = int(time.time() * 1000)
                 packetTimeMS = packetStopMS - packetStartMS
-                print(f'packetStart: {packetStartMS}')
-                print(f'packetStopMS: {packetStopMS}')
+                #print(f'packetStart: {packetStartMS}')
+                #print(f'packetStopMS: {packetStopMS}')
                 print(f'packet processing time in ms: {packetTimeMS}')
+                print()
                 # for thread in threading.enumerate(): 
                 #     print(thread.name)
                 #print()
@@ -327,7 +341,7 @@ class GetData:
 
         #scale the data to +-1
         for i in range(self.packetData.shape[1]):
-            self.packetData[0,i] = self.packetData[0,i] / 255
+            self.packetData[0,i] = self.packetData[0,i] / 127
         #print(f'self.packetData.shape: {self.packetData.shape}')
         #Get ground truth labels
         packetTruth = np.zeros([1,], dtype=int)
@@ -362,10 +376,10 @@ class GetData:
         #Truth
         if os.path.exists(truthPath):
             tmpArr = np.load(truthPath,allow_pickle=False)
-            print(f'Binary truths from file: {tmpArr}')
+            #print(f'Binary truths from file: {tmpArr}')
             tmpArr = np.append(tmpArr,packetTruth)
             np.save(truthPath, tmpArr, allow_pickle=False)
-            print(f'packetTruth appended and saved (Binary): {tmpArr}')
+            #print(f'packetTruth appended and saved (Binary): {tmpArr}')
         else: 
             np.save(truthPath, packetTruth, allow_pickle=False)
             print(f'packetTruth saved (Binary): {packetTruth}')

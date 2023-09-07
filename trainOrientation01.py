@@ -26,16 +26,17 @@ class10 = "baseCCW90Y_01"         #sensor 1 reference orientation 90 CCW on Y ax
 class11 = "baseCCW90Y_02"         #sensor 2 reference orientation 90 CCW on Y axis; sensor 1 stationay  Sensor rotates to left (looking from ESP32)
 class12 = "baseCCW90Y_01baseCCW90Y_02"         #sensor 1 & 2 reference orientation 90 CCW on Y axis      Sensor rotates to left (looking from ESP32)
 
-pathList = [basePath + class0, basePath + class1, basePath + class2, basePath + class3, basePath + class4, basePath + class5, basePath + class6, basePath + class7, basePath + class8, basePath + class9, basePath + class10, basePath + class11, basePath + class12]
+#pathList = [basePath + class0, basePath + class1, basePath + class2, basePath + class3, basePath + class4, basePath + class5, basePath + class6, basePath + class7, basePath + class8, basePath + class9, basePath + class10, basePath + class11, basePath + class12]
 
+pathList = [basePath + class0]
 
 def main():
 
 
   # Get Data for training
   #No movement
-  # socketClient.createTrainingData(pathPreface=basePath, labelPath=class0, packetLimit=30, label=0, packetSize=5, numSensors=2)
-  # socketClient.createTrainingData(pathPreface=basePath, labelPath=class0 + "_test", packetLimit=3, label=0, packetSize=5, numSensors=2)
+  socketClient.createTrainingData(pathPreface=basePath, labelPath=class0, packetLimit=30, label=0, packetSize=5, numSensors=2)
+  socketClient.createTrainingData(pathPreface=basePath, labelPath=class0 + "_test", packetLimit=3, label=0, packetSize=5, numSensors=2)
 
   # socketClient.createTrainingData(pathPreface=basePath, labelPath=class1, packetLimit=30, label=1, packetSize=5, numSensors=2)
   # socketClient.createTrainingData(pathPreface=basePath, labelPath=class1 + "_test", packetLimit=3, label=1, packetSize=5, numSensors=2)
@@ -52,8 +53,8 @@ def main():
   # socketClient.createTrainingData(pathPreface=basePath, labelPath=class5, packetLimit=30, label=5, packetSize=5, numSensors=2)
   # socketClient.createTrainingData(pathPreface=basePath, labelPath=class5 + "_test", packetLimit=3, label=5, packetSize=5, numSensors=2)
 
-  socketClient.createTrainingData(pathPreface=basePath, labelPath=class6, packetLimit=30, label=6, packetSize=5, numSensors=2)
-  socketClient.createTrainingData(pathPreface=basePath, labelPath=class6 + "_test", packetLimit=3, label=6, packetSize=5, numSensors=2)
+#   socketClient.createTrainingData(pathPreface=basePath, labelPath=class6, packetLimit=30, label=6, packetSize=5, numSensors=2)
+#   socketClient.createTrainingData(pathPreface=basePath, labelPath=class6 + "_test", packetLimit=3, label=6, packetSize=5, numSensors=2)
 
   # socketClient.createTrainingData(pathPreface=basePath, labelPath=class7, packetLimit=30, label=7, packetSize=5, numSensors=2)
   # socketClient.createTrainingData(pathPreface=basePath, labelPath=class7 + "_test", packetLimit=3, label=7, packetSize=5, numSensors=2)
@@ -70,8 +71,8 @@ def main():
   # socketClient.createTrainingData(pathPreface=basePath, labelPath=class11, packetLimit=30, label=11, packetSize=5, numSensors=2)
   # socketClient.createTrainingData(pathPreface=basePath, labelPath=class11 + "_test", packetLimit=3, label=11, packetSize=5, numSensors=2)
 
-  socketClient.createTrainingData(pathPreface=basePath, labelPath=class12, packetLimit=30, label=12, packetSize=5, numSensors=2)
-  socketClient.createTrainingData(pathPreface=basePath, labelPath=class12 + "_test", packetLimit=3, label=12, packetSize=5, numSensors=2)
+#   socketClient.createTrainingData(pathPreface=basePath, labelPath=class12, packetLimit=30, label=12, packetSize=5, numSensors=2)
+#   socketClient.createTrainingData(pathPreface=basePath, labelPath=class12 + "_test", packetLimit=3, label=12, packetSize=5, numSensors=2)
 
   # for i in range(len(pathList)):
   #   #dataArr = np.load(pathList[i] + ".npy", allow_pickle=False)
@@ -86,12 +87,12 @@ def main():
   print()
   print(f'data acquired begin training')
 
-  dataArr = np.load(pathList[12] + ".npy", allow_pickle=False)
-  print(f'data in file {pathList[12]} shape: {dataArr.shape}')
+  dataArr = np.load(pathList[0] + ".npy", allow_pickle=False)
+  print(f'data in file {pathList[0]} shape: {dataArr.shape}')
   #print(f'data at basePath: {dataArr}')
 
-  tmpArr = np.loadtxt(pathList[12] + ".csv",dtype=float, delimiter=',', ndmin=2)
-  print(f'data from csv ({pathList[12] + ".csv"}) shape: {tmpArr.shape}')
+  tmpArr = np.loadtxt(pathList[0] + ".csv",dtype=float, delimiter=',', ndmin=2)
+  print(f'data from csv ({pathList[0] + ".csv"}) shape: {tmpArr.shape}')
   print(f'data from csv: {tmpArr}')
 
   #np.save(pathList[12] + ".npy", tmpArr, allow_pickle=False)
