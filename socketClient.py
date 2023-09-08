@@ -9,7 +9,6 @@
 #  Writes packets to files cumulatively - binary and human readable (CSV)
 #  Generates plot images of each packet
 
-
 import socket  
 import numpy as np
 import struct
@@ -42,7 +41,6 @@ class GetData:
         self.plotCounter = 0 #counts how many plots have been made
 
     def processData(self, binaryData, recvCount):
-      
         # print(f'processData recvCount(): {recvCount}')
         # print(f'binaryData: {binaryData}')
 
@@ -222,7 +220,7 @@ class GetData:
     
     #print(f'Sample Received - One byte')
 
-    def socketLoop(self, recvCount, mode="sampleRx"): #recvCount counts samples in a packet in training mode; in prediction mode it is the index for the circular buffer
+    def socketLoop(self, recvCount, rxMode="sampleRx"): #recvCount counts samples in a packet in training mode; in prediction mode it is the index for the circular buffer
 
         packetStartMS = 0
         firstFive = 0 #flip to one after first five sample are in to start predictions
@@ -267,9 +265,9 @@ class GetData:
             #Sends one byte from dataPacket and asks for more
             while recvCount < self.packetSize:
                 sampleRxStartMS = int(time.time() * 1000)
-                if mode == "byteRx":     #Sends one byte from dataPacket and asks for more until packet is done
+                if rxMode == "byteRx":     #Sends one byte from dataPacket and asks for more until packet is done
                     y = self.receiveBytes(self)
-                elif mode == "sampleRx":
+                elif rxMode == "sampleRx":
                     y = self.receiveSample(self)
 
                 sampleRxStopMS = int(time.time() * 1000)
