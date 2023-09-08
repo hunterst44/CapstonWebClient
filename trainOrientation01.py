@@ -3,7 +3,11 @@ import NeuralNetwork
 import numpy as np
 
 ## Receives data from 2 sensors and does NN training and logging on the data in real time.
-## WARNING this will start with fresh (random) weights and biases and OVERWRITE current model at pathPreface/model
+
+#Input parameters
+packetSize = 1
+numSensors = 2
+
 
 #Paths
 basePath = "data/Orientation01/"
@@ -35,44 +39,44 @@ def main():
 
   # Get Data for training
   #No movement
-  socketClient.createTrainingData(pathPreface=basePath, labelPath=class0, packetLimit=30, label=0, packetSize=1, numSensors=2)
-  socketClient.createTrainingData(pathPreface=basePath, labelPath=class0 + "_test", packetLimit=3, label=0, packetSize=1, numSensors=2)
+  socketClient.createTrainingData(pathPreface=basePath, labelPath=class0, packetLimit=3, label=0, packetSize=packetSize, numSensors = numSensors)
+  socketClient.createTrainingData(pathPreface=basePath, labelPath=class0 + "_test", packetLimit=3, label=0, packetSize=packetSize, numSensors = numSensors)
 
-  # socketClient.createTrainingData(pathPreface=basePath, labelPath=class1, packetLimit=30, label=1, packetSize=1, numSensors=2)
-  # socketClient.createTrainingData(pathPreface=basePath, labelPath=class1 + "_test", packetLimit=3, label=1, packetSize=1, numSensors=2)
+  # socketClient.createTrainingData(pathPreface=basePath, labelPath=class1, packetLimit=30, label=1, packetSize=packetSize, numSensors = numSensors)
+  # socketClient.createTrainingData(pathPreface=basePath, labelPath=class1 + "_test", packetLimit=3, label=1, packetSize=packetSize, numSensors = numSensors)
 
-  # socketClient.createTrainingData(pathPreface=basePath, labelPath=class2, packetLimit=30, label=2, packetSize=1, numSensors=2)
-  # socketClient.createTrainingData(pathPreface=basePath, labelPath=class2 + "_test", packetLimit=3, label=2, packetSize=1, numSensors=2)
+  # socketClient.createTrainingData(pathPreface=basePath, labelPath=class2, packetLimit=30, label=2, packetSize=packetSize, numSensors = numSensors)
+  # socketClient.createTrainingData(pathPreface=basePath, labelPath=class2 + "_test", packetLimit=3, label=2, packetSize=packetSize, numSensors = numSensors)
 
-  #socketClient.createTrainingData(pathPreface=basePath, labelPath=class3, packetLimit=30, label=3, packetSize=1, numSensors=2)
-  #socketClient.createTrainingData(pathPreface=basePath, labelPath=class3 + "_test", packetLimit=3, label=3, packetSize=1, numSensors=2)
+  #socketClient.createTrainingData(pathPreface=basePath, labelPath=class3, packetLimit=30, label=3, packetSize=packetSize, numSensors = numSensors)
+  #socketClient.createTrainingData(pathPreface=basePath, labelPath=class3 + "_test", packetLimit=3, label=3, packetSize=packetSize, numSensors = numSensors)
 
-  # socketClient.createTrainingData(pathPreface=basePath, labelPath=class4, packetLimit=30, label=4, packetSize=1, numSensors=2)
-  # socketClient.createTrainingData(pathPreface=basePath, labelPath=class4 + "_test", packetLimit=3, label=4, packetSize=1, numSensors=2)
+  # socketClient.createTrainingData(pathPreface=basePath, labelPath=class4, packetLimit=30, label=4, packetSize=packetSize, numSensors = numSensors)
+  # socketClient.createTrainingData(pathPreface=basePath, labelPath=class4 + "_test", packetLimit=3, label=4, packetSize=packetSize, numSensors = numSensors)
 
-  # socketClient.createTrainingData(pathPreface=basePath, labelPath=class5, packetLimit=30, label=5, packetSize=1, numSensors=2)
-  # socketClient.createTrainingData(pathPreface=basePath, labelPath=class5 + "_test", packetLimit=3, label=5, packetSize=1, numSensors=2)
+  # socketClient.createTrainingData(pathPreface=basePath, labelPath=class5, packetLimit=30, label=5, packetSize=packetSize, numSensors = numSensors)
+  # socketClient.createTrainingData(pathPreface=basePath, labelPath=class5 + "_test", packetLimit=3, label=5, packetSize=packetSize, numSensors = numSensors)
 
-#   socketClient.createTrainingData(pathPreface=basePath, labelPath=class6, packetLimit=30, label=6, packetSize=1, numSensors=2)
-#   socketClient.createTrainingData(pathPreface=basePath, labelPath=class6 + "_test", packetLimit=3, label=6, packetSize=1, numSensors=2)
+#   socketClient.createTrainingData(pathPreface=basePath, labelPath=class6, packetLimit=30, label=6, packetSize=packetSize, numSensors = numSensors)
+#   socketClient.createTrainingData(pathPreface=basePath, labelPath=class6 + "_test", packetLimit=3, label=6, packetSize=packetSize, numSensors = numSensors)
 
-  # socketClient.createTrainingData(pathPreface=basePath, labelPath=class7, packetLimit=30, label=7, packetSize=1, numSensors=2)
-  # socketClient.createTrainingData(pathPreface=basePath, labelPath=class7 + "_test", packetLimit=3, label=7, packetSize=1, numSensors=2)
+  # socketClient.createTrainingData(pathPreface=basePath, labelPath=class7, packetLimit=30, label=7, packetSize=packetSize, numSensors = numSensors)
+  # socketClient.createTrainingData(pathPreface=basePath, labelPath=class7 + "_test", packetLimit=3, label=7, packetSize=packetSize, numSensors = numSensors)
 
-  #socketClient.createTrainingData(pathPreface=basePath, labelPath=class8, packetLimit=30, label=8, packetSize=1, numSensors=2)
-  #socketClient.createTrainingData(pathPreface=basePath, labelPath=class8 + "_test", packetLimit=3, label=8, packetSize=1, numSensors=2)
+  #socketClient.createTrainingData(pathPreface=basePath, labelPath=class8, packetLimit=30, label=8, packetSize=packetSize, numSensors = numSensors)
+  #socketClient.createTrainingData(pathPreface=basePath, labelPath=class8 + "_test", packetLimit=3, label=8, packetSize=packetSize, numSensors = numSensors)
 
-  #socketClient.createTrainingData(pathPreface=basePath, labelPath=class9, packetLimit=30, label=9, packetSize=1, numSensors=2)
-  #socketClient.createTrainingData(pathPreface=basePath, labelPath=class9 + "_test", packetLimit=3, label=9, packetSize=1, numSensors=2)
+  #socketClient.createTrainingData(pathPreface=basePath, labelPath=class9, packetLimit=30, label=9, packetSize=packetSize, numSensors = numSensors)
+  #socketClient.createTrainingData(pathPreface=basePath, labelPath=class9 + "_test", packetLimit=3, label=9, packetSize=packetSize, numSensors = numSensors)
 
-  # socketClient.createTrainingData(pathPreface=basePath, labelPath=class10, packetLimit=30, label=10, packetSize=1, numSensors=2)
-  # socketClient.createTrainingData(pathPreface=basePath, labelPath=class10 + "_test", packetLimit=3, label=10, packetSize=1, numSensors=2)
+  # socketClient.createTrainingData(pathPreface=basePath, labelPath=class10, packetLimit=30, label=10, packetSize=packetSize, numSensors = numSensors)
+  # socketClient.createTrainingData(pathPreface=basePath, labelPath=class10 + "_test", packetLimit=3, label=10, packetSize=packetSize, numSensors = numSensors)
 
-  # socketClient.createTrainingData(pathPreface=basePath, labelPath=class11, packetLimit=30, label=11, packetSize=1, numSensors=2)
-  # socketClient.createTrainingData(pathPreface=basePath, labelPath=class11 + "_test", packetLimit=3, label=11, packetSize=1, numSensors=2)
+  # socketClient.createTrainingData(pathPreface=basePath, labelPath=class11, packetLimit=30, label=11, packetSize=packetSize, numSensors = numSensors)
+  # socketClient.createTrainingData(pathPreface=basePath, labelPath=class11 + "_test", packetLimit=3, label=11, packetSize=packetSize, numSensors = numSensors)
 
-#   socketClient.createTrainingData(pathPreface=basePath, labelPath=class12, packetLimit=30, label=12, packetSize=1, numSensors=2)
-#   socketClient.createTrainingData(pathPreface=basePath, labelPath=class12 + "_test", packetLimit=3, label=12, packetSize=1, numSensors=2)
+#   socketClient.createTrainingData(pathPreface=basePath, labelPath=class12, packetLimit=30, label=12, packetSize=packetSize, numSensors = numSensors)
+#   socketClient.createTrainingData(pathPreface=basePath, labelPath=class12 + "_test", packetLimit=3, label=12, packetSize=packetSize, numSensors = numSensors)
 
   # for i in range(len(pathList)):
   #   #dataArr = np.load(pathList[i] + ".npy", allow_pickle=False)
@@ -98,6 +102,6 @@ def main():
   #np.save(pathList[12] + ".npy", tmpArr, allow_pickle=False)
 
   #Train network with test data
-  NeuralNetwork.trainOrientation(basePath, pathList)
+  NeuralNetwork.trainOrientation(basePath, pathList, packetSize, numSensors)
 
 if __name__ == "__main__": main()

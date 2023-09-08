@@ -22,7 +22,7 @@ import dill
 
 class GetData:
     
-    def __init__(self, *, host="192.168.1.67", port=80, packetSize=5, numSensors=4, pathPreface='data/data', labelPath="Test", label=0, getTraining=True, packetLimit=100):
+    def __init__(self, *, host="192.168.100.144", port=80, packetSize=5, numSensors=4, pathPreface='data/data', labelPath="Test", label=0, getTraining=True, packetLimit=100):
         self.host = host
         self.port = port
         self.packetSize = packetSize
@@ -49,18 +49,18 @@ class GetData:
 
         def formatData(binaryData, sensorIndex):
             #print(f'recvCount: {recvCount}')
-            print(f'binaryData: {binaryData}')
+            #print(f'binaryData: {binaryData}')
             #Parse binary data and recombine into ints
             #X Axis
 
-            print(f'sensor: {sensorIndex}')
-            print(f'XIndex: {0 + (sensorIndex * 3 * self.numSensors)}')
+            # print(f'sensor: {sensorIndex}')
+            # print(f'XIndex: {0 + (sensorIndex * 3 * self.numSensors)}')
 
 
             XAccTuple = struct.unpack("=b", binaryData[0 + (sensorIndex * 3)])  ##MSB is second byte in axis RX; Just a nibble
             XAcc = XAccTuple[0]
             #XAcc = float(int(binaryData[0 + (sensorIndex * 3 * self.numSensors)]),0)
-            print(f'XAcc Raw: {XAcc}')
+            #print(f'XAcc Raw: {XAcc}')
             if self.getTraining is False:
                 self.packetData[0,(self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = XAcc / 127
             else:
@@ -69,7 +69,7 @@ class GetData:
             #Y Axis
             YAccTuple = struct.unpack("=b", binaryData[1 + (sensorIndex * 3)])
             YAcc = YAccTuple[0]
-            print(f'YAcc Raw: {YAcc}')
+            #print(f'YAcc Raw: {YAcc}')
             if self.getTraining is False:
                 self.packetData[0, 1 + (self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = YAcc / 127
             else:       
@@ -78,7 +78,7 @@ class GetData:
             #Z Axis
             ZAccTuple = struct.unpack("=b", binaryData[2 + (sensorIndex * 3)])
             ZAcc = ZAccTuple[0]
-            print(f'ZAcc Raw: {ZAcc}')
+            #print(f'ZAcc Raw: {ZAcc}')
             if self.getTraining is False:
                 self.packetData[0, 2 + (self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = ZAcc / 127
             else:
@@ -176,19 +176,21 @@ class GetData:
         return y
     
     def receiveBytes(self):
+        #print(f'receiveBytes(self)')
         #Signals the server then receives a byte from the sample
         sock = socket.socket()
         sock.connect((self.host, self.port))
         #print("Connected to server")
         dataTx = struct.pack("=i", 255)
-        #try:
-        sock.send(dataTx);
-        #except:
-        #    sock.connect((host, port))
-        #    print("Socket Reconnected")
-        #    sock.send(255);
-        #print(f'sockname: {sock.getsockname()}')
-        #print(f'sockpeer: {sock.getpeername()}')
+        try:
+            sock.send(dataTx)
+            print("Sent Data")
+        except:
+           sock.connect((self.host, self.port))
+           #print("Socket Reconnected")
+           sock.send(255);
+        # print(f'sockname: {sock.getsockname()}')
+        # print(f'sockpeer: {sock.getpeername()}')
         y = []
         #time.sleep(0.01)
         #y = sock.recv(18)
@@ -220,7 +222,7 @@ class GetData:
     
     #print(f'Sample Received - One byte')
 
-    def socketLoop(self, recvCount, rxMode="sampleRx"): #recvCount counts samples in a packet in training mode; in prediction mode it is the index for the circular buffer
+    def socketLoop(self, recvCount, rxMode="byteRx"): #recvCount counts samples in a packet in training mode; in prediction mode it is the index for the circular buffer
 
         packetStartMS = 0
         firstFive = 0 #flip to one after first five sample are in to start predictions
@@ -266,18 +268,20 @@ class GetData:
             while recvCount < self.packetSize:
                 sampleRxStartMS = int(time.time() * 1000)
                 if rxMode == "byteRx":     #Sends one byte from dataPacket and asks for more until packet is done
-                    y = self.receiveBytes(self)
+                    y = self.receiveBytes()
+                    #print(f'Receive Bytes')
                 elif rxMode == "sampleRx":
-                    y = self.receiveSample(self)
+                    y = self.receiveSample()
+                    print(f'Receive Sample')
 
                 sampleRxStopMS = int(time.time() * 1000)
                 sampleRxTimeMS = sampleRxStopMS - sampleRxStartMS
+                print()
                 print(f'Sample receive time in ms: {sampleRxTimeMS}')
 
                 if y == -1:
                     return -1
                 
-                print()
                 print(f'Start preocessData() thread for sample: {recvCount}' )
                 # if self.getTraining is False:  #while predicting make sure all threads are done before starting another
                 #     while threading.active_count() > 1:    #wait for the last threads to finish processing
