@@ -9,7 +9,6 @@
 #  Writes packets to files cumulatively - binary and human readable (CSV)
 #  Generates plot images of each packet
 
-
 import socket  
 import numpy as np
 import struct
@@ -42,7 +41,6 @@ class GetData:
         self.plotCounter = 0 #counts how many plots have been made
 
     def processData(self, binaryData, recvCount):
-      
         # print(f'processData recvCount(): {recvCount}')
         # print(f'binaryData: {binaryData}')
 
@@ -51,48 +49,84 @@ class GetData:
 
         def formatData(binaryData, sensorIndex):
             #print(f'recvCount: {recvCount}')
+            print()
+            #print(f'binaryData: {binaryData}')
             #Parse binary data and recombine into ints
             #X Axis
-            XAcc = struct.unpack("=b", binaryData[1 + (sensorIndex * 3 * self.numSensors)])  ##MSB is second byte in axis RX; Just a nibble
-            #print(f'XAcc Raw: {XAcc}')
-            XAcc = XAcc[0] << 8
-            #print(f'XAcc Shift: {XAcc}')
-            XAcc1 = struct.unpack("=B", binaryData[0 + (sensorIndex * 3 * self.numSensors)])  ##LSB is first byte in axis RX; full byte
+
+            # print(f'sensor: {sensorIndex}')
+            # print(f'XIndex: {0 + (sensorIndex * 3 * self.numSensors)}')
+
+
+            XAccTuple = struct.unpack("=b", binaryData[0 + (sensorIndex * 3)])  ##MSB is second byte in axis RX; Just a nibble
+            XAcc = XAccTuple[0]
+            #XAcc = float(int(binaryData[0 + (sensorIndex * 3 * self.numSensors)]),0)
+            print(f'XAcc Raw: {XAcc}')
             if self.getTraining is False:
-                self.packetData[0,(self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = (XAcc + XAcc1[0]) / 2048
+                self.packetData[0,(self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = XAcc / 127
             else:
-                self.packetData[0,(self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = XAcc + XAcc1[0]
-            #print(f'XAcc Final: {XAcc + XAcc1[0]}')
+                self.packetData[0,(self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = XAcc
 
             #Y Axis
-            YAcc = struct.unpack("=b", binaryData[3 + (sensorIndex * 3 * self.numSensors)])
-            #print(f'XAcc Raw: {XAcc}')
-            YAcc = YAcc[0] << 8
-            #print(f'YAcc Shift: {YAcc}')
-            YAcc1 = struct.unpack("=B", binaryData[2 + (sensorIndex * 3 * self.numSensors)])
+            YAccTuple = struct.unpack("=b", binaryData[1 + (sensorIndex * 3)])
+            YAcc = YAccTuple[0]
+            print(f'YAcc Raw: {YAcc}')
             if self.getTraining is False:
-                self.packetData[0, 1 + (self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = (YAcc + YAcc1[0])/2048
+                self.packetData[0, 1 + (self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = YAcc / 127
             else:       
-                self.packetData[0, 1 + (self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = YAcc + YAcc1[0]
-            #print(f'YAcc Final: {YAcc + YAcc1[0]}')
+                self.packetData[0, 1 + (self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = YAcc
 
             #Z Axis
-            ZAcc = struct.unpack("=b", binaryData[5 + (sensorIndex * 3 * self.numSensors)])
-            #print(f'sensor: {sensorIndex}')
-            #print(f'ZAcc Raw: {ZAcc}')
-            ZAcc = ZAcc[0] << 8
-            #print(f'ZAcc Shift: {ZAcc}')
-            ZAcc1 = struct.unpack("=B", binaryData[4 + (sensorIndex * 3 * self.numSensors)])
-            ZAcc2 = struct.unpack("=B", binaryData[4])
-            #print(f'ZAcc1 Raw: {ZAcc1}')
-            #print(f'ZAcc1[0]: {ZAcc1[0]}')
-            #print(f'ZAcc2[0]: {ZAcc2[0]}')
+            ZAccTuple = struct.unpack("=b", binaryData[2 + (sensorIndex * 3)])
+            ZAcc = ZAccTuple[0]
+            print(f'ZAcc Raw: {ZAcc}')
             if self.getTraining is False:
-                self.packetData[0, 2 + (self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = (ZAcc + ZAcc1[0]) /2048
+                self.packetData[0, 2 + (self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = ZAcc / 127
             else:
-                self.packetData[0, 2 + (self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = ZAcc + ZAcc1[0]
-            #print(f'ZAcc final: {ZAcc + ZAcc1[0]}')
-            #print(f'ZAcc Final: {ZAcc}')
+                self.packetData[0, 2 + (self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = ZAcc
+
+
+
+            # XAcc = struct.unpack("=b", binaryData[1 + (sensorIndex * 3 * self.numSensors)])  ##MSB is second byte in axis RX; Just a nibble
+            # #print(f'XAcc Raw: {XAcc}')
+            # XAcc = XAcc[0] << 8
+            # #print(f'XAcc Shift: {XAcc}')
+            # XAcc1 = struct.unpack("=B", binaryData[0 + (sensorIndex * 3 * self.numSensors)])  ##LSB is first byte in axis RX; full byte
+            # if self.getTraining is False:
+            #     self.packetData[0,(self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = (XAcc + XAcc1[0]) / 2048
+            # else:
+            #     self.packetData[0,(self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = XAcc + XAcc1[0]
+            # #print(f'XAcc Final: {XAcc + XAcc1[0]}')
+
+            # #Y Axis
+            # YAcc = struct.unpack("=b", binaryData[3 + (sensorIndex * 3 * self.numSensors)])
+            # #print(f'XAcc Raw: {XAcc}')
+            # YAcc = YAcc[0] << 8
+            # #print(f'YAcc Shift: {YAcc}')
+            # YAcc1 = struct.unpack("=B", binaryData[2 + (sensorIndex * 3 * self.numSensors)])
+            # if self.getTraining is False:
+            #     self.packetData[0, 1 + (self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = (YAcc + YAcc1[0])/2048
+            # else:       
+            #     self.packetData[0, 1 + (self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = YAcc + YAcc1[0]
+            # #print(f'YAcc Final: {YAcc + YAcc1[0]}')
+
+            # #Z Axis
+            # ZAcc = struct.unpack("=b", binaryData[5 + (sensorIndex * 3 * self.numSensors)])
+            # #print(f'sensor: {sensorIndex}')
+            # #print(f'ZAcc Raw: {ZAcc}')
+            # ZAcc = ZAcc[0] << 8
+            # #print(f'ZAcc Shift: {ZAcc}')
+            # ZAcc1 = struct.unpack("=B", binaryData[4 + (sensorIndex * 3 * self.numSensors)])
+            # ZAcc2 = struct.unpack("=B", binaryData[4])
+            # #print(f'ZAcc1 Raw: {ZAcc1}')
+            # #print(f'ZAcc1[0]: {ZAcc1[0]}')
+            # #print(f'ZAcc2[0]: {ZAcc2[0]}')
+            # if self.getTraining is False:
+            #     self.packetData[0, 2 + (self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = (ZAcc + ZAcc1[0]) /2048
+            # else:
+            #     self.packetData[0, 2 + (self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = ZAcc + ZAcc1[0]
+            # #print(f'ZAcc final: {ZAcc + ZAcc1[0]}')
+            # #print(f'ZAcc Final: {ZAcc}')
         
         if recvCount < self.packetSize:
             for i in range(self.numSensors):
@@ -107,14 +141,95 @@ class GetData:
         #         self.packetData[0,i] = self.packetData[0,i] / 2048
         #         print(f'packetData[0, {i}] (scaled): {self.packetData[0,i]}')
 
-    def socketLoop(self, recvCount): #recvCount counts samples in a packet in training mode; in prediction mode it is the index for the circular buffer
+    def receiveSample(self):
+        #Signals the server and then receives a whole sample of data in one transmission (number of sensors * number of bytes/sensor)
+        #This one should be faster than one byte transmission as it reduces the client TX by the number of bytes in a sample
+        sock = socket.socket()
+        sock.connect((self.host, self.port))
+        #print("Connected to server")
+        dataTx = struct.pack("=i", 255)
+        #try:
+        sock.send(dataTx);
+        y = []
+        a = 0
+        errorCount = 0
+        sampleRxStartMS = int(time.time() * 1000)
+        try:
+            y.append(sock.recv(self.packetSize * self.numSensors * 3))
+            #print(f'Received 1')
+        except ConnectionError:
+            print(f"Unable to reach client with socket: Retrying")
+            #Close and reopen the connection
+            if errorCount < 10:      #If you get ten connection errors in a row close and reopen the socket
+                #Close and reopen the connection
+                sock.close()
+                sock = socket.socket()
+                sock.connect((self.host, self.port))
+                a -= 1     #Ask for a resend (decrement data index)
+                errorCount += 1
+                sock.send(dataTx);
+            else:
+                print(f'Fatal Error: SocketBroken')
+                return -1
+       
+        sock.close()
+
+        return y
+    
+    def receiveBytes(self):
+        #print(f'receiveBytes(self)')
+        #Signals the server then receives a byte from the sample
+        sock = socket.socket()
+        sock.connect((self.host, self.port))
+        #print("Connected to server")
+        dataTx = struct.pack("=i", 255)
+        try:
+            sock.send(dataTx)
+            print("Sent Data")
+        except:
+           sock.connect((self.host, self.port))
+           #print("Socket Reconnected")
+           sock.send(255);
+        # print(f'sockname: {sock.getsockname()}')
+        # print(f'sockpeer: {sock.getpeername()}')
+        y = []
+        #time.sleep(0.01)
+        #y = sock.recv(18)
+        a = 0
+        errorCount = 0
+        sampleRxStartMS = int(time.time() * 1000)
+        while a < (self.numSensors * 3):                #iterate through the number of sensors * the number of bytes per sample
+            #print(f'while loop a')
+            try:
+                y.append(sock.recv(1))
+                #print(f'Received 1')
+            except ConnectionError:
+                print(f"Unable to reach client with socket: Retrying")
+                #Close and reopen the connection
+                if errorCount < 10:      #If you get ten connection errors in a row close and reopen the socket
+                    #Close and reopen the connection
+                    sock.close()
+                    sock = socket.socket()
+                    sock.connect((self.host, self.port))
+                    a -= 1     #Ask for a resend (decrement data index)
+                    errorCount += 1
+                    sock.send(dataTx);
+                else:
+                    print(f'Fatal Error: SocketBroken')
+                    return -1
+            a += 1 
+        sock.close()
+        return y
+    
+    #print(f'Sample Received - One byte')
+
+    def socketLoop(self, recvCount, rxMode="byteRx"): #recvCount counts samples in a packet in training mode; in prediction mode it is the index for the circular buffer
 
         packetStartMS = 0
         firstFive = 0 #flip to one after first five sample are in to start predictions
 
         while self.packetCount < self.packetLimit:                   #keep getting packets until the packetLimit is reaches   
             if recvCount == 0:
-
                 if self.getTraining:
                     #Prompt user to get ready to create training data
                     time.sleep(0.5)
@@ -145,58 +260,30 @@ class GetData:
                     time.sleep(1)
                     print('Go!')
                     time.sleep(0.1)
-
                     
                     #print(f'Start packet time: {packetStartMS}')
             
-            packetStartMS = int(time.time() * 1000)    
-            while recvCount < self.packetSize:             
+            packetStartMS = int(time.time() * 1000)  
 
-                sock = socket.socket()
-                sock.connect((self.host, self.port))
-                #print("Connected to server")
-                dataTx = struct.pack("=i", 255)
-                #try:
-                sock.send(dataTx);
-                #except:
-                #    sock.connect((host, port))
-                #    print("Socket Reconnected")
-                #    sock.send(255);
-                #print(f'sockname: {sock.getsockname()}')
-                #print(f'sockpeer: {sock.getpeername()}')
-                y = []
-                #time.sleep(0.01)
-                #y = sock.recv(18)
-                a = 0
-                errorCount = 0
+            #Sends one byte from dataPacket and asks for more
+            while recvCount < self.packetSize:
                 sampleRxStartMS = int(time.time() * 1000)
-                while a < (self.numSensors * 6):
-                    #print(f'while loop a')
-                    try:
-                        y.append(sock.recv(1))
-                        #print(f'Received 1')
-                    except ConnectionError:
-                        print(f"Unable to reach client with socket: Retrying")
-                        print(f'Connection error recvCount: {recvCount}' )
-                        #Close and reopen the connection
-                        if errorCount < 10:
-                            #Close and reopen the connection
-                            sock.close()
-                            sock = socket.socket()
-                            sock.connect((self.host, self.port))
-                            a -= 1     #Ask for a resend
-                            errorCount += 1
-                            sock.send(dataTx);
-                        else:
-                            print(f'Fatal Error: SocketBroken')
-                            return -1
-                    a += 1 
-                sock.close()
-                
-                #print(f'Sample Received')
-                
+                if rxMode == "byteRx":     #Sends one byte from dataPacket and asks for more until packet is done
+                    y = self.receiveBytes()
+                    #print(f'Receive Bytes')
+                elif rxMode == "sampleRx":
+                    y = self.receiveSample()
+                    print(f'Receive Sample')
+
+                sampleRxStopMS = int(time.time() * 1000)
+                sampleRxTimeMS = sampleRxStopMS - sampleRxStartMS
                 print()
-                print(f'Start preocessData() thread for sample: {recvCount}' )
+                print(f'Sample receive time in ms: {sampleRxTimeMS}')
+
+                if y == -1:
+                    return -1
+                
+                #print(f'Start preocessData() thread for sample: {recvCount}' )
                 # if self.getTraining is False:  #while predicting make sure all threads are done before starting another
                 #     while threading.active_count() > 1:    #wait for the last threads to finish processing
                 #         print(f'threading.active_count(): {threading.active_count()}')
@@ -206,12 +293,9 @@ class GetData:
                 dataThread.start()
 
                 if self.getTraining:
-                    sampleRxStopMS = int(time.time() * 1000)
-                    sampleRxTimeMS = sampleRxStopMS - sampleRxStartMS
-                    print(f'Sample receive time in ms: {sampleRxTimeMS}')
-                    recvCount += 1
+                    recvCount += 1   #Increment index of samples received prep training once all packets have arrived
 
-                #Sample is received make a prediction    
+                #Prediction mode
                 else:       
                     if firstFive:   #wait for full packet before doing prediction
 
@@ -232,12 +316,12 @@ class GetData:
                         except:
                             print("predictThread doesn't exist yet")
 
-                        #Make a plot every 5 seconds
-                        plotTimerCheck = int(time.time() * 1000)
-                        if (plotTimerCheck - self.plotTimer) > 5000 and self.plotCounter < 20:  
-                            self.plotCounter += 1     
-                            self.plotAcc()   #take the packet now hot off the press
-                            self.plotTimer = int(time.time() * 1000)   #reset plotTimer
+                        # #Make a plot every 5 seconds
+                        # plotTimerCheck = int(time.time() * 1000)
+                        # if (plotTimerCheck - self.plotTimer) > 5000 and self.plotCounter < 20:  
+                        #     self.plotCounter += 1     
+                        #     self.plotAcc()   #take the packet now hot off the press
+                        #     self.plotTimer = int(time.time() * 1000)   #reset plotTimer
 
                         #print(f'Input to NN (rolled): {NNINput}')
                         print(f'Making Prediction...{recvCount}') 
@@ -252,23 +336,18 @@ class GetData:
                         
                     if recvCount == self.packetSize - 1:    #reset recvCount to 0 if a full packet is received
                         firstFive = 1                       #Enable first five so a prediction will be made on next pass
-                        recvCount = 0                       
+                        recvCount = 0     
                     else: 
                         recvCount += 1                      #Advance recvCount
-                    
-                    sampleRxStopMS = int(time.time() * 1000)
-                    sampleRxTimeMS = sampleRxStopMS - sampleRxStartMS
-                    print(f'Sample receive time in ms: {sampleRxTimeMS}')
     
                 #print(f'Completed Rx of sample: {recvCount}' )
                 #socketLoop(recvCount)
 
             #training data packet is ready
             if recvCount == self.packetSize and self.getTraining:                      # Once we've received 5 packets
-                dataThread.join()
                 while threading.active_count() > 1:    #wait for the last threads to finish processing
                     #print(f'threading.active_count(): {threading.active_count()}')
-                    pass
+                    dataThread.join()
                 
                 print(f'Packet Done')
                 packetStopMS = int(time.time() * 1000)
@@ -276,6 +355,7 @@ class GetData:
                 #print(f'packetStart: {packetStartMS}')
                 #print(f'packetStopMS: {packetStopMS}')
                 print(f'packet processing time in ms: {packetTimeMS}')
+                print()
                 # for thread in threading.enumerate(): 
                 #     print(thread.name)
                 #print()
@@ -290,7 +370,7 @@ class GetData:
                 metaDataTimeStartMs = int(time.time() * 1000)
                 #Append the data to the packet array
                 self.prepTraining()
-                self.plotAcc()
+                #self.plotAcc()
                 self.packetCount += 1
                 recvCount = 0    #Reset recvCount to get the next packet
                 metaDataTimeStopMs = int(time.time() * 1000)
@@ -305,8 +385,8 @@ class GetData:
 
         #scale the data to +-1
         for i in range(self.packetData.shape[1]):
-            self.packetData[0,i] = self.packetData[0,i] / 2048
-        #print(f'self.packetData.shape: {self.packetData.shape}')
+            self.packetData[0,i] = self.packetData[0,i] / 127
+        print(f'self.packetData.shape: {self.packetData.shape}')
         #Get ground truth labels
         packetTruth = np.zeros([1,], dtype=int)
         #print(f'packetTruth.shape: {packetTruth.shape}')
@@ -329,24 +409,24 @@ class GetData:
             #print(f'tmpArr from file: {tmpArr}')
             tmpArr = np.append(tmpArr,trainingData, axis=0)
             np.save(dataPath, tmpArr, allow_pickle=False)
-            #print(f'dataPacket shape (Binary): {tmpArr.shape}')
-            #print(f'dataPacket saved (Binary): {tmpArr}')
+            # print(f'dataPacket shape (Binary): {tmpArr.shape}')
+            # print(f'dataPacket saved (Binary): {tmpArr}')
             
         else: 
             np.save(dataPath, trainingData, allow_pickle=False)
-            #print(f'dataPacket shape (Binary): {trainingData.shape}')
-            #print(f'dataPacket saved (Binary): {trainingData}')
+            # print(f'dataPacket shape (Binary): {trainingData.shape}')
+            # print(f'dataPacket saved (Binary): {trainingData}')
 
         #Truth
         if os.path.exists(truthPath):
             tmpArr = np.load(truthPath,allow_pickle=False)
-            print(f'Binary truths from file: {tmpArr}')
+            #print(f'Binary truths from file: {tmpArr}')
             tmpArr = np.append(tmpArr,packetTruth)
             np.save(truthPath, tmpArr, allow_pickle=False)
-            print(f'packetTruth appended and saved (Binary): {tmpArr}')
+            #print(f'packetTruth appended and saved (Binary): {tmpArr}')
         else: 
             np.save(truthPath, packetTruth, allow_pickle=False)
-            print(f'packetTruth saved (Binary): {packetTruth}')
+            # print(f'packetTruth saved (Binary): {packetTruth}')
 
     def writetoCSV(self, trainingData, packetTruth):
         #Write data to .csv file (text) - human readable
@@ -365,12 +445,12 @@ class GetData:
             #print(f'tmpArr (CSV): {tmpArr}')
 
             np.savetxt(dataPath, tmpArr, fmt="%f", delimiter=",") 
-            #print(f'dataPacket appended and saved (CSV): {tmpArr}')
+            # print(f'dataPacket appended and saved (CSV): {tmpArr}')
         else: 
             #tmpArr = np.reshape(trainingData, (trainingData.shape[0] * 4, 4))   #Reshape to a 2-D array
             np.savetxt(dataPath, trainingData, fmt="%f", delimiter=",")
-            #print(f'dataPacket appended and saved (CSV): {trainingData}')
-            #print(f'dataPacket shape: {trainingData.shape}')
+            # print(f'dataPacket appended and saved (CSV): {trainingData}')
+            # print(f'dataPacket shape: {trainingData.shape}')
         
         #Truth - 1D Array of same length as data
         if os.path.exists(truthPath):

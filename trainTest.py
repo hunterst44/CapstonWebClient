@@ -11,11 +11,16 @@ labelPath0 = "test"
 
 pathList = [basePath + labelPath0]
 
+#Input parameters
+packetSize = 1
+numSensors = 2
+numClasses = 16
+
 def main():
 
 
   #Testing data
-  socketClient.createTrainingData(pathPreface=basePath, labelPath=labelPath0, packetLimit=2, label=0, packetSize=5, numSensors=2)
+  socketClient.createTrainingData(pathPreface=basePath, labelPath=labelPath0, packetLimit=20, label=0, packetSize=1, numSensors=2)
 
   #Train network with test data
   dataArr = np.load(basePath + "test.npy",allow_pickle=False)
@@ -26,6 +31,6 @@ def main():
   print(f'shape of data at basePath shape: {truthArr.shape}')
   print(f'data at basePath: {truthArr}')
 
-  NeuralNetwork.trainOrientation(basePath, pathList)
+  NeuralNetwork.trainOrientation(basePath, pathList, packetSize, numSensors, numClasses)
 
 if __name__ == "__main__": main()
