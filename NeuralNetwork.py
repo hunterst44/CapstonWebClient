@@ -1472,15 +1472,19 @@ def realTimePrediction(packetData, predictions, basePath):
     predictionTimeMS = predictionStopMS - predictionStartMs
 
 
-    print(f'prediction final: {predList[0]}') 
-
     print(f'Time to predict: {predictionTimeMS}')
+    print('*******************************************')
+    print(f'prediction final: {predList[0]}') 
+    print(f'prediction final: {predList[0]}') 
+    print(f'prediction final: {predList[0]}') 
+    print('*******************************************')
+    print()
 
     #print(f'packet after prediction: {packetData}')
 
     return predList
 
-def trainOrientation(basePath, pathList, packetSize, numSensors):
+def trainOrientation(basePath, pathList, packetSize, numSensors, numClasses):
     #Create Dataset
     #TODO: Create data and validation arrays
         # X Data is a randomized 1D array of features in groups of 15 (3 axis * 5 samples)
@@ -1520,7 +1524,7 @@ def trainOrientation(basePath, pathList, packetSize, numSensors):
         model.add(Layer_Dense(3*packetSize * numSensors,300, weight_regularizer_l2=5e-4, bias_regularizer_l2=5e-4))
         model.add(Activation_ReLu())
         model.add(Layer_Dropout(0.1))
-        model.add(Layer_Dense(300,13))
+        model.add(Layer_Dense(300,numClasses))
         model.add(Activation_Softmax())
         
         model.set(

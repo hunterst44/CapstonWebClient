@@ -22,7 +22,7 @@ import dill
 
 class GetData:
     
-    def __init__(self, *, host="192.168.100.144", port=80, packetSize=5, numSensors=4, pathPreface='data/data', labelPath="Test", label=0, getTraining=True, packetLimit=100):
+    def __init__(self, *, host="192.168.1.67", port=80, packetSize=5, numSensors=4, pathPreface='data/data', labelPath="Test", label=0, getTraining=True, packetLimit=100):
         self.host = host
         self.port = port
         self.packetSize = packetSize
@@ -49,6 +49,7 @@ class GetData:
 
         def formatData(binaryData, sensorIndex):
             #print(f'recvCount: {recvCount}')
+            print()
             #print(f'binaryData: {binaryData}')
             #Parse binary data and recombine into ints
             #X Axis
@@ -60,7 +61,7 @@ class GetData:
             XAccTuple = struct.unpack("=b", binaryData[0 + (sensorIndex * 3)])  ##MSB is second byte in axis RX; Just a nibble
             XAcc = XAccTuple[0]
             #XAcc = float(int(binaryData[0 + (sensorIndex * 3 * self.numSensors)]),0)
-            #print(f'XAcc Raw: {XAcc}')
+            print(f'XAcc Raw: {XAcc}')
             if self.getTraining is False:
                 self.packetData[0,(self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = XAcc / 127
             else:
@@ -69,7 +70,7 @@ class GetData:
             #Y Axis
             YAccTuple = struct.unpack("=b", binaryData[1 + (sensorIndex * 3)])
             YAcc = YAccTuple[0]
-            #print(f'YAcc Raw: {YAcc}')
+            print(f'YAcc Raw: {YAcc}')
             if self.getTraining is False:
                 self.packetData[0, 1 + (self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = YAcc / 127
             else:       
@@ -78,7 +79,7 @@ class GetData:
             #Z Axis
             ZAccTuple = struct.unpack("=b", binaryData[2 + (sensorIndex * 3)])
             ZAcc = ZAccTuple[0]
-            #print(f'ZAcc Raw: {ZAcc}')
+            print(f'ZAcc Raw: {ZAcc}')
             if self.getTraining is False:
                 self.packetData[0, 2 + (self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = ZAcc / 127
             else:
@@ -282,7 +283,7 @@ class GetData:
                 if y == -1:
                     return -1
                 
-                print(f'Start preocessData() thread for sample: {recvCount}' )
+                #print(f'Start preocessData() thread for sample: {recvCount}' )
                 # if self.getTraining is False:  #while predicting make sure all threads are done before starting another
                 #     while threading.active_count() > 1:    #wait for the last threads to finish processing
                 #         print(f'threading.active_count(): {threading.active_count()}')
@@ -315,12 +316,12 @@ class GetData:
                         except:
                             print("predictThread doesn't exist yet")
 
-                        #Make a plot every 5 seconds
-                        plotTimerCheck = int(time.time() * 1000)
-                        if (plotTimerCheck - self.plotTimer) > 5000 and self.plotCounter < 20:  
-                            self.plotCounter += 1     
-                            self.plotAcc()   #take the packet now hot off the press
-                            self.plotTimer = int(time.time() * 1000)   #reset plotTimer
+                        # #Make a plot every 5 seconds
+                        # plotTimerCheck = int(time.time() * 1000)
+                        # if (plotTimerCheck - self.plotTimer) > 5000 and self.plotCounter < 20:  
+                        #     self.plotCounter += 1     
+                        #     self.plotAcc()   #take the packet now hot off the press
+                        #     self.plotTimer = int(time.time() * 1000)   #reset plotTimer
 
                         #print(f'Input to NN (rolled): {NNINput}')
                         print(f'Making Prediction...{recvCount}') 
@@ -345,7 +346,7 @@ class GetData:
             #training data packet is ready
             if recvCount == self.packetSize and self.getTraining:                      # Once we've received 5 packets
                 while threading.active_count() > 1:    #wait for the last threads to finish processing
-                    print(f'threading.active_count(): {threading.active_count()}')
+                    #print(f'threading.active_count(): {threading.active_count()}')
                     dataThread.join()
                 
                 print(f'Packet Done')
@@ -369,7 +370,7 @@ class GetData:
                 metaDataTimeStartMs = int(time.time() * 1000)
                 #Append the data to the packet array
                 self.prepTraining()
-                self.plotAcc()
+                #self.plotAcc()
                 self.packetCount += 1
                 recvCount = 0    #Reset recvCount to get the next packet
                 metaDataTimeStopMs = int(time.time() * 1000)
@@ -385,7 +386,7 @@ class GetData:
         #scale the data to +-1
         for i in range(self.packetData.shape[1]):
             self.packetData[0,i] = self.packetData[0,i] / 127
-        #print(f'self.packetData.shape: {self.packetData.shape}')
+        print(f'self.packetData.shape: {self.packetData.shape}')
         #Get ground truth labels
         packetTruth = np.zeros([1,], dtype=int)
         #print(f'packetTruth.shape: {packetTruth.shape}')
@@ -408,13 +409,13 @@ class GetData:
             #print(f'tmpArr from file: {tmpArr}')
             tmpArr = np.append(tmpArr,trainingData, axis=0)
             np.save(dataPath, tmpArr, allow_pickle=False)
-            #print(f'dataPacket shape (Binary): {tmpArr.shape}')
-            #print(f'dataPacket saved (Binary): {tmpArr}')
+            # print(f'dataPacket shape (Binary): {tmpArr.shape}')
+            # print(f'dataPacket saved (Binary): {tmpArr}')
             
         else: 
             np.save(dataPath, trainingData, allow_pickle=False)
-            #print(f'dataPacket shape (Binary): {trainingData.shape}')
-            #print(f'dataPacket saved (Binary): {trainingData}')
+            # print(f'dataPacket shape (Binary): {trainingData.shape}')
+            # print(f'dataPacket saved (Binary): {trainingData}')
 
         #Truth
         if os.path.exists(truthPath):
@@ -425,7 +426,7 @@ class GetData:
             #print(f'packetTruth appended and saved (Binary): {tmpArr}')
         else: 
             np.save(truthPath, packetTruth, allow_pickle=False)
-            print(f'packetTruth saved (Binary): {packetTruth}')
+            # print(f'packetTruth saved (Binary): {packetTruth}')
 
     def writetoCSV(self, trainingData, packetTruth):
         #Write data to .csv file (text) - human readable
@@ -444,12 +445,12 @@ class GetData:
             #print(f'tmpArr (CSV): {tmpArr}')
 
             np.savetxt(dataPath, tmpArr, fmt="%f", delimiter=",") 
-            #print(f'dataPacket appended and saved (CSV): {tmpArr}')
+            # print(f'dataPacket appended and saved (CSV): {tmpArr}')
         else: 
             #tmpArr = np.reshape(trainingData, (trainingData.shape[0] * 4, 4))   #Reshape to a 2-D array
             np.savetxt(dataPath, trainingData, fmt="%f", delimiter=",")
-            #print(f'dataPacket appended and saved (CSV): {trainingData}')
-            #print(f'dataPacket shape: {trainingData.shape}')
+            # print(f'dataPacket appended and saved (CSV): {trainingData}')
+            # print(f'dataPacket shape: {trainingData.shape}')
         
         #Truth - 1D Array of same length as data
         if os.path.exists(truthPath):
