@@ -1414,9 +1414,10 @@ def train3Gestures(basePath):
     
     model.save(basePath + "model")
 
-def realTimePrediction(packetData, predictions, basePath):
+def realTimePrediction(packetData, basePath):
      #Create Dataset
     predictionStartMs = int(time.time() * 1000)
+    predictions = []
     model = Model.load(basePath + "model")
     #print(f'model: {model}')
     

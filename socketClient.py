@@ -22,7 +22,7 @@ import dill
 
 class GetData:
     
-    def __init__(self, *, host="192.168.1.67", port=80, packetSize=5, numSensors=4, pathPreface='data/data', labelPath="Test", label=0, getTraining=True, packetLimit=100):
+    def __init__(self, *, host="192.168.100.144", port=80, packetSize=5, numSensors=4, pathPreface='data/data', labelPath="Test", label=0, getTraining=True, packetLimit=100):
         self.host = host
         self.port = port
         self.packetSize = packetSize
@@ -325,13 +325,13 @@ class GetData:
 
                         #print(f'Input to NN (rolled): {NNINput}')
                         print(f'Making Prediction...{recvCount}') 
-                        predictThread = Thread(target=NeuralNetwork.realTimePrediction, args=(NNINput, self.predictions, self.pathPreface))
+                        predictThread = Thread(target=NeuralNetwork.realTimePrediction, args=(NNINput, self.pathPreface))
                         predictThread.start()
                         #self.predictions = NeuralNetwork.realTimePrediction(NnInput) 
 
                         # predictionStopMS = int(time.time() * 1000)
                         # predictionTimeMS = predictionStopMS - predictionStartMs
-                        # print(f'It\'s {self.predictions}') 
+                        #print(f'It\'s {self.predictions}') 
                         # print(f'Time to predict: {predictionTimeMS}')
                         
                     if recvCount == self.packetSize - 1:    #reset recvCount to 0 if a full packet is received
