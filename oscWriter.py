@@ -1,0 +1,104 @@
+import socketClient
+import NeuralNetwork
+import numpy as np
+import pythonosc
+import os.path
+import dill
+import socket
+import struct
+import time
+import threading
+from threading import Thread
+
+
+### Almost there! 
+### This module takes the gestures classes predicted by the neural network and associates them with OSC addresses and data.
+### Then it sends the data on to the VST to make sweet music.
+
+class OSCWriter:
+
+    def __init__(self, *, host="127.0.0.1", port="4000",predictions=[]):
+        self.host = host
+        self.port = port
+        self.predictions = predictions
+
+    def getPredictions(self, prediction):
+        # Called in socketClient after prediction has been made 
+        # Hands prediction data to the OSCWriter
+        self.predictions.append(prediction)
+        self.conductor()
+
+    def sendOSC(self, value, address):
+        OSCsock = socket.socket()
+        IPAddress = self.host + address
+        OSCsock.connect((IPAddress, self.port))
+        #print("Connected to server")
+        #try:
+        OSCsock.send(value);
+       
+        OSCsock.close()
+
+    ##TODO create makeAddress method
+
+    def conductor(self):
+        ##Conducts the process of gathering and sending data
+        #Add as many addresses as you need to get the effects you want
+        # Eventually I will write a address generator so you can create addresses and conditions        
+
+        #1. Define Addresses
+        address00 = self.Address(address="/address00", predictions=self.predictions, conditionType=0, conditionData=[0,10,127.0])
+        addressList = [address00]
+        
+        #2 Check conditions
+        address00.checkConditions()
+
+        #3 Send the data
+        for address in addressList:
+            if address.updateFlag:
+                OSCThread = Thread(target=self.sendOSC, args=(address.address, address.value,))
+                OSCThread.start()
+           
+
+    class Address:
+        def __init__(self, *, address="/", updateFlag=0, predictions=[], conditionType=0, conditionData=[], value=-1):
+            self.address = address
+            self.updateFlag = updateFlag
+            self.conditionType = conditionType 
+            ## 0 - checkHoldGesture(gesture, threshold) 
+            #       checks for a gesture (conditionData[0]) 
+            #       held for a threshold (conditionData[1])
+            #       writes conditionData[3] to self.value
+            self.conditionData = conditionData   ##
+            self.value = value
+            self.predictions = predictions
+
+        
+        def checkConditions(self):
+            ## Checks the updated predictions list for conditions on each address
+            ## Called once for each address in OSCWriter.conductor
+            match self.conditionType:
+
+                case 0:
+                    if self.checkHoldGesture(self.conditionData[0], self.conditionData[1]) == 0:
+                        self.value = self.conditionData[2]
+                        self.updateFlag = 1
+
+        ## Methods to check conditions
+
+        def checkHoldGesture(self, gesture, threshold):
+            ## conditionType = 0
+            #       checks for a gesture (conditionData[0]) 
+            #       held for a threshold (conditionData[1])
+            #       writes conditionData[3] to self.value
+            if self.value == self.conditionData[3]:
+                #No need to update if the value is already set
+                return - 1
+            lenPred = len(self.predictions)
+            for i in range(lenPred-threshold,lenPred):
+                if self.predictions[i] != gesture:
+                    return -1
+            return 0
+
+# def main():
+
+# if __name__ == "__main__": main()

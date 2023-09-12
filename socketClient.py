@@ -18,7 +18,8 @@ from threading import Thread
 import matplotlib.pyplot as plt 
 import os.path 
 import NeuralNetwork
-import dill         
+import dill  
+import oscWriter       
 
 class GetData:
     
@@ -311,10 +312,10 @@ class GetData:
 
 
                         NNINput = np.roll(self.packetData, (3 * self.numSensors)*(self.packetSize - recvCount - 1))  #roll the packetData circular array to put them in the right order
-                        try:
-                            predictThread.join()   #Ensure last prediction is done before proceeding
-                        except:
-                            print("predictThread doesn't exist yet")
+                        # try:
+                        #     predictThread.join()   #Ensure last prediction is done before proceeding
+                        # except:
+                        #     print("predictThread doesn't exist yet")
 
                         # #Make a plot every 5 seconds
                         # plotTimerCheck = int(time.time() * 1000)
@@ -325,8 +326,12 @@ class GetData:
 
                         #print(f'Input to NN (rolled): {NNINput}')
                         print(f'Making Prediction...{recvCount}') 
-                        predictThread = Thread(target=NeuralNetwork.realTimePrediction, args=(NNINput, self.pathPreface))
-                        predictThread.start()
+                        prediction = NeuralNetwork.realTimePrediction(NNINput, self.pathPreface)
+                        oscWriter = oscWriter.OSCWriter
+                        oscWriter.getPredictions(prediction)
+
+                        # predictThread = Thread(target=NeuralNetwork.realTimePrediction, args=(NNINput, self.pathPreface))
+                        # predictThread.start()
                         #self.predictions = NeuralNetwork.realTimePrediction(NnInput) 
 
                         # predictionStopMS = int(time.time() * 1000)
