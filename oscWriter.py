@@ -22,12 +22,14 @@ class OSCWriter:
         self.port = port
         self.predictions = predictions
         self.ToFEnable = 0
+        self.memorySize = 10000 #How many samples to save before purging
 
     def getPredictions(self, prediction):
         # Called in socketClient after prediction has been made 
         # Hands prediction data to the OSCWriter
         self.predictions.append(prediction)
         self.conductor()
+        self.garbageMan()      #Reset predictions when it goes above "self.memorySize"
 
     def sendOSC(self, value, address):
         OSCsock = socket.socket()
@@ -38,6 +40,16 @@ class OSCWriter:
         OSCsock.send(value);
        
         OSCsock.close()
+
+    def garbageMan(self):
+        length = len(self.predictions)
+        if length > self.memorySize:
+            newPredict = []
+            for i in range(length - 50, length):
+                newPredict[i] = self.predictions[i]
+            
+            self.predictions = newPredict
+            #Do some kind of logging here...
 
     ##TODO create makeAddress method
 
