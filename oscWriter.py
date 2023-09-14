@@ -67,6 +67,10 @@ class OSCWriter:
                 #4 Send the data
                 OSCThread = Thread(target=self.sendOSC, args=(address.address, address.value,))
                 OSCThread.start()
+        
+        while threading.active_count() > 1:    #wait for the last threads to finish processing
+            print(f'threading.active_count(): {threading.active_count()}')
+            OSCThread.join()
            
 
     class Address:
