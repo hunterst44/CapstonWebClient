@@ -21,6 +21,7 @@ class OSCWriter:
         self.host = host
         self.port = port
         self.predictions = predictions
+        self.ToFEnable = 0
 
     def getPredictions(self, prediction):
         # Called in socketClient after prediction has been made 
@@ -47,20 +48,29 @@ class OSCWriter:
 
         #1. Define Addresses
         address00 = self.Address(address="/address00", predictions=self.predictions, conditionType=0, conditionData=[0,10,127.0])
-        addressList = [address00]
         
-        #2 Check conditions
-        address00.checkConditions()
-
-        #3 Send the data
+        #2 Create Address list
+        addressList = [address00]
+   
         for address in addressList:
+            #2 Check conditions
+            address.checkConditions()
+            
             if address.updateFlag:
+
+                #3 Toggle ToFEnable
+                if address.ToFEnable:
+                    self.ToFEnable = 1
+                else:
+                    self.ToFEnable = 0
+
+                #4 Send the data
                 OSCThread = Thread(target=self.sendOSC, args=(address.address, address.value,))
                 OSCThread.start()
            
 
     class Address:
-        def __init__(self, *, address="/", updateFlag=0, predictions=[], conditionType=0, conditionData=[], value=-1):
+        def __init__(self, *, address="/", ToFEnable=0, updateFlag=0, predictions=[], conditionType=0, conditionData=[], value=-1):
             self.address = address
             self.updateFlag = updateFlag
             self.conditionType = conditionType 
@@ -71,6 +81,7 @@ class OSCWriter:
             self.conditionData = conditionData   ##
             self.value = value
             self.predictions = predictions
+            self.ToFEnable = ToFEnable #IF 1 TOF sensor is enabled when address conditions are met
 
         
         def checkConditions(self):
@@ -82,6 +93,8 @@ class OSCWriter:
                     if self.checkHoldGesture(self.conditionData[0], self.conditionData[1]) == 0:
                         self.value = self.conditionData[2]
                         self.updateFlag = 1
+
+            return self.ToFEnable
 
         ## Methods to check conditions
 

@@ -40,6 +40,11 @@ class GetData:
         self.predictions = []
         self.plotTimer = int(time.time() * 1000)   #Used to make timed plots of input data for plots
         self.plotCounter = 0 #counts how many plots have been made
+        self.dataTx = struct.pack("=i", 255)     #Used to determine what data packet to get from the ESP32 (ie. time of flight data or no) (255 [OxFF] is no ToF, 15 [0x0F] is yes ToF)
+        self.extraRxByte = 0   #Use to add to the socket RX index to collect the ToF byte when it exists
+        self.ToFByte = -1 #Holds the ToF sensor data value
+        self.y = []
+        self.dataGot = 0   #data received flag
 
     def processData(self, binaryData, recvCount):
         # print(f'processData recvCount(): {recvCount}')
@@ -86,7 +91,13 @@ class GetData:
             else:
                 self.packetData[0, 2 + (self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = ZAcc
 
-
+            # TOF sensor
+            if self.dataTx:
+                ToFTuple = struct.unpack("=b", binaryData[2 + (self.numSensors * 3) + 1])   #ToF data is the last byte
+                self.ToFByte = ToFTuple[0]
+            else:
+                #reset ToFByte
+                self.ToFByte = -1
 
             # XAcc = struct.unpack("=b", binaryData[1 + (sensorIndex * 3 * self.numSensors)])  ##MSB is second byte in axis RX; Just a nibble
             # #print(f'XAcc Raw: {XAcc}')
@@ -142,40 +153,39 @@ class GetData:
         #         self.packetData[0,i] = self.packetData[0,i] / 2048
         #         print(f'packetData[0, {i}] (scaled): {self.packetData[0,i]}')
 
-    def receiveSample(self):
-        #Signals the server and then receives a whole sample of data in one transmission (number of sensors * number of bytes/sensor)
-        #This one should be faster than one byte transmission as it reduces the client TX by the number of bytes in a sample
-        sock = socket.socket()
-        sock.connect((self.host, self.port))
-        #print("Connected to server")
-        dataTx = struct.pack("=i", 255)
-        #try:
-        sock.send(dataTx);
-        y = []
-        a = 0
-        errorCount = 0
-        sampleRxStartMS = int(time.time() * 1000)
-        try:
-            y.append(sock.recv(self.packetSize * self.numSensors * 3))
-            #print(f'Received 1')
-        except ConnectionError:
-            print(f"Unable to reach client with socket: Retrying")
-            #Close and reopen the connection
-            if errorCount < 10:      #If you get ten connection errors in a row close and reopen the socket
-                #Close and reopen the connection
-                sock.close()
-                sock = socket.socket()
-                sock.connect((self.host, self.port))
-                a -= 1     #Ask for a resend (decrement data index)
-                errorCount += 1
-                sock.send(dataTx);
-            else:
-                print(f'Fatal Error: SocketBroken')
-                return -1
+    # def receiveSample(self):
+    #     #Signals the server and then receives a whole sample of data in one transmission (number of sensors * number of bytes/sensor)
+    #     #This one should be faster than one byte transmission as it reduces the client TX by the number of bytes in a sample
+    #     sock = socket.socket()
+    #     sock.connect((self.host, self.port))
+    #     #print("Connected to server")
+    #     #try:
+    #     sock.send(self.dataTx);
+    #     y = []
+    #     a = 0
+    #     errorCount = 0
+    #     sampleRxStartMS = int(time.time() * 1000)
+    #     try:
+    #         y.append(sock.recv(self.packetSize * self.numSensors * 3))
+    #         #print(f'Received 1')
+    #     except ConnectionError:
+    #         print(f"Unable to reach client with socket: Retrying")
+    #         #Close and reopen the connection
+    #         if errorCount < 10:      #If you get ten connection errors in a row close and reopen the socket
+    #             #Close and reopen the connection
+    #             sock.close()
+    #             sock = socket.socket()
+    #             sock.connect((self.host, self.port))
+    #             a -= 1     #Ask for a resend (decrement data index)
+    #             errorCount += 1
+    #             sock.send(self.dataTx);
+    #         else:
+    #             print(f'Fatal Error: SocketBroken')
+    #             return -1
        
-        sock.close()
+    #     sock.close()
 
-        return y
+    #     return y
     
     def receiveBytes(self):
         #print(f'receiveBytes(self)')
@@ -183,26 +193,25 @@ class GetData:
         sock = socket.socket()
         sock.connect((self.host, self.port))
         #print("Connected to server")
-        dataTx = struct.pack("=i", 255)
         try:
-            sock.send(dataTx)
+            sock.send(self.dataTx)
             print("Sent Data")
         except:
            sock.connect((self.host, self.port))
            #print("Socket Reconnected")
-           sock.send(255);
+           sock.send(self.dataTx)
         # print(f'sockname: {sock.getsockname()}')
         # print(f'sockpeer: {sock.getpeername()}')
-        y = []
+        #y = []
         #time.sleep(0.01)
         #y = sock.recv(18)
         a = 0
         errorCount = 0
         sampleRxStartMS = int(time.time() * 1000)
-        while a < (self.numSensors * 3):                #iterate through the number of sensors * the number of bytes per sample
+        while a < ((self.numSensors * 3) + self.extraRxByte):                #iterate through the number of sensors * the number of bytes per sample
             #print(f'while loop a')
             try:
-                y.append(sock.recv(1))
+                self.y.append(sock.recv(1))
                 #print(f'Received 1')
             except ConnectionError:
                 print(f"Unable to reach client with socket: Retrying")
@@ -214,17 +223,18 @@ class GetData:
                     sock.connect((self.host, self.port))
                     a -= 1     #Ask for a resend (decrement data index)
                     errorCount += 1
-                    sock.send(dataTx);
+                    sock.send(self.dataTx)
                 else:
                     print(f'Fatal Error: SocketBroken')
                     return -1
             a += 1 
         sock.close()
-        return y
+        self.dataGot = 1
+        return self.y
     
     #print(f'Sample Received - One byte')
 
-    def socketLoop(self, recvCount, rxMode="byteRx"): #recvCount counts samples in a packet in training mode; in prediction mode it is the index for the circular buffer
+    def socketLoop(self, recvCount): #recvCount counts samples in a packet in training mode; in prediction mode it is the index for the circular buffer
 
         packetStartMS = 0
         firstFive = 0 #flip to one after first five sample are in to start predictions
@@ -269,20 +279,18 @@ class GetData:
             #Sends one byte from dataPacket and asks for more
             while recvCount < self.packetSize:
                 sampleRxStartMS = int(time.time() * 1000)
-                if rxMode == "byteRx":     #Sends one byte from dataPacket and asks for more until packet is done
-                    y = self.receiveBytes()
-                    #print(f'Receive Bytes')
-                elif rxMode == "sampleRx":
-                    y = self.receiveSample()
-                    print(f'Receive Sample')
+                dataThread = Thread(target=self.receiveBytes)
+                dataThread.start()
+                #y = self.receiveBytes()
+                #print(f'Receive Bytes')
 
                 sampleRxStopMS = int(time.time() * 1000)
                 sampleRxTimeMS = sampleRxStopMS - sampleRxStartMS
                 print()
                 print(f'Sample receive time in ms: {sampleRxTimeMS}')
 
-                if y == -1:
-                    return -1
+                while self.dataGot == 0:
+                    dataThread.join()
                 
                 #print(f'Start preocessData() thread for sample: {recvCount}' )
                 # if self.getTraining is False:  #while predicting make sure all threads are done before starting another
@@ -290,8 +298,10 @@ class GetData:
                 #         print(f'threading.active_count(): {threading.active_count()}')
                 #         pass
                 
-                dataThread = Thread(target=self.processData, args=(y, recvCount,))
-                dataThread.start()
+                self.processData(self.y, recvCount)
+
+                # dataThread = Thread(target=self.processData, args=(y, recvCount,))
+                # dataThread.start()
 
                 if self.getTraining:
                     recvCount += 1   #Increment index of samples received prep training once all packets have arrived
@@ -300,7 +310,7 @@ class GetData:
                 else:       
                     if firstFive:   #wait for full packet before doing prediction
 
-                        dataThread.join()    #wait for the data to be proccessed in the other thread
+                        #dataThread.join()    #wait for the data to be proccessed in the other thread
                         
                         #predictionStartMs = int(time.time() * 1000)
                         
@@ -327,8 +337,15 @@ class GetData:
                         #print(f'Input to NN (rolled): {NNINput}')
                         print(f'Making Prediction...{recvCount}') 
                         prediction = NeuralNetwork.realTimePrediction(NNINput, self.pathPreface)
-                        oscWriter = oscWriter.OSCWriter
+                        oscWriter = oscWriter.OSCWriter 
                         oscWriter.getPredictions(prediction)
+                        if oscWriter.TofEnable:
+                            self.dataTx = struct.pack("=i", 15)   #Enable ToF sensor
+                            self.extraRxByte = 1
+                        else:
+                           self.dataTx = struct.pack("=i", 255)   #Disable ToF sensor 
+                           self.extraRxByte = 0
+                        self.dataGot = 0   #Reset the dataGot flag for the next sample
 
                         # predictThread = Thread(target=NeuralNetwork.realTimePrediction, args=(NNINput, self.pathPreface))
                         # predictThread.start()
@@ -350,9 +367,9 @@ class GetData:
 
             #training data packet is ready
             if recvCount == self.packetSize and self.getTraining:                      # Once we've received 5 packets
-                while threading.active_count() > 1:    #wait for the last threads to finish processing
-                    #print(f'threading.active_count(): {threading.active_count()}')
-                    dataThread.join()
+                # while threading.active_count() > 1:    #wait for the last threads to finish processing
+                #     #print(f'threading.active_count(): {threading.active_count()}')
+                #     dataThread.join()
                 
                 print(f'Packet Done')
                 packetStopMS = int(time.time() * 1000)
