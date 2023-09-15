@@ -32,14 +32,24 @@ class OSCWriter:
         self.garbageMan()      #Reset predictions when it goes above "self.memorySize"
 
     def sendOSC(self, value, address):
-        OSCsock = socket.socket()
-        IPAddress = self.host + address
-        OSCsock.connect((IPAddress, self.port))
-        #print("Connected to server")
-        #try:
-        OSCsock.send(value);
+        print("sendOSC")
+        print(f"value: {value}")
+        print(f"address: {address}")
+        print(f"self.host: {self.host}")
+        print(f"self.host: {type(self.host)}")
+        print(f"self.host: {self.port}")
+        print(f"self.host: {type(self.port)}")
+        # OSCsock = socket.socket()
+        OscAddress = self.host + address
+        #OSCsock.connect((OscAddress, self.port))
+        print("Connected to server")
+        print(f"Address: {OscAddress}")
+        print(f"Value: {value}")
+
+        # #try:
+        # OSCsock.send(value);
        
-        OSCsock.close()
+        # OSCsock.close()
 
     def garbageMan(self):
         length = len(self.predictions)
@@ -73,11 +83,9 @@ class OSCWriter:
                 #3 Toggle ToFEnable
                 if address.ToFEnable:
                     self.ToFEnable = 1
-                else:
-                    self.ToFEnable = 0
 
                 #4 Send the data
-                OSCThread = Thread(target=self.sendOSC, args=(address.address, address.value,))
+                OSCThread = Thread(target=self.sendOSC, args=(address.value, address.address,))
                 OSCThread.start()
         
         while threading.active_count() > 1:    #wait for the last threads to finish processing
@@ -115,17 +123,29 @@ class OSCWriter:
         ## Methods to check conditions
 
         def checkHoldGesture(self, gesture, threshold):
+            print("checkHoldGesture")
+            print(f"gesture: {gesture}")
+            print(f"Value: {threshold}")
+            print(f"self.predictions: {self.predictions}")
             ## conditionType = 0
             #       checks for a gesture (conditionData[0]) 
             #       held for a threshold (conditionData[1])
             #       writes conditionData[3] to self.value
-            if self.value == self.conditionData[3]:
+            if self.value == self.conditionData[2]:
                 #No need to update if the value is already set
                 return - 1
             lenPred = len(self.predictions)
-            for i in range(lenPred-threshold,lenPred):
+            print(f"Predictions Length: {lenPred}")
+            if lenPred < threshold:
+                startIdx = 0
+            else:
+                startIdx = lenPred-threshold
+
+            for i in range(startIdx,lenPred):
+                print(f"self.predictions[i]: {self.predictions[i]}")
                 if self.predictions[i] != gesture:
                     return -1
+            self.ToFEnable = 1    
             return 0
 
 # def main():

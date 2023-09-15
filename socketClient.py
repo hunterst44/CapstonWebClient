@@ -23,7 +23,7 @@ import oscWriter
 
 class GetData:
     
-    def __init__(self, *, host="192.168.100.144", port=80, packetSize=5, numSensors=4, pathPreface='data/data', labelPath="Test", label=0, getTraining=True, packetLimit=100):
+    def __init__(self, *, host="192.168.1.67", port=80, packetSize=5, numSensors=4, pathPreface='data/data', labelPath="Test", label=0, getTraining=True, packetLimit=100):
         self.host = host
         self.port = port
         self.packetSize = packetSize
@@ -47,22 +47,21 @@ class GetData:
         self.dataGot = 0   #data received flag
 
     def processData(self, binaryData, recvCount):
-        # print(f'processData recvCount(): {recvCount}')
-        # print(f'binaryData: {binaryData}')
+        print(f'processData()')
+        print(f'binaryData: {binaryData}')
 
         #packetStartMS = int(time() * 1000)
         #global processCount
 
         def formatData(binaryData, sensorIndex):
             #print(f'recvCount: {recvCount}')
-            print()
+            #print()
             #print(f'binaryData: {binaryData}')
             #Parse binary data and recombine into ints
             #X Axis
 
             # print(f'sensor: {sensorIndex}')
             # print(f'XIndex: {0 + (sensorIndex * 3 * self.numSensors)}')
-
 
             XAccTuple = struct.unpack("=b", binaryData[0 + (sensorIndex * 3)])  ##MSB is second byte in axis RX; Just a nibble
             XAcc = XAccTuple[0]
@@ -92,7 +91,7 @@ class GetData:
                 self.packetData[0, 2 + (self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = ZAcc
 
             # TOF sensor
-            if self.dataTx:
+            if self.dataTx == 0x0F:
                 ToFTuple = struct.unpack("=b", binaryData[2 + (self.numSensors * 3) + 1])   #ToF data is the last byte
                 self.ToFByte = ToFTuple[0]
             else:
@@ -190,9 +189,10 @@ class GetData:
     def receiveBytes(self):
         #print(f'receiveBytes(self)')
         #Signals the server then receives a byte from the sample
+        
         sock = socket.socket()
         sock.connect((self.host, self.port))
-        #print("Connected to server")
+        print("Connected to server")
         try:
             sock.send(self.dataTx)
             print("Sent Data")
@@ -230,6 +230,7 @@ class GetData:
             a += 1 
         sock.close()
         self.dataGot = 1
+        print(f"self.y: {self.y}")
         return self.y
     
     #print(f'Sample Received - One byte')
@@ -284,13 +285,16 @@ class GetData:
                 #y = self.receiveBytes()
                 #print(f'Receive Bytes')
 
+                while threading.active_count() > 1:
+                    print(f'threading.active_count(): {threading.active_count()}')
+                    dataThread.join()
+
                 sampleRxStopMS = int(time.time() * 1000)
                 sampleRxTimeMS = sampleRxStopMS - sampleRxStartMS
                 print()
                 print(f'Sample receive time in ms: {sampleRxTimeMS}')
 
-                while self.dataGot == 0:
-                    dataThread.join()
+                print(f'self.y loop: {self.y}')
                 
                 #print(f'Start preocessData() thread for sample: {recvCount}' )
                 # if self.getTraining is False:  #while predicting make sure all threads are done before starting another
@@ -299,6 +303,7 @@ class GetData:
                 #         pass
                 
                 self.processData(self.y, recvCount)
+                self.y = []  #Reset y so that it doesn't get too full...
 
                 # dataThread = Thread(target=self.processData, args=(y, recvCount,))
                 # dataThread.start()
@@ -335,14 +340,19 @@ class GetData:
                         #     self.plotTimer = int(time.time() * 1000)   #reset plotTimer
 
                         #print(f'Input to NN (rolled): {NNINput}')
-                        print(f'Making Prediction...{recvCount}') 
+                        print(f'Making Prediction...') 
                         prediction = NeuralNetwork.realTimePrediction(NNINput, self.pathPreface)
-                        oscWriter = oscWriter.OSCWriter 
-                        oscWriter.getPredictions(prediction)
-                        if oscWriter.TofEnable:
+                        print(f'prediction: {prediction}')
+
+                        print(f'Converting gesture to OSC...') 
+                        writer = oscWriter.OSCWriter() 
+                        writer.getPredictions(prediction[0])
+                        if writer.ToFEnable:
+                            print(f'Enable Time of Flight Snesor...') 
                             self.dataTx = struct.pack("=i", 15)   #Enable ToF sensor
                             self.extraRxByte = 1
                         else:
+                           print(f'Disable Time of Flight Sensor...') 
                            self.dataTx = struct.pack("=i", 255)   #Disable ToF sensor 
                            self.extraRxByte = 0
                         self.dataGot = 0   #Reset the dataGot flag for the next sample
