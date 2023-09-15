@@ -145,7 +145,7 @@ class OSCWriter:
                 print(f"self.predictions[i]: {self.predictions[i]}")
                 if self.predictions[i] != gesture:
                     return -1
-            self.ToFEnable = 1    
+            #self.ToFEnable = 1    
             return 0
 
 # def main():
