@@ -90,10 +90,12 @@ class GetData:
             else:
                 self.packetData[0, 2 + (self.numSensors * 3 * recvCount) + (3 * sensorIndex)] = ZAcc
 
+            print(f"self.dataTx: {self.dataTx}")
             # TOF sensor
-            if self.dataTx == 0x0F:
+            if self.dataTx == 15:
                 ToFTuple = struct.unpack("=b", binaryData[2 + (self.numSensors * 3) + 1])   #ToF data is the last byte
                 self.ToFByte = ToFTuple[0]
+                print(f"self.ToFByte: {self.ToFByte}")
             else:
                 #reset ToFByte
                 self.ToFByte = -1

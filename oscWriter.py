@@ -33,18 +33,19 @@ class OSCWriter:
 
     def sendOSC(self, value, address):
         print("sendOSC")
-        print(f"value: {value}")
-        print(f"address: {address}")
-        print(f"self.host: {self.host}")
-        print(f"self.host: {type(self.host)}")
-        print(f"self.host: {self.port}")
-        print(f"self.host: {type(self.port)}")
+        # print(f"value: {value}")
+        # print(f"address: {address}")
+        # print(f"self.host: {self.host}")
+        # print(f"self.host: {type(self.host)}")
+        # print(f"self.host: {self.port}")
+        # print(f"self.host: {type(self.port)}")
         # OSCsock = socket.socket()
-        OscAddress = self.host + address
-        #OSCsock.connect((OscAddress, self.port))
-        print("Connected to server")
-        print(f"Address: {OscAddress}")
-        print(f"Value: {value}")
+        # OscAddress = self.host + address
+        # #OSCsock.connect((OscAddress, self.port))
+        # print("Connected to server")
+        # print(f"Address: {OscAddress}")
+        # print(f"Value: {value}")
+        print()
 
         # #try:
         # OSCsock.send(value);
@@ -89,7 +90,7 @@ class OSCWriter:
                 OSCThread.start()
         
         while threading.active_count() > 1:    #wait for the last threads to finish processing
-            print(f'threading.active_count(): {threading.active_count()}')
+            #print(f'threading.active_count(): {threading.active_count()}')
             OSCThread.join()
            
 
@@ -123,10 +124,10 @@ class OSCWriter:
         ## Methods to check conditions
 
         def checkHoldGesture(self, gesture, threshold):
-            print("checkHoldGesture")
-            print(f"gesture: {gesture}")
-            print(f"Value: {threshold}")
-            print(f"self.predictions: {self.predictions}")
+            # print("checkHoldGesture")
+            # print(f"gesture: {gesture}")
+            # print(f"Value: {threshold}")
+            # print(f"self.predictions: {self.predictions}")
             ## conditionType = 0
             #       checks for a gesture (conditionData[0]) 
             #       held for a threshold (conditionData[1])
@@ -135,14 +136,14 @@ class OSCWriter:
                 #No need to update if the value is already set
                 return - 1
             lenPred = len(self.predictions)
-            print(f"Predictions Length: {lenPred}")
+            #print(f"Predictions Length: {lenPred}")
             if lenPred < threshold:
                 startIdx = 0
             else:
                 startIdx = lenPred-threshold
 
             for i in range(startIdx,lenPred):
-                print(f"self.predictions[i]: {self.predictions[i]}")
+                #print(f"self.predictions[i]: {self.predictions[i]}")
                 if self.predictions[i] != gesture:
                     return -1
             self.ToFEnable = 1    
