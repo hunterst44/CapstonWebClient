@@ -23,7 +23,7 @@ import oscWriter
 
 class GetData:
     
-    def __init__(self, *, host="192.168.100.144", port=80, packetSize=5, numSensors=4, pathPreface='data/data', labelPath="Test", label=0, getTraining=True, packetLimit=100):
+    def __init__(self, *, host="192.168.1.64", port=80, packetSize=5, numSensors=4, pathPreface='data/data', labelPath="Test", label=0, getTraining=True, packetLimit=100):
         self.host = host
         self.port = port
         self.packetSize = packetSize
