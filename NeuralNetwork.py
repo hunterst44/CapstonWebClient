@@ -1479,7 +1479,6 @@ def realTimePrediction(packetData, basePath):
     print(f'prediction final: {predList[0]}') 
     print(f'prediction final: {predList[0]}') 
     print('*******************************************')
-    print()
 
     #print(f'packet after prediction: {packetData}')
 

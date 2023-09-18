@@ -45,7 +45,7 @@ class OSCWriter:
         # print("Connected to server")
         # print(f"Address: {OscAddress}")
         # print(f"Value: {value}")
-        print()
+        #print()
 
         # #try:
         # OSCsock.send(value);
@@ -70,7 +70,7 @@ class OSCWriter:
         # Eventually I will write a address generator so you can create addresses and conditions        
 
         #1. Define Addresses
-        address00 = self.Address(address="/address00", predictions=self.predictions, conditionType=0, conditionData=[0,10,127.0])
+        address00 = self.Address(address="/address00", predictions=self.predictions, conditionType=0, conditionData=[0,3,127.0])
         
         #2 Create Address list
         addressList = [address00]
