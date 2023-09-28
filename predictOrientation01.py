@@ -2,6 +2,7 @@ import socketClient
 import NeuralNetwork
 import numpy as np
 
+
 def main():
 ## Receives data from 2 sensors and does NN prediction on the data in real time.
 
