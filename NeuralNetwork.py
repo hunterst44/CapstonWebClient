@@ -1153,9 +1153,9 @@ def prediction():
     print(predictions)
 
 def getAccDataBinary(dataPathList, truthPathList, packetSize, numSensors):
-    # print()
+    print()
     # print("**######################################**")
-    # print("Binary Data")
+    print("getAccDataBinary")
     dataArr = np.empty([1, 3 * packetSize * numSensors])
     dataArr[0,0] = 99.
     truthArr = np.empty([1,])
@@ -1163,7 +1163,7 @@ def getAccDataBinary(dataPathList, truthPathList, packetSize, numSensors):
 
     for path in dataPathList:
         # print("****")
-        # print(path)
+        print(f'data path: {path}')
         if os.path.exists(path):
             print("****")
             print(path)
@@ -1172,11 +1172,12 @@ def getAccDataBinary(dataPathList, truthPathList, packetSize, numSensors):
             if dataArr[0,0] == 99.:
                 dataArr = tmpArr
             else:
-                #print(f'tmpArr shape: {tmpArr.shape}')
-                #print(f'tmpArr from file: {tmpArr}')
+                print(f'tmpArr shape: {tmpArr.shape}')
+                print(f'tmpArr from file: {tmpArr}')
                 dataArr = np.append(dataArr, tmpArr,axis=0)
 
     for path in truthPathList:
+        print(f'Truth Patch in NN: {path}')
         if os.path.exists(path):
             print("****")
             print(path)
@@ -1185,8 +1186,8 @@ def getAccDataBinary(dataPathList, truthPathList, packetSize, numSensors):
             if truthArr[0] == 99:
                 truthArr = tmpArr
             else:
-                #print(f'tmpArr shape: {tmpArr.shape}')
-                #print(f'tmpArr: {tmpArr}')
+                print(f'tmpArr shape: {tmpArr.shape}')
+                print(f'tmpArr: {tmpArr}')
                 truthArr = np.append(truthArr, tmpArr,axis=0)
 
     #Get random index
@@ -1492,27 +1493,32 @@ def trainOrientation(basePath, pathList, packetSize, numSensors, numClasses):
     #X,y = spiral_data(samples=1000, classes=3)
     #X_test, y_test = spiral_data(samples=100, classes=3)
 
+    print()
+    print('trainOrientation()')
+    print(f'basePath: {basePath}')
+
     dataPathList = pathList.copy()
     truthPathList = pathList.copy()
     for i in range(len(dataPathList)):
-        dataPathList[i] = dataPathList[i] + ".npy"
+        dataPathList[i] = basePath + dataPathList[i] + ".npy"
 
     print(f'data Paths: {dataPathList}')  
     
     for i in range(len(truthPathList)):
-        truthPathList[i] = truthPathList[i] + "_truth.npy"
+        truthPathList[i] = basePath + truthPathList[i] + "_truth.npy"
 
     print(f'truth Paths: {truthPathList}')  
     
     X,y = getAccDataBinary(dataPathList, truthPathList, packetSize=packetSize, numSensors=numSensors)
 
+    print()
     print(f'truths array for model: {y}') 
     #y = y.reshape(y.shape[0])  #reshape truth data only if truth data is formatted as 2-D
     EPOCHS = 500
     BATCH_SIZE = 1
     
-    if os.path.exists(basePath + "model"):     #Use the existing model if it exists
-        model = Model.load(basePath + "model")
+    if os.path.exists(basePath + "model.models"):     #Use the existing model if it exists
+        model = Model.load(basePath + "model.models")
 
         model.finalize()
 
@@ -1541,10 +1547,31 @@ def trainOrientation(basePath, pathList, packetSize, numSensors, numClasses):
     #parameters = model.get_parameters()
     #print(f'parameters: {parameters}')
     
-    model.save(basePath + "model")
+    model.save(basePath + "model.model")
 
+def createTestModel():
+    model = Model()   #Instanstiate the model
+        
+    #Add layers
+    #Input is 15 features (3 Axis * 5 samples)
+    model.add(Layer_Dense(6,300, weight_regularizer_l2=5e-4, bias_regularizer_l2=5e-4))
+    model.add(Activation_ReLu())
+    model.add(Layer_Dropout(0.1))
+    model.add(Layer_Dense(300,1))
+    model.add(Activation_Softmax())
+    
+    model.set(
+        loss=Loss_CategoricalCrossEntropy(),
+        optimizer=Optimizer_Adam(learning_rate=0.05, decay=5e-5),
+        accuracy=Accuracy_Categorical()
+    )
+    
+    model.finalize()
+    model.save('data/test/model1')
 
 # def main():
+#     createTestModel()
+
 #     #RegressionNoValid()
 #     #binaryLogisticValid()
 #     #CategoricalCrossEntropy()
@@ -1563,4 +1590,4 @@ def trainOrientation(basePath, pathList, packetSize, numSensors, numClasses):
 
 #     #convertPickletoDill()
 
-# if __name__ == "__main__": main()
+#if __name__ == "__main__": main()

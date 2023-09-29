@@ -23,7 +23,7 @@ import oscWriter
 
 class GetData:
     
-    def __init__(self, *, host="192.168.100.144", port=80, packetSize=5, numSensors=4, pathPreface='data/data', labelPath="Test", label=0, getTraining=True, packetLimit=100):
+    def __init__(self, *, host="192.168.100.126", port=80, packetSize=1, numSensors=4, pathPreface='data/data', labelPath="Test", label=0, getTraining=True):
         self.host = host
         self.port = port
         self.packetSize = packetSize
@@ -36,7 +36,7 @@ class GetData:
         self.labelPath = labelPath
         self.label = label
         self.getTraining = getTraining
-        self.packetLimit = packetLimit
+        #self.packetLimit = packetLimit
         self.predictions = []
         self.plotTimer = int(time.time() * 1000)   #Used to make timed plots of input data for plots
         self.plotCounter = 0 #counts how many plots have been made
@@ -47,7 +47,8 @@ class GetData:
         self.dataGot = 0   #data received flag
 
     def processData(self, binaryData):
-        #print(f'processData()')
+        print()
+        print(f'processData()')
         print(f'binaryData: {binaryData}')
 
         #packetStartMS = int(time() * 1000)
@@ -104,7 +105,8 @@ class GetData:
             formatData(binaryData, i)
     
     def receiveBytes(self):
-        #print(f'receiveBytes(self)')
+        print()
+        print(f'receiveBytes(self)')
         #Signals the server then receives a byte from the sample
         
         sock = socket.socket()
@@ -154,7 +156,8 @@ class GetData:
     #print(f'Sample Received - One byte')
 
     def getSample(self): #recvCount counts samples in a packet in training mode; in prediction mode it is the index for the circular buffer
-
+        print()
+        print('getSample()')
         packetStartMS = 0 
 
             #Sends one byte from dataPacket and asks for more
@@ -208,7 +211,9 @@ class GetData:
         # self.dataGot = 0   #Reset the dataGot flag for the next sample
 
     def prepTraining(self):    #Prep the packet for training
-
+        print()
+        print('prepTraining')
+        print(f'self.label: {self.label}')
         #print(f'self.packetData: {self.packetData}') 
 
         #scale the data to +-1
@@ -226,7 +231,9 @@ class GetData:
         self.writetoCSV(self.packetData, packetTruth)
 
     def writetoBinary(self,trainingData, packetTruth):
-        #print(f'trainingData for write: {trainingData}')
+        print()
+        print('writetoBinary()')
+        print(f'trainingData for write: {trainingData}')
         #Write data to .npy file (binary) -- faster
         dataPath = self.pathPreface + self.labelPath + '.npy'
         truthPath = self.pathPreface + self.labelPath + '_truth.npy'
@@ -246,17 +253,21 @@ class GetData:
             # print(f'dataPacket saved (Binary): {trainingData}')
 
         #Truth
+        print(f'truth path: {truthPath}')
         if os.path.exists(truthPath):
             tmpArr = np.load(truthPath,allow_pickle=False)
-            #print(f'Binary truths from file: {tmpArr}')
+            print(f'Binary truths from file: {tmpArr}')
             tmpArr = np.append(tmpArr,packetTruth)
             np.save(truthPath, tmpArr, allow_pickle=False)
-            #print(f'packetTruth appended and saved (Binary): {tmpArr}')
+            print(f'packetTruth appended and saved (Binary): {tmpArr}')
         else: 
             np.save(truthPath, packetTruth, allow_pickle=False)
-            # print(f'packetTruth saved (Binary): {packetTruth}')
+            print(f'packetTruth saved (Binary): {packetTruth}')
 
     def writetoCSV(self, trainingData, packetTruth):
+        print()
+        print('writetoCSV()')
+        print(f'trainingData for write: {trainingData}')
         #Write data to .csv file (text) - human readable
         #print(f'CSV write training data')
         dataPath = self.pathPreface + self.labelPath + '.csv'
