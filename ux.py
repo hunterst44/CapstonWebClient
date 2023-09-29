@@ -22,6 +22,7 @@ class UX:
         self.sampleCount = 0 #counter for the number of samples collected per gesture while training
         self.gestureCount = 0 #counter for the number of gestures collected while training
         self.goTrain = 0
+        self.Test = 0 # A variable to test things
 
     def trainModel(self, numSensors, pathPreface, *, label=0, labelPath=''):
         #iterate through all the gestures and collect packetLimit samples of each
@@ -76,6 +77,7 @@ class UX:
         layout = [[sg.Text('The Conductor: Window 2.1'), sg.Text(size=(2,1), key='-OUTPUT-')],
                   [sg.Text('Train model'), sg.Text(size=(2,1), key='-TRAIN-'), sg.Button('Train')],
                   [sg.Text('Predict gestures with model'), sg.Text(size=(2,1), key='-PREDICT-'), sg.Button('Predict')],
+                  [sg.pin(sg.Column([[sg.Text('', visible=True, key='-WORDS-'), sg.Text(size=(2,1))]], pad=(0,0)), shrink=False)],
         ]
         return sg.Window('THE CONDUCTOR: Step 2.1', layout, finalize=True)
     
@@ -104,6 +106,8 @@ class UX:
 
             #events for window1 (welcome, load / create model)
             if window == window1:
+                print()
+                print('window1')
                 #window['-invalidModel-'].update(visible=False)
                 if event == sg.WIN_CLOSED or event == 'Exit':
                     break
@@ -151,10 +155,12 @@ class UX:
                     print()
                     print(f'Value: {values[0]}')
                     window1.hide()
-                    window2 = self.makeWindow2_1()
+                    window2_1 = self.makeWindow2_1()
 
             if window == window2_1:
+                print()
                 print("Window 2.1")
+                
                 if event == sg.WIN_CLOSED or event == 'Exit':
                     window2_1.hide()
                     window1 =self.makeWindow1()   
@@ -162,8 +168,27 @@ class UX:
                 if event == "Train":
                     window2_1.hide()
                     window3 =self.makeWindow3()
+                    print("Train pushed")
+                
+                if event == "Predict":
+                    print("Predict Pushed")
+                    x = 10
+                    for i in range(x):
+                        print(f'i: {i}')
+                        if i == 5:
+                            window.write_event_value("-WORDS-", 'These are some words')
+                        
+                        if i == 6:
+                            window.write_event_value("-WORDS-", 'These are some other words')
+
+                        if i == 7:
+                            window.write_event_value("-WORDS-", 'These are some other other words')
+                
+                if event == "-WORDS-":
+                    window["-WORDS-"].update(values['-WORDS-'])
             
             if window == window3:
+                print()
                 print("window 3")
                 class0 = "baseStationaryC00"   #Class 0 is the reference orientation with no movement
                 pathList = [class0]

@@ -1517,8 +1517,8 @@ def trainOrientation(basePath, pathList, packetSize, numSensors, numClasses):
     EPOCHS = 500
     BATCH_SIZE = 1
     
-    if os.path.exists(basePath + "model.models"):     #Use the existing model if it exists
-        model = Model.load(basePath + "model.models")
+    if os.path.exists(basePath + "model.model"):     #Use the existing model if it exists
+        model = Model.load(basePath + "model.model")
 
         model.finalize()
 
