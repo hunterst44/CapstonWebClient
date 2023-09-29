@@ -23,7 +23,7 @@ import oscWriter
 
 class GetData:
     
-    def __init__(self, *, host="192.168.100.144", port=80, packetSize=5, numSensors=4, pathPreface='data/data', labelPath="Test", label=0, getTraining=True, packetLimit=100, modelFileName="model.model"):
+    def __init__(self, *, host="192.168.100.144", port=80, packetSize=5, numSensors=4, pathPreface='data/data', labelPath="Test", label=0, getTraining=True, packetLimit=100, modelFileName="model.model", writer=oscWriter.OSCWriter()):
         self.host = host
         self.port = port
         self.packetSize = packetSize
@@ -46,6 +46,7 @@ class GetData:
         self.y = []
         self.dataGot = 0   #data received flag
         self.modelFileName = modelFileName
+        self.writer = writer
 
     def processData(self, binaryData, recvCount):
         #print(f'processData()')
@@ -348,9 +349,9 @@ class GetData:
                         #print(f'prediction: {prediction}')
 
                         print(f'Converting gesture to OSC...') 
-                        writer = oscWriter.OSCWriter() 
-                        writer.getPredictions(prediction[0])
-                        if writer.ToFEnable:
+                        #writer = oscWriter.OSCWriter()   //writer is passed during GetData.__init__()
+                        self.writer.getPredictions(prediction[0])
+                        if self.writer.ToFEnable:
                             print(f'Enable Time of Flight Sensor...') 
                             self.dataTx = 0 #Reset dataTx
                             self.dataTx = struct.pack("=B", 15)   #Enable ToF sensor

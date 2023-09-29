@@ -9,7 +9,8 @@ class UX:
 
     def __init__(self, *, theme='BluePurple'):
         self.theme = theme
-        self.dataStream = socketClient.GetData(packetSize=1, label=0, getTraining=False, numSensors=2, packetLimit=1000, pathPreface="data/Orientation01/")
+        self.writer = oscWriter.OSCWriter()
+        self.dataStream = socketClient.GetData(packetSize=1, label=0, getTraining=False, numSensors=2, packetLimit=1000, pathPreface="data/Orientation01/", writer=self.writer)
 
     def makeWindow1(self):
     #Window one welcome, load / create model
