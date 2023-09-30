@@ -160,6 +160,7 @@ class UX:
             if window == window2_1:
                 print()
                 print("Window 2.1")
+                print(self.Test)
                 
                 if event == sg.WIN_CLOSED or event == 'Exit':
                     window2_1.hide()
@@ -170,19 +171,24 @@ class UX:
                     window3 =self.makeWindow3()
                     print("Train pushed")
                 
-                if event == "Predict":
+                if event == "Predict":   
                     print("Predict Pushed")
-                    x = 10
-                    for i in range(x):
-                        print(f'i: {i}')
-                        if i == 5:
-                            window.write_event_value("-WORDS-", 'These are some words')
-                        
-                        if i == 6:
-                            window.write_event_value("-WORDS-", 'These are some other words')
+                    predictSample = 0
 
-                        if i == 7:
-                            window.write_event_value("-WORDS-", 'These are some other other words')
+                    while predictSample < 10:
+                        print(f"Hi Mom! {predictSample}, from {self.gestureCount}")
+                        predictSample += 1
+                    
+                    if self.gestureCount < 4:
+                        window['-WORDS-'].update(f'Completed gesture {self.gestureCount}')
+                        window.write_event_value("Predict", '')
+                        self.gestureCount += 1
+
+                    else:
+                        self.gestureCount = 0
+                        window['-WORDS-'].update(f'Completed gestures')
+                        
+
                 
                 if event == "-WORDS-":
                     window["-WORDS-"].update(values['-WORDS-'])
@@ -207,23 +213,27 @@ class UX:
                     time.sleep(1)
                     print("Start Training")
 
-                    for i in range(gestureIdx):
-                        while sampleCount < self.packetLimit:
-                            print(f'Collected sample {sampleCount} of {self.packetLimit} samples for gesture {i} of {gestureIdx} gestures')
-                            self.trainModel(self.numSensors, self.pathPreface, label=0, labelPath=pathList[0])
-                            sampleCount += 1
-                        sampleCount = 0
-                        while testCount < self.packetLimit /10:
-                            print(f'Collected sample {sampleCount} of {self.packetLimit} samples for gesture {i} of {gestureIdx} gestures')
-                            self.trainModel(self.numSensors, self.pathPreface, label=0, labelPath=(pathList[0] + '_test'))
-                            testCount += 1
-                        testCount = 0
-                        
-                    #trainOrientation(basePath, pathList, packetSize, numSensors, numClasses):
-                    NeuralNetwork.trainOrientation(self.pathPreface, pathList, 1, self.numSensors, 1)
-                    
-                    window['-Gesture-'].update(f'Training Complete')
-                    window['-CountDown-'].update('')
+                    while sampleCount < self.packetLimit:
+                        print(f'Collected sample {sampleCount} of {self.packetLimit} samples for gesture {self.gestureCount} of {gestureIdx} gestures')
+                        self.trainModel(self.numSensors, self.pathPreface, label=0, labelPath=pathList[0])
+                        sampleCount += 1
+                    sampleCount = 0
+                    while testCount < self.packetLimit /10:
+                        print(f'Collected sample {sampleCount} of {self.packetLimit} samples for gesture {self.gestureCount} of {gestureIdx} gestures')
+                        self.trainModel(self.numSensors, self.pathPreface, label=0, labelPath=(pathList[0] + '_test'))
+                        testCount += 1
+                    testCount = 0
+                    self.gestureCount += 1
+
+                    if self.gestureCount < gestureIdx:
+                        window.write_event_value("GO!", '') 
+                    else:
+                        #trainOrientation(basePath, pathList, packetSize, numSensors, numClasses):
+                        self.gestureCount = 0
+                        NeuralNetwork.trainOrientation(self.pathPreface, pathList, 1, self.numSensors, 1)
+
+                        window['-Gesture-'].update(f'Training Complete')
+                        window['-CountDown-'].update('')
 
         window.close()
 
