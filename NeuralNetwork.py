@@ -1514,15 +1514,22 @@ def trainOrientation(basePath, pathList, packetSize, numSensors, numClasses):
     print()
     print(f'truths array for model: {y}') 
     #y = y.reshape(y.shape[0])  #reshape truth data only if truth data is formatted as 2-D
-    EPOCHS = 500
+    EPOCHS = 5
     BATCH_SIZE = 1
     
+    modelOk = 0
     if os.path.exists(basePath + "model.model"):     #Use the existing model if it exists
         model = Model.load(basePath + "model.model")
 
-        model.finalize()
+        try:
+            model.finalize()
+            modelOk = 1
+        except:
+            print('Model file not valid. Creating new model')
 
-    else:                                     #Or create a new one
+
+    if modelOk == 0:   
+        print('Creating a new model')                                 #Or create a new one
         model = Model()   #Instanstiate the model
         
         #Add layers
@@ -1567,10 +1574,10 @@ def createTestModel():
     )
     
     model.finalize()
-    model.save('data/test/model1')
+    model.save('data/test/model.model')
 
-# def main():
-#     createTestModel()
+def main():
+    createTestModel()
 
 #     #RegressionNoValid()
 #     #binaryLogisticValid()
@@ -1590,4 +1597,4 @@ def createTestModel():
 
 #     #convertPickletoDill()
 
-#if __name__ == "__main__": main()
+if __name__ == "__main__": main()

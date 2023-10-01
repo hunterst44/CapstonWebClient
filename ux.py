@@ -13,7 +13,7 @@ class UX:
         self.theme = theme
         #self.writer = oscWriter.OSCWriter()
         #self.dataStream = socketClientUx.GetData(packetSize=1, label=0, getTraining=False, numSensors=2, packetLimit=1000, pathPreface="data/Orientation01/", writer=self.writer)
-        self.packetLimit = 10
+        self.packetLimit = 3
         self.packetSize = 1
         self.numSensors = 2
         self.pathPreface = "data/test/"
@@ -59,14 +59,31 @@ class UX:
         #     self.extraRxByte = 0
         # self.dataGot = 0   #Reset the dataGot flag for the next sample
 
-    def makeWindow1(self):
+    def makeModelFileMessage(self, pathPreface):
+        modelPath = pathPreface + 'model.model'
+        if os.path.exists(modelPath):
+            # figure out a way to elegantly make a new model
+            modelMessage = 'Model file exits at: ' + modelPath + ' Use this model?'
+            
+        else:
+            modelMessage = ''
+
+        return modelMessage   
+            
+            # window['-MODELOK-'].update(visible=True)
+            # window.write_event_value('-MESSAGE-', message)
+            # #window['-MESSAGE-'].update(f'message')
+
+    def makeWindow1(self, modelMessage):
     #Window one welcome, load / create model
         layout = [[sg.Text('The Conductor: Window 1'), sg.Text(size=(2,1), key='-OUTPUT-')],
                 [sg.Text('Upload an existing neural network model or create a new one.'), sg.Text(size=(5,1), key='-OUTPUT-')], 
-                [sg.Text('Upload a Model'), sg.Text(size=(2,1), key='-OUTPUT-'), sg.Input(), sg.FileBrowse(), sg.Button('Ok')],
-                [sg.Text('Create a Model'), sg.Text(size=(2,1), key='-OUTPUT-'), sg.Button('Create')],
-                [sg.pin(sg.Column([[sg.Text('', visible=True, key='-invalidModel-'), sg.Text(size=(2,1))]], pad=(0,0)), shrink=False)]
-                    #sg.Text('Not a valid model file. Please try again.', size=(2,1), key='-invalidModel-', visible=True, pad=(0,0)), sg.Text(size=(2,1))]
+                [sg.pin(sg.Column([[sg.Text(modelMessage), sg.Text(size=(2,1), key='-MODELMESSAGE-'), sg.Button('Ok', key='-MODELMESAGEBTN-')]]))],
+                [sg.pin(sg.Column([[sg.Text('Upload a model'), sg.Text(size=(2,1), key='-UPLOADMODEL-'), sg.Input(), sg.FileBrowse(), sg.Button('Ok', key='-UPLOADMODELBTN-')]]))],
+                [sg.Text('Create a New Model'), sg.Text(size=(2,1), key='-OUTPUT-'), sg.Button('Ok', key='-CREATE-')],
+                [sg.pin(sg.Column([[sg.Text('', visible=True, key='-MESSAGE-'), sg.Text(size=(2,1))]], pad=(0,0)), shrink=False)],
+                #[sg.pin(sg.Column([[sg.Button('-MODELOK-', visible=False)]], pad=(0,0)), shrink=False)]
+                        #sg.Text('Not a valid model file. Please try again.', size=(2,1), key='-invalidModel-', visible=True, pad=(0,0)), sg.Text(size=(2,1))]
                 ]
 
         return sg.Window('THE CONDUCTOR: Step 1', layout, finalize=True)
@@ -76,7 +93,7 @@ class UX:
         #Window3 Training or prediction select
         layout = [[sg.Text('The Conductor: Window 2.1'), sg.Text(size=(2,1), key='-OUTPUT-')],
                   [sg.Text('Train model'), sg.Text(size=(2,1), key='-TRAIN-'), sg.Button('Train')],
-                  [sg.Text('Predict gestures with model'), sg.Text(size=(2,1), key='-PREDICT-'), sg.Button('Predict')],
+                  [sg.pin(sg.Column([[sg.Text('Predict gestures with model'), sg.Text(size=(2,1), key='-PREDICT-'), sg.Button('Predict')]]))],
                   [sg.pin(sg.Column([[sg.Text('', visible=True, key='-WORDS-'), sg.Text(size=(2,1))]], pad=(0,0)), shrink=False)],
         ]
         return sg.Window('THE CONDUCTOR: Step 2.1', layout, finalize=True)
@@ -92,10 +109,13 @@ class UX:
         return sg.Window('THE CONDUCTOR: Step 3', layout, finalize=True)
 
     def uxLoop(self):
+        ##Methods to collect run time data required for the GUI
+        modelMessage = self.makeModelFileMessage(self.pathPreface)
+
         sg.theme(self.theme)
 
         # Set all windows to Noe except window 1 to start
-        window1 = self.makeWindow1()
+        window1 = self.makeWindow1(modelMessage)
         window2_1 = None
         window3 = None
 
@@ -107,52 +127,57 @@ class UX:
             #events for window1 (welcome, load / create model)
             if window == window1:
                 print()
-                print('window1')
+                print('Window 1')
+                modelPath = self.pathPreface + 'model.model'
+                print(f'modelPath: {modelPath}')
+                modelOk = -1
+
                 #window['-invalidModel-'].update(visible=False)
                 if event == sg.WIN_CLOSED or event == 'Exit':
                     break
-                if event == 'Ok':
-                    model = NeuralNetwork.Model()
-                    modelOk = -1
-                    #window['-invalidModel-'].hide_row()
-                    print()
-                    print(f'Model Path: {values[0]}')
-                    # Check that the path has a valid model file
-                    try:
-                        model.load(values[0])
-                    except:
-                        window['-invalidModel-'].update('Not a valid model file. Please try again.')
-                        print(f'Invalid model')
-                        modelOk = 0
 
-                    if modelOk == -1:
-                        window['-invalidModel-'].update('')
+                if event == '-UPLOADMODELBTN-':
+                    print(f'Window 1 -UPLOADMODEL-')
+                    window['-MESSAGE-'].update('Sorry feature not enabled yet.')
 
-                    modelPath = self.pathPreface + 'model.model'
+                    #TODO backup existing model file if it exists and save model to pathPreface/model.model
+                    # if modelOk == -1:
+                    #     window['-MESSAGE-'].update('')
 
-                    #Save model to pathPreface
-                    shutil.copy(values[0], modelPath)
-                    try:
-                        model.load(modelPath)
-                    except:
-                        window['-invalidModel-'].update('Bad copy')
-                        print(f'BadCopy')
+                    # else:
+                    #     modelPath = self.pathPreface + 'model.model'
 
-                    # see if there is a model in pathPreface
-                    if os.path.exists(self.pathPreface + 'model.model'):
-                        # figure out a way to elegantly make a new model
-                        print('path')
+                    #     #Save model to pathPreface
+                    #     shutil.copy(values[0], modelPath)
+                    #     try:
+                    #         model.load(modelPath)
+                    #     except:
+                    #         window['-MESSAGE-'].update('Bad copy')
+                    #         print(f'BadCopy')
+
+                if event == '-MODELMESAGEBTN-':
+                    print(f'Window 1 -MODELMESAGEBTN-')
+                    # model = NeuralNetwork.Model()                                
+                    # try:
+                    #     model.load(modelPath)
+                    # except:
+                    #     window['-MESSAGE-'].update('Not a valid model file. Please try again.')
+                    #     print(f'Invalid model')
+                    #     modelOk = 0
+
+                    # if modelOk == -1:
+                    modelOk = 1
+                    window1.hide()
+                    window2_1 = self.makeWindow2_1()
                         
                     # increment the filename to avoid overwriting model (update self.modelFileName)
 
                     # save the file to pathPreface/model
 
                     #Go to window2
-                    window1.hide()
-                    window2_1 = self.makeWindow2_1()
 
-                if event == 'Create':
-                    print()
+                if event == '-CREATE-':
+                    print(f'Window 1 -CREATE-')
                     print(f'Value: {values[0]}')
                     window1.hide()
                     window2_1 = self.makeWindow2_1()
@@ -200,12 +225,11 @@ class UX:
                 pathList = [class0]
 
                 if event == sg.WIN_CLOSED or event == 'Exit':
-                    window3.hide()
-                    window2_1 =self.makeWindow2_1() 
+                    break
 
                 if event == "GO!":
                     #self.goTrain = 1
-                    gestureIdx = 1 #hard coded for now, will be provided by user with GUI
+                    gestureIdx = 2 #hard coded for now, will be provided by user with GUI
                     sampleCount = 0
                     testCount = 0
                     window['GO!'].hide_row() 
