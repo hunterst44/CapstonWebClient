@@ -1523,6 +1523,7 @@ def trainOrientation(basePath, pathList, packetSize, numSensors, numClasses):
 
         try:
             model.finalize()
+            print('Using exisiting model at: {basePath}model.model') 
             modelOk = 1
         except:
             print('Model file not valid. Creating new model')
