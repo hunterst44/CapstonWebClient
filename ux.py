@@ -222,19 +222,23 @@ class UX:
                 if event == "-PREDICTBTN-":  
                     print() 
                     print("Predict Pushed")
+        
                     predictSample = 0
                     print(f'values.keys(): {values.keys()}')
                     keys = list(values.keys())
                     print(f'keys: {keys}')
                     if len(keys) > 0 and keys[0] == '-PREDICTBTN-':
-                        window['-PREDICTBTN-'].update(f'{values["-PREDICTBTN-"]}')
+                        window['-WORDS-'].update(f'{values["-PREDICTBTN-"]}')
+                        print(f'values["-PREDICTBTN-": {values["-PREDICTBTN-"]}')
+                        time.sleep(5)
                     while predictSample < 10:
                         print(f"Hi Mom! {predictSample}, from {self.gestureCount}")
                         predictSample += 1
                     
                     if self.gestureCount < 4:
-                        window['-WORDS-'].update(f'Completed gesture {self.gestureCount}')
-                        window.write_event_value("-PREDICTBTN-", 'Hi boss')
+                        gestureMessage = str(self.gestureCount)
+                        #window['-WORDS-'].update(f'Completed gesture {self.gestureCount}')
+                        window.write_event_value("-PREDICTBTN-", gestureMessage)
                         self.gestureCount += 1
 
                     else:
