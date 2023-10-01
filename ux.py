@@ -113,7 +113,7 @@ class UX:
     def makeWindow3(self):
         #Window3 Training 
         layout = [[sg.Text('The Conductor: Window 3'), sg.Text(size=(2,1), key='-OUTPUT-')],
-                  [sg.pin(sg.Column([[sg.Text("Hi I'm GESTURE", visible=True, key='-GESTURE-'), sg.Text(size=(2,1))]], pad=(0,0)), shrink=False)],
+                  [sg.pin(sg.Column([[sg.Text("Hit the 'GO!' button to begin training", visible=True, key='-GESTURE-'), sg.Text(size=(2,1))]], pad=(0,0)), shrink=False)],
                   [sg.pin(sg.Column([[sg.Text('', visible=True, key='-CountDown-'), sg.Text(size=(2,1))]], pad=(0,0)), shrink=False)],
                   [sg.Button('GO!')]
         ]
@@ -231,6 +231,7 @@ class UX:
                         window['-WORDS-'].update(f'{values["-PREDICTBTN-"]}')
                         print(f'values["-PREDICTBTN-": {values["-PREDICTBTN-"]}')
                         time.sleep(5)
+                        window.refresh()
                     while predictSample < 10:
                         print(f"Hi Mom! {predictSample}, from {self.gestureCount}")
                         predictSample += 1
@@ -269,8 +270,19 @@ class UX:
                     sampleCount = 0
                     testCount = 0
                     window['GO!'].hide_row() 
-                    window['-GESTURE-'].update(f'Get ready to train Gesture {self.gestureCount}.')
-                    time.sleep(5)
+                    window['-GESTURE-'].update(f'Get ready to train Gesture {self.gestureCount} in .....3')
+                    window.refresh()
+                    time.sleep(2)
+                    window['-GESTURE-'].update(f'Get ready to train Gesture {self.gestureCount} in .....2')
+                    window.refresh()
+                    time.sleep(1)
+                    window['-GESTURE-'].update(f'Get ready to train Gesture {self.gestureCount} in .....1')
+                    window.refresh()
+                    time.sleep(1)
+                    window['-GESTURE-'].update(f'Get ready to train Gesture {self.gestureCount} in .....GO!')
+                    window.refresh()
+                    time.sleep(1)
+
                     print("Start Training")
 
                     while sampleCount < self.packetLimit:
@@ -286,8 +298,9 @@ class UX:
                     self.gestureCount += 1
 
                     if self.gestureCount < gestureIdx:
-                        gestureMessage = 'Training Gesture ' + str(self.gestureCount + 1) + ' of ' + str(gestureIdx) +  ' gestures'
-                        window.write_event_value('-GESTURE-', gestureMessage)
+                        #gestureMessage = 'Training Gesture ' + str(self.gestureCount + 1) + ' of ' + str(gestureIdx) +  ' gestures'
+                        # window['-GESTURE-'].update(gestureMessage)
+                        # window.refresh()
                         window.write_event_value("GO!", '') 
                     else:
                         #trainOrientation(basePath, pathList, packetSize, numSensors, numClasses):
