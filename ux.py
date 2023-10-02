@@ -4,6 +4,7 @@ import NeuralNetwork
 import oscWriter
 import os.path
 import time
+import struct
 import shutil
 import sys
 
@@ -11,8 +12,7 @@ class UX:
 
     def __init__(self, *, theme='BluePurple'):
         self.theme = theme
-        #self.writer = oscWriter.OSCWriter()
-        #self.dataStream = socketClientUx.GetData(packetSize=1, label=0, getTraining=False, numSensors=2, packetLimit=1000, pathPreface="data/Orientation01/", writer=self.writer)
+        self.writer = oscWriter.OSCWriter()
         self.packetLimit = 3
         self.packetSize = 1
         self.numSensors = 2
@@ -25,46 +25,51 @@ class UX:
         self.Test = 0 # A variable to test things
         self.windowSizeX = 750
         self.windowSizeY = 300
+        self.stopPredict = 0
+        self.dataStream = socketClientUx.GetData(packetSize=self.packetSize, numSensors=self.numSensors, pathPreface=self.pathPreface)
 
 
 ###############################################################################################
 ##############                  Control Methods                               #################
 ###############################################################################################
 
-    def trainModel(self, numSensors, pathPreface, *, label=0, labelPath=''):
+    def trainModel(self):
         #iterate through all the gestures and collect packetLimit samples of each
         #Called in window 2 and 2.1 where user provides data to set up model and data
         #Switches to window 3 to output data 
-
-            print(f'ux.trainModel')
-            dataStream = socketClientUx.GetData(packetSize=self.packetSize, label=label, labelPath=labelPath, getTraining=True, numSensors=numSensors, pathPreface=pathPreface)
-            dataStream.getSample()
-            dataStream.prepTraining()
+            print(f'UX.trainModel')
+            # self.dataStream.label = label
+            # self.dataStream.labelPath = labelPath 
+            # self.dataStream.getTraining = True
+            # self.dataStream.numSensors = numSensors
+            # self.dataStream.pathPreface = pathPreface
+            self.dataStream.getSample()
+            self.dataStream.prepTraining()
         
         #CSend all the gestures to neural network
         #NeuralNetwork.trainOrientation(pathPreface, labelPathList, 1, numSensors, gestureIdx)
             
 
-    def predictSample(self, numSensors, pathPreface):
-        dataStream = socketClientUx.GetData(packetSize=1, label=0, getTraining=False, numSensors=numSensors, packetLimit=1000, pathPreface=pathPreface)
-        writer = oscWriter.OSCWriter()
-        dataStream.getSample()
-        predictionList = dataStream.predictSample()
-        writer.getPredictions(predictionList[0])
+    def predictSample(self):
+        #writer = oscWriter.OSCWriter()
+        self.dataStream.getSample()
+        predictionList = self.dataStream.predictSample()
+        print(f'Converting gesture to OSC...') 
+        self.writer.getPredictions(predictionList[0])
+        if self.writer.ToFEnable:
+            print(f'Enable Time of Flight Sensor...') 
+            self.dataStream.dataTx = 0 #Reset dataTx
+            self.dataStream.dataTx = struct.pack("=B", 15)   #Enable ToF sensor
+            self.dataStream.extraRxByte = 1
+        else:
+            print(f'Disable Time of Flight Sensor...') 
+            self.dataStream.dataTx = 0 #Reset dataTx
+            self.dataStream.dataTx = struct.pack("=B", 255)   #Disable ToF sensor 
+            self.dataStream.extraRxByte = 0
+        self.dataStream.dataGot = 0   #Reset the dataGot flag for the next sample
 
-        #Must get dataTx out of this - and write it into getSample()
-        #Code from old socketClient below
-        # if writer.ToFEnable:
-        #     print(f'Enable Time of Flight Sensor...') 
-        #     self.dataTx = 0 #Reset dataTx
-        #     self.dataTx = struct.pack("=B", 15)   #Enable ToF sensor
-        #     self.extraRxByte = 1
-        # else:
-        #     print(f'Disable Time of Flight Sensor...') 
-        #     self.dataTx = 0 #Reset dataTx
-        #     self.dataTx = struct.pack("=B", 255)   #Disable ToF sensor 
-        #     self.extraRxByte = 0
-        # self.dataGot = 0   #Reset the dataGot flag for the next sample
+        return predictionList[0], self.writer.ToFEnable
+        
 
     def makeModelFileMessage(self, pathPreface):
         modelPath = pathPreface + 'model.model'
@@ -103,8 +108,8 @@ class UX:
     def makeWindow2_1(self):
         #Window3 Training or prediction select
         layout = [[sg.Text('The Conductor: Window 2.1'), sg.Text(size=(2,1), key='-OUTPUT-')],
-                  [sg.Text('Train model'), sg.Text(size=(2,1), key='-TRAIN-'), sg.Button('Train')],
-                  [sg.pin(sg.Column([[sg.Text('Predict gestures with model'), sg.Text(size=(2,1), key='-PREDICT-'), sg.Button('Predict', key='-PREDICTBTN-')]]))],
+                  [sg.pin(sg.Column([[sg.Text('Train Model'), sg.Text(size=(2,1), key='-TRAIN-'), sg.Button('Train', key='-TRAINBTN-')]]))],
+                  [sg.pin(sg.Column([[sg.Text('Predict gestures'), sg.Text(size=(2,1), key='-PREDICT-'), sg.Button('Predict', key='-PREDICTBTN-')]]))],
                   [sg.pin(sg.Column([[sg.Text('', visible=True, key='-WORDS-'), sg.Text(size=(2,1))]], pad=(0,0)), shrink=False)],
         ]
         return sg.Window('THE CONDUCTOR: Step 2.1', layout, layout, size=(self.windowSizeX,self.windowSizeY), finalize=True)
@@ -118,6 +123,17 @@ class UX:
                   [sg.Button('GO!')]
         ]
         return sg.Window('THE CONDUCTOR: Step 3', layout, layout, size=(self.windowSizeX,self.windowSizeY), finalize=True)
+
+
+    def makeWindow3_1(self):
+        #Window3_1 Prediction 
+        layout = [[sg.Text('The Conductor: Window 3_1'), sg.Text(size=(2,1), key='-OUTPUT-')],
+                  [sg.pin(sg.Column([[sg.Text("Hit the 'GO!' button to begin prediction", visible=True, key='-GESTURE-'), sg.Text(size=(2,1))]], pad=(0,0)), shrink=False)],
+                  [sg.pin(sg.Column([[sg.Text('', visible=True, key='-CountDown-'), sg.Text(size=(2,1))]], pad=(0,0)), shrink=False)],
+                  [sg.pin(sg.Column([[sg.Text(''), sg.Text(size=(2,1), key='-GO-'), sg.Button('GO!', key='-GOBTN-', visible=True)]]), shrink=False)],
+                  [sg.pin(sg.Column([[sg.Text(''), sg.Text(size=(2,1), key='-STOP-'), sg.Button('Stop', key='-STOPBTN-', visible=False)]]), shrink=False)]
+        ]
+        return sg.Window('THE CONDUCTOR: Step 3_1', layout, layout, size=(self.windowSizeX,self.windowSizeY), finalize=True)
 
 ###############################################################################################
 ##############                  UX LOOP                                       #################
@@ -133,6 +149,7 @@ class UX:
         window1 = self.makeWindow1(modelMessage)
         window2_1 = None
         window3 = None
+        window3_1 = None
 
         while True:  # Event Loop
             window, event, values = sg.read_all_windows()
@@ -187,12 +204,6 @@ class UX:
                     modelOk = 1
                     window1.hide()
                     window2_1 = self.makeWindow2_1()
-                        
-                    # increment the filename to avoid overwriting model (update self.modelFileName)
-
-                    # save the file to pathPreface/model
-
-                    #Go to window2
 
                 if event == '-CREATE-':
                     print()
@@ -213,38 +224,19 @@ class UX:
                     window2_1.hide()
                     window1 =self.makeWindow1()   
 
-                if event == "Train":
+                if event == "-TRAINBTN-":
                     print()
+                    print("-TRAINBTN- ")
+                    #setup datastream how we want it for training
+                    #dataStream = socketClientUx.GetData(packetSize=self.packetSize, label=label, labelPath=labelPath, getTraining=True, numSensors=numSensors, pathPreface=pathPreface)
                     window2_1.hide()
                     window3 =self.makeWindow3()
-                    print("Train pushed")
-                
+                           
                 if event == "-PREDICTBTN-":  
                     print() 
-                    print("Predict Pushed")
-        
-                    predictSample = 0
-                    print(f'values.keys(): {values.keys()}')
-                    keys = list(values.keys())
-                    print(f'keys: {keys}')
-                    if len(keys) > 0 and keys[0] == '-PREDICTBTN-':
-                        window['-WORDS-'].update(f'{values["-PREDICTBTN-"]}')
-                        print(f'values["-PREDICTBTN-": {values["-PREDICTBTN-"]}')
-                        time.sleep(5)
-                        window.refresh()
-                    while predictSample < 10:
-                        print(f"Hi Mom! {predictSample}, from {self.gestureCount}")
-                        predictSample += 1
-                    
-                    if self.gestureCount < 4:
-                        gestureMessage = str(self.gestureCount)
-                        #window['-WORDS-'].update(f'Completed gesture {self.gestureCount}')
-                        window.write_event_value("-PREDICTBTN-", gestureMessage)
-                        self.gestureCount += 1
-
-                    else:
-                        self.gestureCount = 0
-                        window['-WORDS-'].update(f'Completed gestures')
+                    print("-PREDICTBTN-")
+                    window2_1.hide()
+                    window3_1 =self.makeWindow3_1()
                 
                 if event == "-WORDS-":
                     window["-WORDS-"].update(values['-WORDS-'])
@@ -259,8 +251,6 @@ class UX:
 
                 if event == sg.WIN_CLOSED or event == 'Exit':
                     break
-
-#window.write_event_value("Predict", '')
                 
                 if event == "GO!":
                     print()
@@ -269,6 +259,14 @@ class UX:
                     gestureIdx = 5 #hard coded for now, will be provided by user with GUI
                     sampleCount = 0
                     testCount = 0
+
+                    #Setup dataStream
+                    self.dataStream.label = self.gestureCount
+                    self.dataStream.labelPath = pathList[self.gestureCount] 
+                    self.dataStream.getTraining = True
+                    self.dataStream.numSensors = self.numSensors
+                    self.dataStream.pathPreface = self.pathPreface
+
                     window['GO!'].hide_row() 
                     window['-GESTURE-'].update(f'Get ready to train Gesture {self.gestureCount} in .....3')
                     window.refresh()
@@ -287,12 +285,19 @@ class UX:
 
                     while sampleCount < self.packetLimit:
                         print(f'Collected sample {sampleCount + 1} of {self.packetLimit} samples for gesture {self.gestureCount + 1} of {gestureIdx} gestures')
-                        self.trainModel(self.numSensors, self.pathPreface, label=0, labelPath=pathList[0])
+                        self.trainModel()
                         sampleCount += 1
                     sampleCount = 0
-                    while testCount < self.packetLimit /10:
+
+                    self.dataStream.labelPath = pathList[self.gestureCount] + '_test'  #collect test data to testing the network
+                    if self.packetLimit /10 > 1:
+                        testIdx = self.packetLimit /10
+                    else:
+                        testIdx = 1
+
+                    while testCount < testIdx:
                         print(f'Collected sample {sampleCount + 1} of {self.packetLimit} samples for gesture {self.gestureCount + 1} of {gestureIdx} gestures')
-                        self.trainModel(self.numSensors, self.pathPreface, label=0, labelPath=(pathList[0] + '_test'))
+                        self.trainModel()
                         testCount += 1
                     testCount = 0
                     self.gestureCount += 1
@@ -309,6 +314,52 @@ class UX:
 
                         window['-GESTURE-'].update(f'Training Complete')
                         window['-CountDown-'].update('')
+
+            if window == window3_1:
+                #Predicting
+                print()
+                print()
+                print("window 3_1")
+
+                #set up dataStream
+                self.dataStream.packetSize = 1
+                self.dataStream.getTraining = False
+                self.dataStream.numSensors = self.numSensors
+                self.dataStream.pathPreface = self.pathPreface
+
+                if event == sg.WIN_CLOSED or event == 'Exit':
+                    break
+
+                if event == "-GOBTN-":
+                    print()
+                    print("-GOBTN-")
+                    #print(f'Collected sample {sampleCount + 1} of {self.packetLimit} samples for gesture {self.gestureCount + 1} of {gestureIdx} gestures')
+                    prediction, ToFEnable = self.predictSample()
+                    if ToFEnable:
+                        PredictMessage = "ToF enabled. Detected Gesture " + str(prediction)
+                    else:
+                        PredictMessage = "ToF disabled. Detected Gesture " + str(prediction)
+                    window['-GESTURE-'].update(PredictMessage)
+                    window['-STOPBTN-'].update(visible=True)
+                    window['-GOBTN-'].update(visible=False)
+                    window.refresh()
+                    if self.stopPredict == 0:
+                        window.write_event_value("-GOBTN-", '') 
+                    else:
+                        window['-STOPBTN-'].update(visible=False)
+                        window['-GOBTN-'].update(visible=True)
+                        window.refresh()
+                        self.stopPredict = 0
+
+                if event == "-STOPBTN-":
+                    print()
+                    print("-STOPBTN-")
+                    window['-STOPBTN-'].update(visible=False)
+                    window['-GOBTN-'].update(visible=True)
+                    window['-GESTURE-'].update(f'Prediction paused. Hit "GO!" to resume.')
+                    window.refresh()
+                    #window.write_event_value("-STOPBTN-", '')
+                    self.stopPredict = 1
 
         window.close()
 

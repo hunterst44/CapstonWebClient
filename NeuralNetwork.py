@@ -1419,7 +1419,7 @@ def realTimePrediction(packetData, basePath):
      #Create Dataset
     predictionStartMs = int(time.time() * 1000)
     predictions = []
-    model = Model.load(basePath + "model")
+    model = Model.load(basePath + "model.model")
     #print(f'model: {model}')
     
     confidences = model.predict(packetData)

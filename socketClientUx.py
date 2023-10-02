@@ -195,9 +195,9 @@ class GetData:
 
         return prediction            
 
-        print(f'Converting gesture to OSC...') 
-        writer = oscWriter.OSCWriter()   #writer is passed during GetData.__init__()
-        writer.getPredictions(prediction[0])
+        # print(f'Converting gesture to OSC...') 
+        # writer = oscWriter.OSCWriter()   #writer is passed during GetData.__init__()
+        # writer.getPredictions(prediction[0])
         # if writer.ToFEnable:
         #     print(f'Enable Time of Flight Sensor...') 
         #     self.dataTx = 0 #Reset dataTx

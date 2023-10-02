@@ -85,13 +85,13 @@ class OSCWriter:
                 if address.ToFEnable:
                     self.ToFEnable = 1
 
-                #4 Send the data
-                OSCThread = Thread(target=self.sendOSC, args=(address.value, address.address,))
-                OSCThread.start()
+        #         #4 Send the data
+        #         OSCThread = Thread(target=self.sendOSC, args=(address.value, address.address,))
+        #         OSCThread.start()
         
-        while threading.active_count() > 1:    #wait for the last threads to finish processing
-            #print(f'threading.active_count(): {threading.active_count()}')
-            OSCThread.join()
+        # while threading.active_count() > 1:    #wait for the last threads to finish processing
+        #     #print(f'threading.active_count(): {threading.active_count()}')
+        #     OSCThread.join()
            
 
     class Address:
