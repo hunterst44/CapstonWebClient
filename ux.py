@@ -16,6 +16,7 @@ class UX:
         self.packetLimit = 3
         self.packetSize = 1
         self.numSensors = 2
+        self.numGestures = 1   #How many gestures trained by the model
         self.pathPreface = "data/test/"
         self.dataTx = 0xFF
         self.trainCountDown = 0 # Counter for training countdown
@@ -33,10 +34,33 @@ class UX:
 ##############                  Control Methods                               #################
 ###############################################################################################
 
+    class ConductorConnector:
+
+        def __init__(self):
+            self.SSID = ""
+            self.PSWD = ""
+
+
+        def connectDevice(self):
+            print()
+            print(f'UX.connnectDevice')
+
+            #Connect to ESP32 AP network
+
+            #Get network details from user or file
+
+            #Send network detials to ESP32
+
+            #Reconnect to ESP32 on new network
+
+            #Log network details
+    
+    
     def trainModel(self):
         #iterate through all the gestures and collect packetLimit samples of each
         #Called in window 2 and 2.1 where user provides data to set up model and data
         #Switches to window 3 to output data 
+            print()
             print(f'UX.trainModel')
             # self.dataStream.label = label
             # self.dataStream.labelPath = labelPath 
@@ -47,8 +71,7 @@ class UX:
             self.dataStream.prepTraining()
         
         #CSend all the gestures to neural network
-        #NeuralNetwork.trainOrientation(pathPreface, labelPathList, 1, numSensors, gestureIdx)
-            
+        #NeuralNetwork.trainOrientation(pathPreface, labelPathList, 1, numSensors, gestureIdx)        
 
     def predictSample(self):
         #writer = oscWriter.OSCWriter()
@@ -90,6 +113,22 @@ class UX:
 ##############                  Window Definitions                            #################
 ###############################################################################################
 
+    def makeWindow0(self):
+    #Window zero welcome, set up wifi
+        layout = [[sg.Text('The Conductor: Window 0'), sg.Text(size=(2,1), key='-OUTPUT-')],
+                [sg.Text('Connect to The Conductor.'), sg.Text(size=(5,1), key='-OUTPUT-')], 
+                [sg.pin(sg.Column([[sg.Text('Start up The Conductor and enter the SSID and IP Address displayed on the screen and hit OK to continue.'), sg.Text(size=(2,1), key='-MODELMESSAGE-'), sg.Button('Ok', key='-MODELMESAGEBTN-')]]))],
+                [sg.pin(sg.Column([[sg.Text('Upload a model'), sg.Text(size=(2,1), key='-UPLOADMODEL-'), sg.Input(), sg.FileBrowse(), sg.Button('Ok', key='-UPLOADMODELBTN-')]]))],
+                [sg.Text(''), sg.Text(size=(2,1), key='-OUTPUT-'), sg.Button('Ok', key='-APCONNECTBTN-')],
+                [sg.pin(sg.Column([[sg.Text('', visible=True, key='-MESSAGE-'), sg.Text(size=(2,1))]], pad=(0,0)), shrink=False)],
+                #[sg.pin(sg.Column([[sg.Button('-MODELOK-', visible=False)]], pad=(0,0)), shrink=False)]
+                        #sg.Text('Not a valid model file. Please try again.', size=(2,1), key='-invalidModel-', visible=True, pad=(0,0)), sg.Text(size=(2,1))]
+                ]
+
+        return sg.Window('THE CONDUCTOR: Step 0', layout, size=(self.windowSizeX,self.windowSizeY), finalize=True)
+    
+
+    
     def makeWindow1(self, modelMessage):
     #Window one welcome, load / create model
         layout = [[sg.Text('The Conductor: Window 1'), sg.Text(size=(2,1), key='-OUTPUT-')],
@@ -146,7 +185,9 @@ class UX:
         sg.theme(self.theme)
 
         # Set all windows to Noe except window 1 to start
-        window1 = self.makeWindow1(modelMessage)
+        window0 = self.makeWindow0()
+        #window1 = self.makeWindow1(modelMessage)
+        window1 = 0
         window2_1 = None
         window3 = None
         window3_1 = None
@@ -156,9 +197,15 @@ class UX:
             print(f'event: {event}')
             print(f'values: {values}')
 
+
+##############     Window1          #################
             #events for window1 (welcome, load / create model)
-            if window == window1:
+            if window == window0:
                 print()
+                print('Window 0')
+            
+            
+            if window == window1:
                 print()
                 print('Window 1')
                 modelPath = self.pathPreface + 'model.model'
@@ -212,6 +259,7 @@ class UX:
                     window1.hide()
                     window2_1 = self.makeWindow2_1()
 
+##############     Window2_1          #################
             if window == window2_1:
                 #User chooses training or prediction 
                 #Currently used for testing
@@ -240,7 +288,8 @@ class UX:
                 
                 if event == "-WORDS-":
                     window["-WORDS-"].update(values['-WORDS-'])
-            
+
+ ##############     Window3          #################           
             if window == window3:
                 #Training in progress
                 print()
@@ -262,6 +311,7 @@ class UX:
 
                     #Setup dataStream
                     self.dataStream.label = self.gestureCount
+                    self.dataStream.packetSize = self.packetSize
                     self.dataStream.labelPath = pathList[self.gestureCount] 
                     self.dataStream.getTraining = True
                     self.dataStream.numSensors = self.numSensors
@@ -310,11 +360,12 @@ class UX:
                     else:
                         #trainOrientation(basePath, pathList, packetSize, numSensors, numClasses):
                         self.gestureCount = 0
-                        NeuralNetwork.trainOrientation(self.pathPreface, pathList, 1, self.numSensors, 1)
+                        NeuralNetwork.trainOrientation(self.pathPreface, pathList, self.packetSize, self.numSensors, self.numGestures)
 
                         window['-GESTURE-'].update(f'Training Complete')
                         window['-CountDown-'].update('')
 
+##############     Window3_1          #################
             if window == window3_1:
                 #Predicting
                 print()
