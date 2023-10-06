@@ -7,6 +7,7 @@ import time
 import struct
 import socket
 import subprocess
+import csv
 import shutil
 import sys
 
@@ -129,6 +130,8 @@ class UX:
             return 1
 
         def sendNetworkInfo(self, newSSID, pswd):
+            print()
+            print(f'sendNetworkInfo')
             if newSSID != '' and pswd != '':
                 dataTx = newSSID + "__--__" + pswd
                 #TODO Connect to AP network
@@ -137,9 +140,18 @@ class UX:
                     return 1
                 else:
                     return -1
-                  
 
-    
+        def logNetwork(self):
+            print()
+            print(f'logNetwork()')
+            networkPath = self.pathPreface + "/networks.csv"
+            with open(networkPath, 'w') as csvfile:
+                writer = csv.writer(csvfile)
+                writer.writerow([self.SSID, self.PSWD])
+
+        #Things to log - Network connections
+            # model parameters: numSensors, numGestures, pathPreface, pathList
+
     def trainModel(self):
         #iterate through all the gestures and collect packetLimit samples of each
         #Called in window 2 and 2.1 where user provides data to set up model and data
@@ -224,8 +236,8 @@ class UX:
     #Window one welcome, load / create model
         layout = [[sg.Text('The Conductor: Window 1'), sg.Text(size=(2,1), key='-OUTPUT-')],
                 [sg.Text('Upload an existing neural network model or create a new one.'), sg.Text(size=(5,1), key='-OUTPUT-')], 
-                [sg.pin(sg.Column([[sg.Text(f'Use the model at {self.pathPreface}'), sg.Text(size=(2,1), key='-MODELMESSAGE-'), sg.Button('Ok', key='-MODELMESAGEBTN-')]]))],
-                [sg.pin(sg.Column([[sg.Text('Upload a model'), sg.Text(size=(2,1), key='-UPLOADMODEL-'), sg.Input(), sg.FileBrowse(), sg.Button('Ok', key='-UPLOADMODELBTN-')]]))],
+                [sg.pin(sg.Column([[sg.Text(modelMessage), sg.Text(size=(2,1), key='-MODELMESSAGE-'), sg.Button('Ok', key='-MODELMESAGEBTN-')]]))],
+                [sg.pin(sg.Column([[sg.Text('Upload a model'), sg.Text(size=(2,1), key='-UPLOADMODEL-'), sg.Input(), sg.FileBrowse(), sg.Button('Upload', key='-UPLOADMODELBTN-')]]))],
                 [sg.Text('Create a New Model'), sg.Text(size=(2,1), key='-OUTPUT-'), sg.Button('Ok', key='-CREATE-')],
                 [sg.pin(sg.Column([[sg.Text('', visible=True, key='-MESSAGE-'), sg.Text(size=(2,1))]], pad=(0,0)), shrink=False)],
                 #[sg.pin(sg.Column([[sg.Button('-MODELOK-', visible=False)]], pad=(0,0)), shrink=False)]
@@ -386,14 +398,12 @@ class UX:
                             connector.newSSID = ''
                             window['-MESSAGE-'].update(f"Connected to server at {connector.HostIP} on {connector.SSID}")
                             
-                            #TODO log connection information
+                            connector.logNetwork()
                             
                             time.sleep(5)
                             window1 = self.makeWindow1(modelMessage)
                             window0.hide()
-                 
-
-            
+           
 ##############     Window1          #################            
             if window == window1:
                 print()
