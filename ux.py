@@ -6,6 +6,7 @@ import os.path
 import time
 import struct
 import socket
+import subprocess
 import shutil
 import sys
 
@@ -26,11 +27,12 @@ class UX:
         self.gestureCount = 0 #counter for the number of gestures collected while training
         self.goTrain = 0
         self.Test = 0 # A variable to test things
-        self.windowSizeX = 750
-        self.windowSizeY = 300
+        self.windowSizeX = 800
+        self.windowSizeY = 400
         self.stopPredict = 0
         self.dataStream = socketClientUx.GetData(packetSize=self.packetSize, numSensors=self.numSensors, pathPreface=self.pathPreface)
         self.IPAddress = ''
+        self.SSIDList = []
 
 
 ###############################################################################################
@@ -47,6 +49,24 @@ class UX:
             self.newIP = ""
             self.newPSWD = ""
 
+        def getNetworks(self):
+            SSIDList = []
+            networks = subprocess.check_output(["netsh", "wlan", "show", "network"])
+            networks = networks.decode("ascii")
+            #networks = networks.replace("\r,","")
+            ls = networks.split('\n')
+            ls = ls[4:]
+
+            counter = 0
+            while counter < (len(ls)):
+                if counter % 5 == 0:
+                    #print(ls[counter])
+                    if len(ls[counter]) > 9:
+                        ls[counter] = ls[counter][9:]
+                        print(f'Network {counter}: {ls[counter]}')
+                        SSIDList.append(ls[counter])
+                counter += 1
+            return SSIDList
 
         def socketConnect(self, ip, ssid):
             print()
@@ -186,7 +206,8 @@ class UX:
                 [sg.pin(sg.Column([[sg.Input('IP Address', key="-IPIN-", visible=True)]]), shrink=False)],
                 [sg.pin(sg.Column([[sg.Input('IP Address', key="-IPNEW-", visible=False)]]), shrink=False)],
                 [sg.pin(sg.Column([[sg.Button('Connect', key='-STNCNTEBTN-', visible=False)]], pad=(0,0)), shrink=False)],
-                [sg.pin(sg.Column([[sg.Input('Network SSID', key="-SSIDIN-", visible=False)]]), shrink=False)],
+                [sg.pin(sg.Column([[sg.Listbox(self.SSIDList, size=(15, 4), key="-SSIDIN-", expand_y=True, enable_events=True, visible=False)]]), shrink=False)],
+                #[sg.pin(sg.Column([[sg.Input('Network SSID', key="-SSIDIN-", visible=False)]]), shrink=False)],
                 [sg.pin(sg.Column([[sg.Input('Password', key="-PSWDIN-", visible=False)]]), shrink=False)],
                 [sg.pin(sg.Column([[sg.Button('Connect', key='-APCNTEBTN-', visible=True)]], pad=(0,0)), shrink=False)],
                 [sg.pin(sg.Column([[sg.Button('Continue', key='-CONTBTN-', visible=False)]], pad=(0,0)), shrink=False)],
@@ -249,11 +270,15 @@ class UX:
 ###############################################################################################
 
     def uxLoop(self):
+        print()
+        print('uxLoop Start')
+       
         ##Methods to collect run time data required for the GUI
         modelMessage = self.makeModelFileMessage(self.pathPreface)
 
         sg.theme(self.theme)
         connector = self.ConductorConnector()
+        connector.getNetworks()
 
         # Set all windows to Noe except window 1 to start
         window0 = self.makeWindow0()
@@ -291,22 +316,26 @@ class UX:
                         #connector.SSID = values["-SSIDIN-"]
                         connector.newIP = values["-IPIN-"]
                         #connector.PSWD = "NoneShallPass"
+                        
                         window['-MESSAGE-'].update(f'Connecting to The Conductor at IP Address {connector.HostIP}...')
                         window.refresh()
                         if connector.socketConnect(connector.newIP, connector.SSID) == 1:
                             connector.HostIP = connector.newIP
                             connector.newIP = ''
                             print(f'IP: {connector.HostIP}, SSID: {connector.SSID}')
-                            #Get Network data from User
+                            #Get Network data from the air
+                            self.SSIDList = connector.getNetworks()
                             window['-TOPMESSAGE-'].update(f'Conductor Connected!  IP Address: {connector.HostIP}')
                             window['-TOPMESSAGE01-'].update(f'To use this network click continue. To connect to another network enter the network info below and click Reconect')
                             #window['-TOPMESSAGE01-'].update(visible=False)
                             window['-IPIN-'].update(visible=False)
+                            window['-SSIDIN-'].update(self.SSIDList)
                             window['-SSIDIN-'].update(visible=True)
                             window['-PSWDIN-'].update(visible=True)
                             window['-RECNTBTN-'].update(visible=True)
                             window['-CONTBTN-'].update(visible=True)
                             window['-APCNTEBTN-'].update(visible=False)
+                            window['-MESSAGE-'].update(visible=False)
                             window.refresh()  
 
                 if event == '-CONTBTN-':
@@ -318,7 +347,7 @@ class UX:
                 if event == '-RECNTBTN-':
                     print()
                     print(f'Window 0 -RECNTBTN-')
-                    connector.newSSID = values["-SSIDIN-"]
+                    connector.newSSID = values["-SSIDIN-"][0]
                     connector.newPSWD = values["-PSWDIN-"]
                     window['-SSIDIN-'].update(visible=False)
                     window['-PSWDIN-'].update(visible=False)
