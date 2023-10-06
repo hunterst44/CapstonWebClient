@@ -40,75 +40,85 @@ class UX:
     class ConductorConnector:
 
         def __init__(self):
-            self.SSID = ""
+            self.SSID = "TheConductor"
             self.HostIP = ""
             self.PSWD = ""
+            self.newSSID = ""
+            self.newIP = ""
+            self.newPSWD = ""
 
 
-        def connectAP(self):
+        def socketConnect(self, ip, ssid):
             print()
             print(f'UX.connnectDevice')
-            dataTx = struct.pack("=B", 0xF0)
+            # dataTx = struct.pack("=B", 0xF0)
             sock = socket.socket()
-            sock.connect((self.HostIP, 80))
-            print()
-            print("Connected to server")
-            try:
-                sock.send(dataTx)
-                #print("Sent Data")
-            except:
-                sock.connect((self.HostIP, 80))
-                #print("Socket Reconnected")
-                sock.send(dataTx)
-                #TODO Set ESP32 to respond with display when client connects to AP
-                recvByte = sock.recv(1)
+            connection = 0
+            while connection == 0:
+                # sock = socket.socket()
+                # sock.connect((ip, 80))
+                print(f"Connected to server at {ip} at {ssid}")
+                connection = 1
+            #Test the connection
+            
+            
+            # try:
+            #     sock.send(dataTx)
+            #     #print("Sent Data")
+            # except:
+            #     sock.connect((ip, 80))
+            #     #print("Socket Reconnected")
+            #     sock.send(dataTx)
+        #     #TODO Set ESP32 to respond with display when client connects to AP
+        #     recvByte = sock.recv(1)
 
-                if recvByte == 0xFF:
+            #     if recvByte == 0xFF:
+
+            #        return 1
+            #     else:
+            #         return -1
+            return 1
+
+        def socketSendStr(self, dataTx, ip, ssid):
+            print()
+            print(f'UX.connnectDevice')
+            print(f"Sending connection info {dataTx}")
+
+            #sock = socket.socket()
+            #sock.connect((ip, 80))
+            print(f"Connected to server at {ip} on {ssid}")
+            print(f"Sending connection info {dataTx}")
+
+            # try:
+            #     sock.send(dataTx)
+            #     #print("Sent Data")
+            # except:
+            #     sock.connect((ip, 80))
+            #     #print("Socket Reconnected")
+            #     sock.send(dataTx)
+            #     recvByte = sock.recv(1)
+
+            #     if recvByte == 0xF0:
+                     #sock.close()
+            #         return 1
+            #     else:
+                      #sock.close()
+            #         return -1
+                #     #TODO Have the ESP32 disconnet and reconnect on the new socket
+
+            return 1
+
+        def sendNetworkInfo(self, newSSID, pswd):
+            if newSSID != '' and pswd != '':
+                dataTx = newSSID + "__--__" + pswd
+                #TODO Connect to AP network
+                    #send connection infos
+                if self.socketSendStr(dataTx, self.HostIP, self.SSID) == 1:
                     return 1
                 else:
                     return -1
-                
-        def sendNetwork(self, newSSID, pswd):
-            if newSSID != '' and pswd != '':
-                dataTx = newSSID + "__--__" + pswd
-                
-                sock = socket.socket()
-                sock.connect((self.SSID, 80))
-                print(f"Connected to server on {self.SSID}")
-                try:
-                    sock.send(dataTx)
-                    #print("Sent Data")
-                except:
-                    sock.connect((self.SSID, 80))
-                    #print("Socket Reconnected")
-                    sock.send(dataTx)
-                    #TODO Have the ESP32 disconnet and reconnect on the new socket
+                  
 
-        # def 
-        #         sock.close()
-        #         connected = 0
-        #         while connected == 0:
-        #            time.sleep(5)
-        #            sock.connect((newSSID, 80))
-        #            connected = 1
-                   
-        #         print()
-        #         print(f"Connected to server on {newSSID}")
-        #         self.SSID = newSSID
-        #         self.PSWD = pswd
-
-                
-                    
-            #Connect to ESP32 AP network
-
-            #Get network details from user or file
-
-            #Send network detials to ESP32
-
-            #Reconnect to ESP32 on new network
-
-            #Log network details
-    
     
     def trainModel(self):
         #iterate through all the gestures and collect packetLimit samples of each
@@ -169,12 +179,13 @@ class UX:
 
     def makeWindow0(self):
     #Window zero welcome, set up wifi
-        layout = [[sg.Text('The Conductor: Window 0'), sg.Text(size=(2,1), key='-OUTPUT-')],
-                [sg.Text('Connect to The Conductor.'), sg.Text(size=(5,1), key='-OUTPUT-')], 
-                [sg.pin(sg.Column([[sg.Text('Start up The Conductor and connect your PC to the the SSID and IP Address displayed on the screen.'), sg.Text(size=(2,1), key='-TOPMESSAGE-')]]))],
-                [sg.pin(sg.Column([[sg.Text('Enter same IP address below and click "Connect."'), sg.Text(size=(2,1), key='-TOPMESSAGE01-')]]))],
+        layout = [[sg.Text('The Conductor: Window 0: Connect to The Conductor.'), sg.Text(size=(2,1), key='-OUTPUT-')],
+                #[sg.Text('Connect to The Conductor.'), sg.Text(size=(5,1), key='-OUTPUT-')], 
+                [sg.pin(sg.Column([[sg.Text('Start up The Conductor and connect your PC to the SSID displayed on the screen.', key='-TOPMESSAGE-'), sg.Text(size=(2,1))]]))],
+                [sg.pin(sg.Column([[sg.Text('Then enter IP address on the screen and click "Connect."', key='-TOPMESSAGE01-'), sg.Text(size=(2,1))]]))],
                 [sg.pin(sg.Column([[sg.Input('IP Address', key="-IPIN-", visible=True)]]), shrink=False)],
                 [sg.pin(sg.Column([[sg.Input('IP Address', key="-IPNEW-", visible=False)]]), shrink=False)],
+                [sg.pin(sg.Column([[sg.Button('Connect', key='-STNCNTEBTN-', visible=False)]], pad=(0,0)), shrink=False)],
                 [sg.pin(sg.Column([[sg.Input('Network SSID', key="-SSIDIN-", visible=False)]]), shrink=False)],
                 [sg.pin(sg.Column([[sg.Input('Password', key="-PSWDIN-", visible=False)]]), shrink=False)],
                 [sg.pin(sg.Column([[sg.Button('Connect', key='-APCNTEBTN-', visible=True)]], pad=(0,0)), shrink=False)],
@@ -247,7 +258,7 @@ class UX:
         # Set all windows to Noe except window 1 to start
         window0 = self.makeWindow0()
         #window1 = self.makeWindow1(modelMessage)
-        window1 = 0
+        window1 = None
         window2_1 = None
         window3 = None
         window3_1 = None
@@ -260,9 +271,15 @@ class UX:
 
 ##############     Window0          #################
             #events for window1 (welcome, load / create model)
+            #TODO Add option to choose from previous connections
+            #Add option to select from detected networks
             if window == window0:
+
                 print()
                 print('Window 0')
+
+                if event == sg.WIN_CLOSED or event == 'Exit':
+                    break
 
                 if event == "-APCNTEBTN-":
                     print()
@@ -272,16 +289,19 @@ class UX:
                         #TODO better validation
                             #Check pattern for IP, Get list of available networks aand let user check
                         #connector.SSID = values["-SSIDIN-"]
-                        connector.HostIP = values["-IPIN-"]
+                        connector.newIP = values["-IPIN-"]
                         #connector.PSWD = "NoneShallPass"
-                        print(f'IP: {connector.HostIP}')
                         window['-MESSAGE-'].update(f'Connecting to The Conductor at IP Address {connector.HostIP}...')
                         window.refresh()
-                        if connector.connectAP() > 0:
+                        if connector.socketConnect(connector.newIP, connector.SSID) == 1:
+                            connector.HostIP = connector.newIP
+                            connector.newIP = ''
+                            print(f'IP: {connector.HostIP}, SSID: {connector.SSID}')
                             #Get Network data from User
                             window['-TOPMESSAGE-'].update(f'Conductor Connected!  IP Address: {connector.HostIP}')
-                            window['-TOPMESSAGE01-'].update(f'To use this network click continue. To connect to another network enter the network info below and click OK')
+                            window['-TOPMESSAGE01-'].update(f'To use this network click continue. To connect to another network enter the network info below and click Reconect')
                             #window['-TOPMESSAGE01-'].update(visible=False)
+                            window['-IPIN-'].update(visible=False)
                             window['-SSIDIN-'].update(visible=True)
                             window['-PSWDIN-'].update(visible=True)
                             window['-RECNTBTN-'].update(visible=True)
@@ -292,13 +312,14 @@ class UX:
                 if event == '-CONTBTN-':
                     print()
                     print(f'Window 0 -CONTBTN-')
-
-                
+                    window0.hide()
+                    window1 = self.makeWindow1(modelMessage)
+                    
                 if event == '-RECNTBTN-':
                     print()
                     print(f'Window 0 -RECNTBTN-')
-                    newSSID = values["-SSIDIN-"]
-                    pswd = values["-PSWDIN-"]
+                    connector.newSSID = values["-SSIDIN-"]
+                    connector.newPSWD = values["-PSWDIN-"]
                     window['-SSIDIN-'].update(visible=False)
                     window['-PSWDIN-'].update(visible=False)
                     window['-RECNTBTN-'].update(visible=False)
@@ -306,30 +327,45 @@ class UX:
                     window['-APCNTEBTN-'].update(visible=False)
                     window.refresh()
 
-                    if newSSID != "Network SSID" and pswd != "Password":
+                    if connector.newSSID != "Network SSID" and connector.newPSWD != "Password":
                         #TODO better validation
                             #Check pattern for IP, Get list of available networks aand let user check
                         #connector.SSID = values["-SSIDIN-"]
-                        newSSID = values["-SSIDIN-"]
                         #connector.PSWD = "NoneShallPass"
                         print(f'IP: {connector.HostIP}')
-                        window['-TOPMESSAGE-'].update(f'Connecting Conductor to Network {newSSID}.')
-                        window['-TOPMESSAGE01-'].update(f"Check The Conductor's display for connection information, and enter the displayed IP Address below.")
-                        window['-IPIN-'].update(visible=True)
+                        window['-TOPMESSAGE-'].update(f'Connecting Conductor to Network {connector.newSSID}. Please reconnect your PC to this network.')
+                        window['-TOPMESSAGE01-'].update(f"Check The Conductor's display for connection information, and enter the new IP Address below.")
+                        window['-IPNEW-'].update(visible=True)
+                        window['-STNCNTEBTN-'].update(visible=True)
                         window.refresh()
-                        self.sendNetwork(newSSID, pswd)
+                        if connector.sendNetworkInfo(connector.newSSID, connector.newPSWD) == 1:
+                            window['-MESSAGE-'].update(visible=True)
+                            window['-MESSAGE-'].update(f"Sent Network Information")
 
-                if event == '-IPNEW-':
+                if event == '-STNCNTEBTN-':
                     print()
                     print(f'Window 0 -IPNEW-')
                     if window['-IPNEW-'] != 'IP Address':
                         #TODO add better validation
-                        self.IPAddress = values['IPNEW']
-
+                        connector.newIP = values['-IPNEW-']
+                        window['-TOPMESSAGE-'].update(f'Connecting to The Conductor at {connector.newIP} on {connector.newSSID}.')
+                        window['-TOPMESSAGE01-'].update(visible=False)
+                        if connector.socketConnect(connector.newIP, connector.newSSID) == 1:
+                            connector.HostIP = connector.newIP
+                            connector.newIP = ''
+                            connector.SSID = connector.newSSID
+                            connector.newSSID = ''
+                            window['-MESSAGE-'].update(f"Connected to server at {connector.HostIP} on {connector.SSID}")
+                            
+                            #TODO log connection information
+                            
+                            time.sleep(5)
+                            window1 = self.makeWindow1(modelMessage)
+                            window0.hide()
                  
 
             
-##############     Window0          #################            
+##############     Window1          #################            
             if window == window1:
                 print()
                 print('Window 1')
