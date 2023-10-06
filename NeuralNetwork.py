@@ -502,8 +502,9 @@ class Loss_CategoricalCrossEntropy(Loss):
         #Number of sample in a batch
         samples = len(y_pred)
         
-        #print(f'y_pred: {y_pred}') 
-        #print(f'y_true: {y_true}') 
+        print(f'len(y_pred): {len(y_pred)}') 
+        print(f'len(y_pred): {len(y_pred)}') 
+        print(f'y_true: {y_true}') 
         
         #Clip data to prevent division by 0
         #Clip both sidfes to not drag mean towards any value
@@ -514,6 +515,9 @@ class Loss_CategoricalCrossEntropy(Loss):
         #Probabilities for target values
         #Only if categorical labels
         if len(y_true.shape) == 1:
+            print(f'samples): {samples}') 
+            print(f'y_pred_clipped: {y_pred_clipped}')
+            print(f'len(y_pred_clipped): {len(y_pred_clipped)}')
             correct_confidences = y_pred_clipped[range(samples), y_true]
         
         #Mask values - only for one-hot encoded labels
@@ -1171,10 +1175,14 @@ def getAccDataBinary(dataPathList, truthPathList, packetSize, numSensors):
 
             if dataArr[0,0] == 99.:
                 dataArr = tmpArr
+                print(f'dataArr shape: {dataArr.shape}')
+                print(f'dataArr from file: {dataArr}')
             else:
-                print(f'tmpArr shape: {tmpArr.shape}')
-                print(f'tmpArr from file: {tmpArr}')
+                #print(f'tmpArr shape: {tmpArr.shape}')
+                #print(f'tmpArr from file: {tmpArr}')
                 dataArr = np.append(dataArr, tmpArr,axis=0)
+                print(f'dataArr shape: {dataArr.shape}')
+                print(f'dataArr from file: {dataArr}')
 
     for path in truthPathList:
         print(f'Truth Patch in NN: {path}')
@@ -1214,7 +1222,6 @@ def getAccDataBinary(dataPathList, truthPathList, packetSize, numSensors):
     print(f'dataIndex shape: {dataIndex.shape}')
     print(f'dataIndex from file: {dataIndex}')
 
-    
     return dataArr, truthArr
 
 def getAccDataCSV(dataPathList, truthPathList):
@@ -1513,8 +1520,9 @@ def trainOrientation(basePath, pathList, packetSize, numSensors, numClasses):
 
     print()
     print(f'truths array for model: {y}') 
+    print(f'data array for model: {X}') 
     #y = y.reshape(y.shape[0])  #reshape truth data only if truth data is formatted as 2-D
-    EPOCHS = 5
+    EPOCHS = 100
     BATCH_SIZE = 1
     
     modelOk = 0

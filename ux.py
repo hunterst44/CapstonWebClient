@@ -19,7 +19,7 @@ class UX:
         self.packetLimit = 3
         self.packetSize = 1
         self.numSensors = 2
-        self.numGestures = 1   #How many gestures trained by the model
+        self.numGestures = 3   #How many gestures trained by the model
         self.pathPreface = "data/test/"
         self.dataTx = 0xFF
         self.trainCountDown = 0 # Counter for training countdown
@@ -155,7 +155,7 @@ class UX:
             self.dataStream.prepTraining()
         
         #CSend all the gestures to neural network
-        #NeuralNetwork.trainOrientation(pathPreface, labelPathList, 1, numSensors, gestureIdx)        
+        #NeuralNetwork.trainOrientation(pathPreface, labelPathList, 1, numSensors, self.numGestures)        
 
     def predictSample(self):
         #writer = oscWriter.OSCWriter()
@@ -224,7 +224,7 @@ class UX:
     #Window one welcome, load / create model
         layout = [[sg.Text('The Conductor: Window 1'), sg.Text(size=(2,1), key='-OUTPUT-')],
                 [sg.Text('Upload an existing neural network model or create a new one.'), sg.Text(size=(5,1), key='-OUTPUT-')], 
-                [sg.pin(sg.Column([[sg.Text('Upload an existing neural network model or create a new one.'), sg.Text(size=(2,1), key='-MODELMESSAGE-'), sg.Button('Ok', key='-MODELMESAGEBTN-')]]))],
+                [sg.pin(sg.Column([[sg.Text(f'Use the model at {self.pathPreface}'), sg.Text(size=(2,1), key='-MODELMESSAGE-'), sg.Button('Ok', key='-MODELMESAGEBTN-')]]))],
                 [sg.pin(sg.Column([[sg.Text('Upload a model'), sg.Text(size=(2,1), key='-UPLOADMODEL-'), sg.Input(), sg.FileBrowse(), sg.Button('Ok', key='-UPLOADMODELBTN-')]]))],
                 [sg.Text('Create a New Model'), sg.Text(size=(2,1), key='-OUTPUT-'), sg.Button('Ok', key='-CREATE-')],
                 [sg.pin(sg.Column([[sg.Text('', visible=True, key='-MESSAGE-'), sg.Text(size=(2,1))]], pad=(0,0)), shrink=False)],
@@ -486,7 +486,7 @@ class UX:
                 print()
                 print("window 3")
                 class0 = "baseStationaryC00"   #Class 0 is the reference orientation with no movement
-                pathList = [class0]
+                pathList = ["class00", "class01", "class02"]
 
                 if event == sg.WIN_CLOSED or event == 'Exit':
                     break
@@ -495,7 +495,7 @@ class UX:
                     print()
                     print("GO!")
                     #self.goTrain = 1
-                    gestureIdx = 5 #hard coded for now, will be provided by user with GUI
+                    #gestureIdx = self.numGestures #hard coded for now, will be provided by user with GUI
                     sampleCount = 0
                     testCount = 0
 
@@ -524,7 +524,7 @@ class UX:
                     print("Start Training")
 
                     while sampleCount < self.packetLimit:
-                        print(f'Collected sample {sampleCount + 1} of {self.packetLimit} samples for gesture {self.gestureCount + 1} of {gestureIdx} gestures')
+                        print(f'Collected sample {sampleCount + 1} of {self.packetLimit} samples for gesture {self.gestureCount + 1} of {self.numGestures} gestures')
                         self.trainModel()
                         sampleCount += 1
                     sampleCount = 0
@@ -536,14 +536,14 @@ class UX:
                         testIdx = 1
 
                     while testCount < testIdx:
-                        print(f'Collected sample {sampleCount + 1} of {self.packetLimit} samples for gesture {self.gestureCount + 1} of {gestureIdx} gestures')
+                        print(f'Collected sample {sampleCount + 1} of {self.packetLimit} samples for gesture {self.gestureCount + 1} of {self.numGestures} gestures')
                         self.trainModel()
                         testCount += 1
                     testCount = 0
                     self.gestureCount += 1
 
-                    if self.gestureCount < gestureIdx:
-                        #gestureMessage = 'Training Gesture ' + str(self.gestureCount + 1) + ' of ' + str(gestureIdx) +  ' gestures'
+                    if self.gestureCount < self.numGestures:
+                        #gestureMessage = 'Training Gesture ' + str(self.gestureCount + 1) + ' of ' + str(self.numGestures) +  ' gestures'
                         # window['-GESTURE-'].update(gestureMessage)
                         # window.refresh()
                         window.write_event_value("GO!", '') 
@@ -574,7 +574,7 @@ class UX:
                 if event == "-GOBTN-":
                     print()
                     print("-GOBTN-")
-                    #print(f'Collected sample {sampleCount + 1} of {self.packetLimit} samples for gesture {self.gestureCount + 1} of {gestureIdx} gestures')
+                    #print(f'Collected sample {sampleCount + 1} of {self.packetLimit} samples for gesture {self.gestureCount + 1} of {self.numGestures} gestures')
                     prediction, ToFEnable = self.predictSample()
                     if ToFEnable:
                         PredictMessage = "ToF enabled. Detected Gesture " + str(prediction)
