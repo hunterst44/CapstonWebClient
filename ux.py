@@ -17,7 +17,7 @@ class UX:
     def __init__(self, *, theme='BluePurple'):
         self.theme = theme
         self.writer = oscWriter.OSCWriter()
-        self.packetLimit = 3
+        self.packetLimit = 300
         self.packetSize = 1
         self.numSensors = 2
         self.numGestures = 3   #How many gestures trained by the model
