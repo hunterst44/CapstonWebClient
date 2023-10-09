@@ -502,8 +502,9 @@ class Loss_CategoricalCrossEntropy(Loss):
         #Number of sample in a batch
         samples = len(y_pred)
         
-        #print(f'y_pred: {y_pred}') 
-        #print(f'y_true: {y_true}') 
+        print(f'len(y_pred): {len(y_pred)}') 
+        print(f'len(y_pred): {len(y_pred)}') 
+        print(f'y_true: {y_true}') 
         
         #Clip data to prevent division by 0
         #Clip both sidfes to not drag mean towards any value
@@ -514,6 +515,9 @@ class Loss_CategoricalCrossEntropy(Loss):
         #Probabilities for target values
         #Only if categorical labels
         if len(y_true.shape) == 1:
+            print(f'samples): {samples}') 
+            print(f'y_pred_clipped: {y_pred_clipped}')
+            print(f'len(y_pred_clipped): {len(y_pred_clipped)}')
             correct_confidences = y_pred_clipped[range(samples), y_true]
         
         #Mask values - only for one-hot encoded labels
@@ -1021,141 +1025,10 @@ class Model:
             
             return np.vstack(output)
 
-def RegressionNoValid():
-    #Create Dataset
-    X, y = sine_data()
-    
-    #Instanstiate the model
-    model = Model()
-    
-    #Add layers
-    model.add(Layer_Dense(1,64))
-    model.add(Activation_ReLu())
-    model.add(Layer_Dense(64,64))
-    model.add(Activation_ReLu())
-    model.add(Layer_Dense(64,1))
-    model.add(Activation_Linear())
-    
-    model.set(
-        loss=Loss_MeanSquaredError(),
-        optimizer=Optimizer_Adam(learning_rate=0.005, decay=1e-3),
-        accuracy=Accuracy_Regression()
-    )
-    
-    # Finalize the model
-    model.finalize()
-    
-    model.train(X, y, epochs=10000, print_every=100)
-    
-def binaryLogisticValid():
-    #Create Dataset
-    X,y = spiral_data(samples=100, classes=2)
-    X_test, y_test = spiral_data(samples=100, classes=2)
-    
-    y = y.reshape(-1, 1)
-    y_test = y_test.reshape(-1, 1)
-    
-    #Instanstiate the model
-    model = Model()
-    
-    #Add layers
-    model.add(Layer_Dense(2,64, weight_regularizer_l2=5e-4, bias_regularizer_l2=5e-4))
-    model.add(Activation_ReLu())
-    model.add(Layer_Dense(64,1))
-    model.add(Activation_Sigmoid())
-    
-    model.set(
-        loss=Loss_BinaryCrossentropy(),
-        optimizer=Optimizer_Adam(decay=1e-7),
-        accuracy=Accuracy_Categorical()
-    )
-    
-    model.finalize()
-    
-    model.train(X,y, validation_data=(X_test, y_test),epochs=10000, print_every=100)
-    
-def CategoricalCrossEntropy():
-    #Create Dataset
-    X,y = spiral_data(samples=1000, classes=3)
-    X_test, y_test = spiral_data(samples=100, classes=3)
-    
-    #Instanstiate the model
-    model = Model()
-    
-    #Add layers
-    model.add(Layer_Dense(2,512, weight_regularizer_l2=5e-4, bias_regularizer_l2=5e-4))
-    model.add(Activation_ReLu())
-    model.add(Layer_Dropout(0.1))
-    model.add(Layer_Dense(512,3))
-    model.add(Activation_Softmax())
-    
-    model.set(
-        loss=Loss_CategoricalCrossEntropy(),
-        optimizer=Optimizer_Adam(learning_rate=0.05, decay=5e-5),
-        accuracy=Accuracy_Categorical()
-    )
-    
-    model.finalize()
-    
-    model.train(X,y, validation_data=(X_test, y_test),epochs=10000, print_every=100)
-    
-def batchModel():
-    #Create Dataset
-    X,y = spiral_data(samples=1000, classes=3)
-    X_test, y_test = spiral_data(samples=100, classes=3)
-    
-    EPOCHS = 1000
-    BATCH_SIZE = 250
-    
-    #Instanstiate the model
-    model = Model()
-    
-    #Add layers
-    model.add(Layer_Dense(2,512, weight_regularizer_l2=5e-4, bias_regularizer_l2=5e-4))
-    model.add(Activation_ReLu())
-    model.add(Layer_Dropout(0.1))
-    model.add(Layer_Dense(512,3))
-    model.add(Activation_Softmax())
-    
-    model.set(
-        loss=Loss_CategoricalCrossEntropy(),
-        optimizer=Optimizer_Adam(learning_rate=0.05, decay=5e-5),
-        accuracy=Accuracy_Categorical()
-    )
-    
-    model.finalize()
-    
-    model.train(X,y, validation_data=(X_test, y_test),epochs=EPOCHS, batch_size=BATCH_SIZE, print_every=5)
-    
-    parameters = model.get_parameters()
-    print(parameters)
-    
-    model.save('data/model00.model')
-    
-def testLoadModel():
-    #Create Dataset
-    X,y = spiral_data(samples=1000, classes=3)
-    X_test, y_test = spiral_data(samples=100, classes=3)
-    
-    model = Model.load('data/model00.model')
-    
-    model.evaluate(X_test, y_test)
-    
-def prediction():
-    #Create Dataset
-    X,y = spiral_data(samples=1000, classes=3)
-    X_test, y_test = spiral_data(samples=100, classes=3)
-    
-    model = Model.load('data/model00.model')
-    
-    confidences = model.predict(X_test[:5])
-    predictions = model.output_layer_activation.predictions(confidences)
-    print(predictions)
 
 def getAccDataBinary(dataPathList, truthPathList, packetSize, numSensors):
-    # print()
-    # print("**######################################**")
-    # print("Binary Data")
+    print()
+    # print("**######################################**")    print("getAccDataBinary")
     dataArr = np.empty([1, 3 * packetSize * numSensors])
     dataArr[0,0] = 99.
     truthArr = np.empty([1,])
@@ -1163,7 +1036,7 @@ def getAccDataBinary(dataPathList, truthPathList, packetSize, numSensors):
 
     for path in dataPathList:
         # print("****")
-        # print(path)
+        print(f'data path: {path}')
         if os.path.exists(path):
             print("****")
             print(path)
@@ -1171,12 +1044,17 @@ def getAccDataBinary(dataPathList, truthPathList, packetSize, numSensors):
 
             if dataArr[0,0] == 99.:
                 dataArr = tmpArr
+                print(f'dataArr shape: {dataArr.shape}')
+                print(f'dataArr from file: {dataArr}')
             else:
                 #print(f'tmpArr shape: {tmpArr.shape}')
                 #print(f'tmpArr from file: {tmpArr}')
                 dataArr = np.append(dataArr, tmpArr,axis=0)
+                print(f'dataArr shape: {dataArr.shape}')
+                print(f'dataArr from file: {dataArr}')
 
     for path in truthPathList:
+        print(f'Truth Patch in NN: {path}')
         if os.path.exists(path):
             print("****")
             print(path)
@@ -1185,8 +1063,8 @@ def getAccDataBinary(dataPathList, truthPathList, packetSize, numSensors):
             if truthArr[0] == 99:
                 truthArr = tmpArr
             else:
-                #print(f'tmpArr shape: {tmpArr.shape}')
-                #print(f'tmpArr: {tmpArr}')
+                print(f'tmpArr shape: {tmpArr.shape}')
+                print(f'tmpArr: {tmpArr}')
                 truthArr = np.append(truthArr, tmpArr,axis=0)
 
     #Get random index
@@ -1213,7 +1091,6 @@ def getAccDataBinary(dataPathList, truthPathList, packetSize, numSensors):
     print(f'dataIndex shape: {dataIndex.shape}')
     print(f'dataIndex from file: {dataIndex}')
 
-    
     return dataArr, truthArr
 
 def getAccDataCSV(dataPathList, truthPathList):
@@ -1275,77 +1152,8 @@ def getAccDataCSV(dataPathList, truthPathList):
     #print(f'truthArr shape: {truthArr.shape}')
     #print(f'truthArr from file: {truthArr}')
 
-    return dataArr, truthArr
+    return dataArr, truthArr       
 
-# def AccModel01():
-#     #Create Dataset
-#     #TODO: Create data and validation arrays
-#         # X Data is a randomized 1D array of features in groups of 15 (3 axis * 5 samples)
-#         # y ground truth is the list of the classes of the data - see spiral_data as an example
-#     #X,y = spiral_data(samples=1000, classes=3)
-#     #X_test, y_test = spiral_data(samples=100, classes=3)
-    
-#     X,y = getAccDataBinary(["data\packet5Avg20\\training00_noMove.npy","data\packet5Avg20\\training01_upandDown.npy","data\packet5Avg20\\training02_inandOut.npy"], ["data\packet5Avg20\\training00_noMove_truth.npy","data\packet5Avg20\\training01_upandDown_truth.npy","data\packet5Avg20\\training02_inandOut_truth.npy"])
-#     #y = y.reshape(y.shape[0])  #reshape truth data only if truth data is formatted as 2-D
-#     EPOCHS = 500
-#     BATCH_SIZE = 1
-    
-#     #Instanstiate the model
-#     model = Model()
-    
-#     #Add layers
-#     #Input is 15 features (3 Axis * 5 samples)
-#     model.add(Layer_Dense(30,150, weight_regularizer_l2=5e-4, bias_regularizer_l2=5e-4))
-#     model.add(Activation_ReLu())
-#     model.add(Layer_Dropout(0.1))
-#     model.add(Layer_Dense(150,3))
-#     model.add(Activation_Softmax())
-    
-#     model.set(
-#         loss=Loss_CategoricalCrossEntropy(),
-#         optimizer=Optimizer_Adam(learning_rate=0.05, decay=5e-5),
-#         accuracy=Accuracy_Categorical()
-#     )
-    
-#     model.finalize()
-    
-#     #model.train(X,y, validation_data=(X_test, y_test),epochs=EPOCHS, batch_size=BATCH_SIZE, print_every=5)
-#     model.train(X,y, epochs=EPOCHS, batch_size=BATCH_SIZE, print_every=1000)
-    
-#     parameters = model.get_parameters()
-#     #print(f'parameters: {parameters}')
-    
-#     model.save('data/AccModel01')
-
-def Acc01prediction():
-    #Create Dataset
-    X,y = getAccDataBinary(["data\packet5Avg20\\training00_noMove.npy","data\packet5Avg20\\training01_upandDown.npy","data\packet5Avg20\\training02_inandOut.npy"], ["data\packet5Avg20\\training00_noMove_truth.npy","data\packet5Avg20\\training01_upandDown_truth.npy","data\packet5Avg20\\training02_inandOut_truth.npy"])
-   
-    model = Model.load('data/AccModel01')
-    
-    confidences = model.predict(X)
-    predictions = model.output_layer_activation.predictions(confidences)
-    print(predictions)
-
-
-# def convertTruthBinary(truthPathList):
-#     #One time function to convert truth data to a 1-D array - done automatically in socketClient from now on
-#     for path in truthPathList:
-#         if os.path.exists(path):
-#             # print("****")
-#             # print(path)
-#             y = np.load(path,allow_pickle=False)
-#             print(y)
-#             print(y.shape)
-#             y = y.reshape(y.shape[0])  #reshape truth data only if truth data is formatted as 2-D
-#             print(y)
-#             print(y.shape)
-#             np.save(path, y, allow_pickle=False)
-#     for path in truthPathList:   #Check that the file was written to properly
-#         if os.path.exists(path):
-#            y = np.load(path,allow_pickle=False)
-#           print(y)
-#           print(y.shape)
 
 def convertTruthCSV(truthPathList):
     #One time function to convert truth data to a 1-D array - done automatically in socketClient from now on
@@ -1374,56 +1182,16 @@ def convertPickletoDill():
     with open("data/AccModel01Dill", 'wb') as f:
         dill.dump(model, f)
 
-def train3Gestures(basePath):
-    #Create Dataset
-    #TODO: Create data and validation arrays
-        # X Data is a randomized 1D array of features in groups of 15 (3 axis * 5 samples)
-        # y ground truth is the list of the classes of the data - see spiral_data as an example
-    #X,y = spiral_data(samples=1000, classes=3)
-    #X_test, y_test = spiral_data(samples=100, classes=3)
-    
-    X,y = getAccDataBinary([basePath + "noMove.npy", basePath + "upandDown.npy", basePath + "inandOut.npy"], [basePath + "noMove_truth.npy", basePath + "upandDown_truth.npy", basePath + "inandOut_truth.npy"])
-    #y = y.reshape(y.shape[0])  #reshape truth data only if truth data is formatted as 2-D
-    EPOCHS = 500
-    BATCH_SIZE = 1
-    
-    #Instanstiate the model
-    model = Model()
-    
-    #Add layers
-    #Input is 15 features (3 Axis * 5 samples)
-    model.add(Layer_Dense(30,150, weight_regularizer_l2=5e-4, bias_regularizer_l2=5e-4))
-    model.add(Activation_ReLu())
-    model.add(Layer_Dropout(0.1))
-    model.add(Layer_Dense(150,3))
-    model.add(Activation_Softmax())
-    
-    model.set(
-        loss=Loss_CategoricalCrossEntropy(),
-        optimizer=Optimizer_Adam(learning_rate=0.05, decay=5e-5),
-        accuracy=Accuracy_Categorical()
-    )
-    
-    model.finalize()
-    
-    #model.train(X,y, validation_data=(X_test, y_test),epochs=EPOCHS, batch_size=BATCH_SIZE, print_every=5)
-    model.train(X,y, epochs=EPOCHS, batch_size=BATCH_SIZE, print_every=1000)
-    
-    parameters = model.get_parameters()
-    #print(f'parameters: {parameters}')
-    
-    model.save(basePath + "model")
-
-def realTimePrediction(packetData, basePath):
+def realTimePrediction(packetData, pathPreface):
      #Create Dataset
     predictionStartMs = int(time.time() * 1000)
     predictions = []
-    model = Model.load(basePath + "model")
+    model = Model.load(pathPreface + "model.model")
     #print(f'model: {model}')
     
     confidences = model.predict(packetData)
     
-    confidencesPath = basePath + "confidences.npy"
+    confidencesPath = pathPreface + "confidences.npy"
     #Write Confidences to binary
     if os.path.exists(confidencesPath):
         tmpArr = np.load(confidencesPath,allow_pickle=False)
@@ -1439,7 +1207,7 @@ def realTimePrediction(packetData, basePath):
 
     #print(f'Confidences: {confidences}') 
 
-    predictionsPath = basePath + "predictions.npy"
+    predictionsPath = pathPreface + "predictions.npy"
     predictions = model.output_layer_activation.predictions(confidences)
     #print(f'Current Prediction: {predictions}')
     #print(f'Current Prediction: {predictions[0]}')
@@ -1484,7 +1252,7 @@ def realTimePrediction(packetData, basePath):
 
     return predList
 
-def trainOrientation(basePath, pathList, packetSize, numSensors, numClasses):
+def trainOrientation(pathPreface, pathList, packetSize, numSensors, numGestures):
     #Create Dataset
     #TODO: Create data and validation arrays
         # X Data is a randomized 1D array of features in groups of 15 (3 axis * 5 samples)
@@ -1492,31 +1260,45 @@ def trainOrientation(basePath, pathList, packetSize, numSensors, numClasses):
     #X,y = spiral_data(samples=1000, classes=3)
     #X_test, y_test = spiral_data(samples=100, classes=3)
 
+    print()
+    print('trainOrientation()')
+    print(f'pathPreface: {pathPreface}')
+
     dataPathList = pathList.copy()
     truthPathList = pathList.copy()
     for i in range(len(dataPathList)):
-        dataPathList[i] = dataPathList[i] + ".npy"
+        dataPathList[i] = pathPreface + dataPathList[i] + ".npy"
 
     print(f'data Paths: {dataPathList}')  
     
     for i in range(len(truthPathList)):
-        truthPathList[i] = truthPathList[i] + "_truth.npy"
+        truthPathList[i] = pathPreface + truthPathList[i] + "_truth.npy"
 
     print(f'truth Paths: {truthPathList}')  
     
     X,y = getAccDataBinary(dataPathList, truthPathList, packetSize=packetSize, numSensors=numSensors)
 
+    print()
     print(f'truths array for model: {y}') 
+    print(f'data array for model: {X}') 
     #y = y.reshape(y.shape[0])  #reshape truth data only if truth data is formatted as 2-D
-    EPOCHS = 500
+    EPOCHS = 100
     BATCH_SIZE = 1
     
-    if os.path.exists(basePath + "model"):     #Use the existing model if it exists
-        model = Model.load(basePath + "model")
+    modelOk = 0
+    if os.path.exists(pathPreface + "model.model"):     #Use the existing model if it exists
+        model = Model.load(pathPreface + "model.model")
 
-        model.finalize()
+        try:
+            model.finalize()
+            print(f'Using exisiting model at: {pathPreface}model.model') 
+            modelOk = 1
+        except:
+            print('Model file not valid. Creating new model')
 
-    else:                                     #Or create a new one
+
+    if modelOk == 0:   
+        print('Creating a new model')                                 #Or create a new one
         model = Model()   #Instanstiate the model
         
         #Add layers
@@ -1524,7 +1306,7 @@ def trainOrientation(basePath, pathList, packetSize, numSensors, numClasses):
         model.add(Layer_Dense(3*packetSize * numSensors,300, weight_regularizer_l2=5e-4, bias_regularizer_l2=5e-4))
         model.add(Activation_ReLu())
         model.add(Layer_Dropout(0.1))
-        model.add(Layer_Dense(300,numClasses))
+        model.add(Layer_Dense(300,numGestures))
         model.add(Activation_Softmax())
         
         model.set(
@@ -1541,26 +1323,307 @@ def trainOrientation(basePath, pathList, packetSize, numSensors, numClasses):
     #parameters = model.get_parameters()
     #print(f'parameters: {parameters}')
     
-    model.save(basePath + "model")
+    model.save(pathPreface + "model.model")
+
+def createTestModel():
+    model = Model()   #Instanstiate the model
+        
+    #Add layers
+    #Input is 15 features (3 Axis * 5 samples)
+    model.add(Layer_Dense(6,300, weight_regularizer_l2=5e-4, bias_regularizer_l2=5e-4))
+    model.add(Activation_ReLu())
+    model.add(Layer_Dropout(0.1))
+    model.add(Layer_Dense(300,1))
+    model.add(Activation_Softmax())
+    
+    model.set(
+        loss=Loss_CategoricalCrossEntropy(),
+        optimizer=Optimizer_Adam(learning_rate=0.05, decay=5e-5),
+        accuracy=Accuracy_Categorical()
+    )
+    
+    model.finalize()
+    model.save('data/test/model.model')
+
+
+
+
+##########################################################################################################
+##########################################################################################################
+##########################################################################################################
+###########################   Neural Network Training and Prediction Examples    #########################
+##########################################################################################################
+##########################################################################################################
+##########################################################################################################
+
+
+
+# def RegressionNoValid():
+#     #Create Dataset
+#     X, y = sine_data()
+    
+#     #Instanstiate the model
+#     model = Model()
+    
+#     #Add layers
+#     model.add(Layer_Dense(1,64))
+#     model.add(Activation_ReLu())
+#     model.add(Layer_Dense(64,64))
+#     model.add(Activation_ReLu())
+#     model.add(Layer_Dense(64,1))
+#     model.add(Activation_Linear())
+    
+#     model.set(
+#         loss=Loss_MeanSquaredError(),
+#         optimizer=Optimizer_Adam(learning_rate=0.005, decay=1e-3),
+#         accuracy=Accuracy_Regression()
+#     )
+    
+#     # Finalize the model
+#     model.finalize()
+    
+#     model.train(X, y, epochs=10000, print_every=100)
+    
+# def binaryLogisticValid():
+#     #Create Dataset
+#     X,y = spiral_data(samples=100, classes=2)
+#     X_test, y_test = spiral_data(samples=100, classes=2)
+    
+#     y = y.reshape(-1, 1)
+#     y_test = y_test.reshape(-1, 1)
+    
+#     #Instanstiate the model
+#     model = Model()
+    
+#     #Add layers
+#     model.add(Layer_Dense(2,64, weight_regularizer_l2=5e-4, bias_regularizer_l2=5e-4))
+#     model.add(Activation_ReLu())
+#     model.add(Layer_Dense(64,1))
+#     model.add(Activation_Sigmoid())
+    
+#     model.set(
+#         loss=Loss_BinaryCrossentropy(),
+#         optimizer=Optimizer_Adam(decay=1e-7),
+#         accuracy=Accuracy_Categorical()
+#     )
+    
+#     model.finalize()
+    
+#     model.train(X,y, validation_data=(X_test, y_test),epochs=10000, print_every=100)
+    
+# def CategoricalCrossEntropy():
+#     #Create Dataset
+#     X,y = spiral_data(samples=1000, classes=3)
+#     X_test, y_test = spiral_data(samples=100, classes=3)
+    
+#     #Instanstiate the model
+#     model = Model()
+    
+#     #Add layers
+#     model.add(Layer_Dense(2,512, weight_regularizer_l2=5e-4, bias_regularizer_l2=5e-4))
+#     model.add(Activation_ReLu())
+#     model.add(Layer_Dropout(0.1))
+#     model.add(Layer_Dense(512,3))
+#     model.add(Activation_Softmax())
+    
+#     model.set(
+#         loss=Loss_CategoricalCrossEntropy(),
+#         optimizer=Optimizer_Adam(learning_rate=0.05, decay=5e-5),
+#         accuracy=Accuracy_Categorical()
+#     )
+    
+#     model.finalize()
+    
+#     model.train(X,y, validation_data=(X_test, y_test),epochs=10000, print_every=100)
+    
+# def batchModel():
+#     #Create Dataset
+#     X,y = spiral_data(samples=1000, classes=3)
+#     X_test, y_test = spiral_data(samples=100, classes=3)
+    
+#     EPOCHS = 1000
+#     BATCH_SIZE = 250
+    
+#     #Instanstiate the model
+#     model = Model()
+    
+#     #Add layers
+#     model.add(Layer_Dense(2,512, weight_regularizer_l2=5e-4, bias_regularizer_l2=5e-4))
+#     model.add(Activation_ReLu())
+#     model.add(Layer_Dropout(0.1))
+#     model.add(Layer_Dense(512,3))
+#     model.add(Activation_Softmax())
+    
+#     model.set(
+#         loss=Loss_CategoricalCrossEntropy(),
+#         optimizer=Optimizer_Adam(learning_rate=0.05, decay=5e-5),
+#         accuracy=Accuracy_Categorical()
+#     )
+    
+#     model.finalize()
+    
+#     model.train(X,y, validation_data=(X_test, y_test),epochs=EPOCHS, batch_size=BATCH_SIZE, print_every=5)
+    
+#     parameters = model.get_parameters()
+#     print(parameters)
+    
+#     model.save('data/model00.model')
+    
+# def testLoadModel():
+#     #Create Dataset
+#     X,y = spiral_data(samples=1000, classes=3)
+#     X_test, y_test = spiral_data(samples=100, classes=3)
+    
+#     model = Model.load('data/model00.model')
+    
+#     model.evaluate(X_test, y_test)
+    
+# def prediction():
+#     #Create Dataset
+#     X,y = spiral_data(samples=1000, classes=3)
+#     X_test, y_test = spiral_data(samples=100, classes=3)
+    
+#     model = Model.load('data/model00.model')
+    
+#     confidences = model.predict(X_test[:5])
+#     predictions = model.output_layer_activation.predictions(confidences)
+#     print(predictions)
+
+
+
+# def AccModel01():
+#     #Create Dataset
+#     #TODO: Create data and validation arrays
+#         # X Data is a randomized 1D array of features in groups of 15 (3 axis * 5 samples)
+#         # y ground truth is the list of the classes of the data - see spiral_data as an example
+#     #X,y = spiral_data(samples=1000, classes=3)
+#     #X_test, y_test = spiral_data(samples=100, classes=3)
+    
+#     X,y = getAccDataBinary(["data\packet5Avg20\\training00_noMove.npy","data\packet5Avg20\\training01_upandDown.npy","data\packet5Avg20\\training02_inandOut.npy"], ["data\packet5Avg20\\training00_noMove_truth.npy","data\packet5Avg20\\training01_upandDown_truth.npy","data\packet5Avg20\\training02_inandOut_truth.npy"])
+#     #y = y.reshape(y.shape[0])  #reshape truth data only if truth data is formatted as 2-D
+#     EPOCHS = 500
+#     BATCH_SIZE = 1
+    
+#     #Instanstiate the model
+#     model = Model()
+    
+#     #Add layers
+#     #Input is 15 features (3 Axis * 5 samples)
+#     model.add(Layer_Dense(30,150, weight_regularizer_l2=5e-4, bias_regularizer_l2=5e-4))
+#     model.add(Activation_ReLu())
+#     model.add(Layer_Dropout(0.1))
+#     model.add(Layer_Dense(150,3))
+#     model.add(Activation_Softmax())
+    
+#     model.set(
+#         loss=Loss_CategoricalCrossEntropy(),
+#         optimizer=Optimizer_Adam(learning_rate=0.05, decay=5e-5),
+#         accuracy=Accuracy_Categorical()
+#     )
+    
+#     model.finalize()
+    
+#     #model.train(X,y, validation_data=(X_test, y_test),epochs=EPOCHS, batch_size=BATCH_SIZE, print_every=5)
+#     model.train(X,y, epochs=EPOCHS, batch_size=BATCH_SIZE, print_every=1000)
+    
+#     parameters = model.get_parameters()
+#     #print(f'parameters: {parameters}')
+    
+#     model.save('data/AccModel01')
+
+# def Acc01prediction():
+#     #Create Dataset
+#     X,y = getAccDataBinary(["data\packet5Avg20\\training00_noMove.npy","data\packet5Avg20\\training01_upandDown.npy","data\packet5Avg20\\training02_inandOut.npy"], ["data\packet5Avg20\\training00_noMove_truth.npy","data\packet5Avg20\\training01_upandDown_truth.npy","data\packet5Avg20\\training02_inandOut_truth.npy"])
+   
+#     model = Model.load('data/AccModel01')
+    
+#     confidences = model.predict(X)
+#     predictions = model.output_layer_activation.predictions(confidences)
+#     print(predictions)
+
+
+# def convertTruthBinary(truthPathList):
+#     #One time function to convert truth data to a 1-D array - done automatically in socketClient from now on
+#     for path in truthPathList:
+#         if os.path.exists(path):
+#             # print("****")
+#             # print(path)
+#             y = np.load(path,allow_pickle=False)
+#             print(y)
+#             print(y.shape)
+#             y = y.reshape(y.shape[0])  #reshape truth data only if truth data is formatted as 2-D
+#             print(y)
+#             print(y.shape)
+#             np.save(path, y, allow_pickle=False)
+#     for path in truthPathList:   #Check that the file was written to properly
+#         if os.path.exists(path):
+#            y = np.load(path,allow_pickle=False)
+#           print(y)
+#           print(y.shape)
+
+
+
+# def train3Gestures(pathPreface):
+#     #Create Dataset
+#     #TODO: Create data and validation arrays
+#         # X Data is a randomized 1D array of features in groups of 15 (3 axis * 5 samples)
+#         # y ground truth is the list of the classes of the data - see spiral_data as an example
+#     #X,y = spiral_data(samples=1000, classes=3)
+#     #X_test, y_test = spiral_data(samples=100, classes=3)
+    
+#     X,y = getAccDataBinary([pathPreface + "noMove.npy", pathPreface + "upandDown.npy", pathPreface + "inandOut.npy"], [pathPreface + "noMove_truth.npy", pathPreface + "upandDown_truth.npy", pathPreface + "inandOut_truth.npy"])
+#     #y = y.reshape(y.shape[0])  #reshape truth data only if truth data is formatted as 2-D
+#     EPOCHS = 500
+#     BATCH_SIZE = 1
+    
+#     #Instanstiate the model
+#     model = Model()
+    
+#     #Add layers
+#     #Input is 15 features (3 Axis * 5 samples)
+#     model.add(Layer_Dense(30,150, weight_regularizer_l2=5e-4, bias_regularizer_l2=5e-4))
+#     model.add(Activation_ReLu())
+#     model.add(Layer_Dropout(0.1))
+#     model.add(Layer_Dense(150,3))
+#     model.add(Activation_Softmax())
+    
+#     model.set(
+#         loss=Loss_CategoricalCrossEntropy(),
+#         optimizer=Optimizer_Adam(learning_rate=0.05, decay=5e-5),
+#         accuracy=Accuracy_Categorical()
+#     )
+    
+#     model.finalize()
+    
+#     #model.train(X,y, validation_data=(X_test, y_test),epochs=EPOCHS, batch_size=BATCH_SIZE, print_every=5)
+#     model.train(X,y, epochs=EPOCHS, batch_size=BATCH_SIZE, print_every=1000)
+    
+#     parameters = model.get_parameters()
+#     #print(f'parameters: {parameters}')
+    
+#     model.save(pathPreface + "model")
+
 
 
 # def main():
-#     #RegressionNoValid()
-#     #binaryLogisticValid()
-#     #CategoricalCrossEntropy()
-#     #batchModel()
-#     #testLoadModel()
-#     #prediction()
-#     # X,y = spiral_data(samples=1000, classes=3)
-#     # print(X)
-#     # print(y)
-#     #getAccData(["data\packet5Avg20/\/training00_noMove.npy","data\packet5Avg20\/training01_upandDown.npy","data\packet5Avg20\/training02_inandOut.npy"])
-#     #dataArr, truthArr = getAccDataCSV(['data\packet5Avg20\\training00_noMove.csv',"data\packet5Avg20\\training01_upandDown.csv","data\packet5Avg20\\training02_inandOut.csv"], ['data\packet5Avg20\\training00_noMove_truth.csv',"data\packet5Avg20\\training01_upandDown_truth.csv","data\packet5Avg20\\training02_inandOut_truth.csv"])
-#     #dataArrBin, truthArrBin = getAccDataBinary(["data\packet5Avg20\\training00_noMove.npy","data\packet5Avg20\\training01_upandDown.npy","data\packet5Avg20\\training02_inandOut.npy"], ["data\packet5Avg20\\training00_noMove_truth.npy","data\packet5Avg20\\training01_upandDown_truth.npy","data\packet5Avg20\\training02_inandOut_truth.npy"])
-#     #AccModel01()
-#     #Acc01prediction()
-#     #convertTruthCSV(["data\packet5Avg20\\training00_noMove_truth.csv","data\packet5Avg20\\training01_upandDown_truth.csv","data\packet5Avg20\\training02_inandOut_truth.csv"])
+#     #createTestModel()
 
-#     #convertPickletoDill()
+# #     #RegressionNoValid()
+# #     #binaryLogisticValid()
+# #     #CategoricalCrossEntropy()
+# #     #batchModel()
+# #     #testLoadModel()
+# #     #prediction()
+# #     # X,y = spiral_data(samples=1000, classes=3)
+# #     # print(X)
+# #     # print(y)
+# #     #getAccData(["data\packet5Avg20/\/training00_noMove.npy","data\packet5Avg20\/training01_upandDown.npy","data\packet5Avg20\/training02_inandOut.npy"])
+# #     #dataArr, truthArr = getAccDataCSV(['data\packet5Avg20\\training00_noMove.csv',"data\packet5Avg20\\training01_upandDown.csv","data\packet5Avg20\\training02_inandOut.csv"], ['data\packet5Avg20\\training00_noMove_truth.csv',"data\packet5Avg20\\training01_upandDown_truth.csv","data\packet5Avg20\\training02_inandOut_truth.csv"])
+# #     #dataArrBin, truthArrBin = getAccDataBinary(["data\packet5Avg20\\training00_noMove.npy","data\packet5Avg20\\training01_upandDown.npy","data\packet5Avg20\\training02_inandOut.npy"], ["data\packet5Avg20\\training00_noMove_truth.npy","data\packet5Avg20\\training01_upandDown_truth.npy","data\packet5Avg20\\training02_inandOut_truth.npy"])
+# #     #AccModel01()
+# #     #Acc01prediction()
+# #     #convertTruthCSV(["data\packet5Avg20\\training00_noMove_truth.csv","data\packet5Avg20\\training01_upandDown_truth.csv","data\packet5Avg20\\training02_inandOut_truth.csv"])
+
+# #     #convertPickletoDill()
 
 # if __name__ == "__main__": main()
