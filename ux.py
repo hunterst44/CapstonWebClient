@@ -17,7 +17,7 @@ class UX:
     def __init__(self, *, theme='BluePurple'):
         self.theme = theme
         self.writer = oscWriter.OSCWriter()
-        self.packetLimit = 300
+        self.packetLimit = 30
         self.packetSize = 1
         self.numSensors = 2
         self.numGestures = 3   #How many gestures trained by the model
@@ -146,8 +146,8 @@ class UX:
             print(f'logNetwork()')
             networkPath = self.pathPreface + "/networks.csv"
             with open(networkPath, 'w') as csvfile:
-                writer = csv.writer(csvfile)
-                writer.writerow([self.SSID, self.PSWD])
+                csvWrite = csv.writer(csvfile)
+                csvWrite.writerow([self.SSID, self.PSWD])
 
         #Things to log - Network connections
             # model parameters: numSensors, numGestures, pathPreface, pathList
@@ -190,8 +190,7 @@ class UX:
         return predictionList[0], self.writer.ToFEnable
         
 
-    def makeModelFileMessage(self, pathPreface):
-        modelPath = pathPreface + 'model.model'
+    def makeModelFileMessage(self, modelPath):
         if os.path.exists(modelPath):
             # figure out a way to elegantly make a new model
             modelMessage = 'Model file exits at: ' + modelPath + ' Use this model?'
@@ -286,11 +285,13 @@ class UX:
         print('uxLoop Start')
        
         ##Methods to collect run time data required for the GUI
-        modelMessage = self.makeModelFileMessage(self.pathPreface)
+        modelPath = self.pathPreface + 'model.model'
+        print(f'modelPath: {modelPath}')
+        modelMessage = self.makeModelFileMessage(modelPath)
 
         sg.theme(self.theme)
         connector = self.ConductorConnector()
-        connector.getNetworks()
+        #connector.getNetworks()
 
         # Set all windows to Noe except window 1 to start
         window0 = self.makeWindow0()
@@ -408,8 +409,6 @@ class UX:
             if window == window1:
                 print()
                 print('Window 1')
-                modelPath = self.pathPreface + 'model.model'
-                print(f'modelPath: {modelPath}')
                 modelOk = -1
 
                 #window['-invalidModel-'].update(visible=False)
@@ -466,7 +465,7 @@ class UX:
                 print()
                 print()
                 print("Window 2.1")
-                print(self.Test)
+                #print(self.Test)
                 
                 if event == sg.WIN_CLOSED or event == 'Exit':
                     window2_1.hide()

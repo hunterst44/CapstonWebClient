@@ -23,76 +23,7 @@ class OSCWriter:
         self.predictions = predictions
         self.ToFEnable = 0
         self.memorySize = 10000 #How many samples to save before purging
-
-    def getPredictions(self, prediction):
-        # Called in socketClient after prediction has been made 
-        # Hands prediction data to the OSCWriter
-        self.predictions.append(prediction)
-        self.conductor()
-        self.garbageMan()      #Reset predictions when it goes above "self.memorySize"
-
-    def sendOSC(self, value, address):
-        print("sendOSC")
-        # print(f"value: {value}")
-        # print(f"address: {address}")
-        # print(f"self.host: {self.host}")
-        # print(f"self.host: {type(self.host)}")
-        # print(f"self.host: {self.port}")
-        # print(f"self.host: {type(self.port)}")
-        # OSCsock = socket.socket()
-        # OscAddress = self.host + address
-        # #OSCsock.connect((OscAddress, self.port))
-        # print("Connected to server")
-        # print(f"Address: {OscAddress}")
-        # print(f"Value: {value}")
-        #print()
-
-        # #try:
-        # OSCsock.send(value);
-       
-        # OSCsock.close()
-
-    def garbageMan(self):
-        length = len(self.predictions)
-        if length > self.memorySize:
-            newPredict = []
-            for i in range(length - 50, length):
-                newPredict[i] = self.predictions[i]
-            
-            self.predictions = newPredict
-            #Do some kind of logging here...
-
-    ##TODO create makeAddress method
-
-    def conductor(self):
-        ##Conducts the process of gathering and sending data
-        #Add as many addresses as you need to get the effects you want
-        # Eventually I will write a address generator so you can create addresses and conditions        
-
-        #1. Define Addresses
-        address00 = self.Address(address="/address00", predictions=self.predictions, conditionType=0, conditionData=[0,3,127.0])
-        
-        #2 Create Address list
-        addressList = [address00]
-   
-        for address in addressList:
-            #2 Check conditions
-            address.checkConditions()
-            
-            if address.updateFlag:
-
-                #3 Toggle ToFEnable
-                if address.ToFEnable:
-                    self.ToFEnable = 1
-
-        #         #4 Send the data
-        #         OSCThread = Thread(target=self.sendOSC, args=(address.value, address.address,))
-        #         OSCThread.start()
-        
-        # while threading.active_count() > 1:    #wait for the last threads to finish processing
-        #     #print(f'threading.active_count(): {threading.active_count()}')
-        #     OSCThread.join()
-           
+        self.memorySizeMin = 100 #How many predictions to keep on purge
 
     class Address:
         def __init__(self, *, address="/", ToFEnable=0, updateFlag=0, predictions=[], conditionType=0, conditionData=[], value=-1):
@@ -113,7 +44,6 @@ class OSCWriter:
             ## Checks the updated predictions list for conditions on each address
             ## Called once for each address in OSCWriter.conductor
             match self.conditionType:
-
                 case 0:
                     if self.checkHoldGesture(self.conditionData[0], self.conditionData[1]) == 0:
                         self.value = self.conditionData[2]
@@ -148,6 +78,77 @@ class OSCWriter:
                     return -1
             self.ToFEnable = 1    
             return 0
+
+    def getPredictions(self, prediction):
+        # Called in socketClient after prediction has been made 
+        # Hands prediction data to the OSCWriter
+        self.predictions.append(prediction)
+        self.conductor()
+        self.garbageMan()      #Reset predictions when it goes above "self.memorySize"
+
+    def sendOSC(self, value, address):
+        print("sendOSC")
+        # print(f"value: {value}")
+        # print(f"address: {address}")
+        # print(f"self.host: {self.host}")
+        # print(f"self.host: {type(self.host)}")
+        # print(f"self.host: {self.port}")
+        # print(f"self.host: {type(self.port)}")
+        # OSCsock = socket.socket()
+        # OscAddress = self.host + address
+        # #OSCsock.connect((OscAddress, self.port))
+        # print("Connected to server")
+        # print(f"Address: {OscAddress}")
+        # print(f"Value: {value}")
+        #print()
+
+        # #try:
+        # OSCsock.send(value);
+       
+        # OSCsock.close()
+
+    def garbageMan(self):
+        length = len(self.predictions)
+        if length > self.memorySize:
+            newPredict = []
+            for i in range(length - self.memorySizeMin, length):
+                newPredict[i] = self.predictions[i]
+            
+            self.predictions = newPredict
+
+    ##TODO create makeAddress method
+
+    def conductor(self):
+        ##Conducts the process of gathering and sending data
+        #Add as many addresses as you need to get the effects you want
+        # Eventually I will write a address generator so you can create addresses and conditions        
+
+        #1. Define Addresses
+        address00 = self.Address(address="/address00", predictions=self.predictions, conditionType=0, conditionData=[0,3,127.0])
+        
+        #2 Create Address list
+        addressList = [address00]
+   
+        for address in addressList:
+            #2 Check conditions
+            address.checkConditions()
+            
+            if address.updateFlag:
+
+                #3 Toggle ToFEnable
+                if address.ToFEnable:
+                    self.ToFEnable = 1
+
+        #         #4 Send the data
+        #         OSCThread = Thread(target=self.sendOSC, args=(address.value, address.address,))
+        #         OSCThread.start()
+        
+        # while threading.active_count() > 1:    #wait for the last threads to finish processing
+        #     #print(f'threading.active_count(): {threading.active_count()}')
+        #     OSCThread.join()
+           
+
+    
 
 # def main():
 

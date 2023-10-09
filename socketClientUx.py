@@ -349,9 +349,9 @@ class GetData:
         #plt.show()   
         plt.close         
 
-def createTrainingData(*, pathPreface='data/data', labelPath="test", label=0, packetLimit=1, packetSize=1, numSensors=4):
-    trgData = GetData(packetSize=packetSize, pathPreface=pathPreface, labelPath=labelPath, label=label, getTraining=True, packetLimit=packetLimit, numSensors=numSensors)
-    trgData.socketLoop(0)
+# def createTrainingData(*, pathPreface='data/data', labelPath="test", label=0, packetLimit=1, packetSize=1, numSensors=4):
+#     trgData = GetData(packetSize=packetSize, pathPreface=pathPreface, labelPath=labelPath, label=label, getTraining=True, packetLimit=packetLimit, numSensors=numSensors)
+#     trgData.socketLoop(0)
 
 # def main():
     
