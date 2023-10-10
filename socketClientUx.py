@@ -45,6 +45,7 @@ class GetData:
         self.ToFByte = -1 #Holds the ToF sensor data value
         self.y = []
         self.dataGot = 0   #data received flag
+        self.sock = socket.socket()
 
     def processData(self, binaryData):
         print()
@@ -127,7 +128,7 @@ class GetData:
         #y = sock.recv(18)
         a = 0
         errorCount = 0
-        sampleRxStartMS = int(time.time() * 1000)
+        #sampleRxStartMS = int(time.time() * 1000)
         while a < ((self.numSensors * 3) + self.extraRxByte):                #iterate through the number of sensors * the number of bytes per sample
             #print(f'while loop a')
             try:
@@ -303,51 +304,53 @@ class GetData:
              #print(f'packetTruth appended and saved (CSV): {packetTruth}')
              #print(f'dataPacket shape: {packetTruth.shape}')
 
-    def plotAcc(self):
 
-        _,axs = plt.subplots(self.numSensors,3, figsize=(12,8))
+#Useful matplot function for when packet size is above 1 
+    # def plotAcc(self):
+
+    #     _,axs = plt.subplots(self.numSensors,3, figsize=(12,8))
         
-        #Axis labels
-        axs[0][0].set_title('X Axis')
-        axs[0][1].set_title('Y Axis')
-        axs[0][2].set_title('Z Axis')
+    #     #Axis labels
+    #     axs[0][0].set_title('X Axis')
+    #     axs[0][1].set_title('Y Axis')
+    #     axs[0][2].set_title('Z Axis')
         
-        for i in range(self.numSensors):
-            # Sensor labels
-            axs[i][0].set_ylabel(f'Sensor {i}')
+    #     for i in range(self.numSensors):
+    #         # Sensor labels
+    #         axs[i][0].set_ylabel(f'Sensor {i}')
 
-            #Data
-            XList = [[],[]]
-            for j in range(self.packetSize):
-                XList[0].append(self.packetData[0, 0 + (i * 3) + (j * self.numSensors * 3)])
-                XList[1].append(j)
-                #print(f'XList{j}: {XList}')
-            axs[i][0].plot(XList[1], XList[0])
+    #         #Data
+    #         XList = [[],[]]
+    #         for j in range(self.packetSize):
+    #             XList[0].append(self.packetData[0, 0 + (i * 3) + (j * self.numSensors * 3)])
+    #             XList[1].append(j)
+    #             #print(f'XList{j}: {XList}')
+    #         axs[i][0].plot(XList[1], XList[0])
 
-            YList = [[],[]]
-            for j in range(self.packetSize):
-                YList[0].append(self.packetData[0, 1 + (i * 3) + (j * self.numSensors * 3)])
-                YList[1].append(j)
-                #print(f'YList{j}: {YList}')
-            axs[i][1].plot(YList[1], YList[0])
+    #         YList = [[],[]]
+    #         for j in range(self.packetSize):
+    #             YList[0].append(self.packetData[0, 1 + (i * 3) + (j * self.numSensors * 3)])
+    #             YList[1].append(j)
+    #             #print(f'YList{j}: {YList}')
+    #         axs[i][1].plot(YList[1], YList[0])
 
-            ZList = [[],[]]
-            for j in range(self.packetSize):
-                ZList[0].append(self.packetData[0, 2 + (i * 3) + (j * self.numSensors * 3)])
-                ZList[1].append(j)
-                #print(f'ZList{j}: {ZList}')
-            axs[i][2].plot(ZList[1], ZList[0])
+    #         ZList = [[],[]]
+    #         for j in range(self.packetSize):
+    #             ZList[0].append(self.packetData[0, 2 + (i * 3) + (j * self.numSensors * 3)])
+    #             ZList[1].append(j)
+    #             #print(f'ZList{j}: {ZList}')
+    #         axs[i][2].plot(ZList[1], ZList[0])
 
-        if self.getTraining:    
-            figPath = self.pathPreface + self.labelPath + str(self.packetCount) + '_' + str(self.label) + '.png'
-            plt.savefig(figPath)
-        else:
-            figPath = self.pathPreface + "PredPlots/" + str(self.plotCounter) + '.png'
+    #     if self.getTraining:    
+    #         figPath = self.pathPreface + self.labelPath + str(self.packetCount) + '_' + str(self.label) + '.png'
+    #         plt.savefig(figPath)
+    #     else:
+    #         figPath = self.pathPreface + "PredPlots/" + str(self.plotCounter) + '.png'
             
-            plt.savefig(figPath)
+    #         plt.savefig(figPath)
 
-        #plt.show()   
-        plt.close         
+    #     #plt.show()   
+    #     plt.close         
 
 # def createTrainingData(*, pathPreface='data/data', labelPath="test", label=0, packetLimit=1, packetSize=1, numSensors=4):
 #     trgData = GetData(packetSize=packetSize, pathPreface=pathPreface, labelPath=labelPath, label=label, getTraining=True, packetLimit=packetLimit, numSensors=numSensors)
