@@ -56,10 +56,10 @@ class GetData:
         except ConnectionError:
             print(f"TCP/IP Socket Error: Connection Error")
     
-    def promptServer(self, host, port):
+    def promptServer(self, dataTx, host, port):
         #Check socket connection and send prompt to the server        
         try:   
-            self.sock.send(self.dataTx)    
+            self.sock.send(dataTx)    
             
         except socket.timeout as err:
             print(f"TCP/IP Socket Timeout Error {self.sockRecursionCount}: {err}")
@@ -101,19 +101,17 @@ class GetData:
                 print(f"Failed transmission: {self.dataTx}, length: {len(self.dataTx)}")
                 self.sockRecursionCount = 0
                 return -1
-            
 
         print("Sent Data")
         self.host = host
         self.port = port
         self.sockRecursionCount = 0
         return 1
-    
-
 
     def receiveBytes(self):
+        #Checks the connection to the servers, sends the prompt and then receives numSensors * 3 bytes
+        #Collects one sample and returns the data as a byte array
         count = 0
-        skip = 0
         #sock = socket.socket()
     
         print("Sending prompt to server")
@@ -121,16 +119,15 @@ class GetData:
             return -1
         
         #Now receive the response
-        y = self.sock.recv(numSensors * 3)
-        print(f'y received all at once? {y}')
+        #y = self.sock.recv(numSensors * 3)
+        #print(f'y received all at once? {y}')
         a = 0
         errorCount = 0
         #sampleRxStartMS = int(time.time() * 1000)
-        while a < ((numSensors * 3)):                #iterate through the number of sensors * the number of bytes per sample
+        while a < ((numSensors * 3 + self.extraRxByte)):                #iterate through the number of sensors * the number of bytes per sample
             print(f'while loop a')
-            
             try:
-                y.append(self.sock.recv(1))
+                self.y.append(self.sock.recv(1))
                 print(f'Received 1')
             except socket.error as err:
                 print(f"TCP/IP Socket RX Error: {err}")
@@ -146,6 +143,7 @@ class GetData:
                 #     errorCount += 1
                 if self.promptServer(self, self.host, self.port) == -1:
                     print(f'Fatal Error: SocketBroken')
+                    a -= 1
                     #print(f"TCP/IP Socket Error: {err}")
                     print(f"Failed transmission: {self.dataTx}, length: {len(self.dataTx)}")
                     return -1
@@ -156,10 +154,74 @@ class GetData:
         print(f"self.y returned: {self.y}")
         return self.y
     
+    def socketSendStr(self, message):
+        print()
+        print(f'UX.connnectDevice')
+        print(f"Sending connection info {message}")
+        response = []
+
+        #Send the prompt to get ESP32 ready to receive text
+        self.dataTx = struct.pack("=B", 0x22)
+        self.promptServer(self.dataTx, self.host, self.port)
+        
+        response0 = self.recieveBytes()
+
+        if response0[0] == 0xFF and response0[1] == 0x0F:
+            print(f'Server is ready sending length of the message to server: {len(message)}')
+            self.dataTx = struct.pack("=B", len(message))
+            self.promptServer(self.dataTx, self.host, self.port)
+
+            response1 = self.receiveBytes()
+
+        if response1[0] == 0x0F and response1[1] == 0xFF:
+            print(f'Sent connection info to server: {self.dataTx}')
+            self.dataTx = message
+            self.promptServer(self.dataTx, self.host, self.port)
+            
+            
+            
+            
+            return 1       
+        
+        # try:
+        #     self.sock.send(dataTx)
+        #     #print("Sent Data")
+        # except:
+        #     sock.connect((ip, 80))
+        #     #print("Socket Reconnected")
+        #     sock.send(dataTx)
+        #     recvByte = sock.recv(1)
+
+        #     if recvByte == 0xF0:
+        #             sock.close()
+        #         return 1
+        #     else:
+        #             sock.close()
+        #         return -1
+            #     #TODO Have the ESP32 disconnet and reconnect on the new socket
+
+        return 1
+    
 def main():
     
-    dataStream = GetData(numSensors=4, pathPreface='data/data')
+    dataStream = GetData(numSensors=4, pathPreface='data/test')
 
     dataStream.receiveBytes()
+
+    dataStream.dataTx = struct.pack("=B", 0x0F)
+
+    dataStream.receiveBytes()
+
+    dataStream.socketSendStr("Hello! Jello!", dataStream.host, dataStream.port)
+
+    i = 0
+    while i < 100:
+        dataStream.receiveBytes()
+        if dataStream.dataTx == 0xFF:
+            dataStream.dataTx = struct.pack("=B", 0x0F)
+        elif dataStream.dataTx == 0x0F:
+            dataStream.dataTx = struct.pack("=B", 0xFF)
+        i += 1
+
 
 if __name__ == "__main__": main()

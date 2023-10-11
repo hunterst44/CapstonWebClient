@@ -70,6 +70,7 @@ class UX:
             return SSIDList
 
         def socketConnect(self, ip, ssid):
+            #Use socketClient.GetData.promptServer()
             print()
             print(f'UX.connnectDevice')
             # dataTx = struct.pack("=B", 0xF0)
@@ -333,7 +334,8 @@ class UX:
                         window['-MESSAGE-'].update(f'Connecting to The Conductor at IP Address {connector.HostIP}...')
                         window.refresh()
                         if connector.socketConnect(connector.newIP, connector.SSID) == 1:
-                            #if self.dataStream.promptServer(connector.newIP, connector.SSID) == 1:   #New version with unified socket connection
+                            #self.dataStream.dataTx = struct.pack("=B", 0x01)
+                            #if self.dataStream.socketSendStr(message) == 1:   #New version with unified socket connection
                             connector.HostIP = connector.newIP
                             connector.newIP = ''
                             print(f'IP: {connector.HostIP}, SSID: {connector.SSID}')
