@@ -134,9 +134,14 @@ class UX:
             print()
             print(f'sendNetworkInfo')
             if newSSID != '' and pswd != '':
-                dataTx = newSSID + "__--__" + pswd
-                #TODO Connect to AP network
-                    #send connection infos
+                dataTx = newSSID + "__--__" + pswd + "__--__" 
+                dataLen = len(dataTx)
+                dataLen = 50 - dataLen
+
+                for i in range(dataLen):
+                    dataTx.append('0')
+
+                #send connection infos
                 if self.socketSendStr(dataTx, self.HostIP, self.SSID) == 1:
                     return 1
                 else:
@@ -386,6 +391,7 @@ class UX:
                         if connector.sendNetworkInfo(connector.newSSID, connector.newPSWD) == 1:
                             window['-MESSAGE-'].update(visible=True)
                             window['-MESSAGE-'].update(f"Sent Network Information")
+                            #TODO trigger sending a test message
 
                 if event == '-STNCNTEBTN-':
                     print()
