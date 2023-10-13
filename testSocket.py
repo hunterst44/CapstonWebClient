@@ -109,6 +109,9 @@ class GetData:
             if rcount < 5:
                 rcount += 1
                 if self.promptServer(dataTx, host, port, rcount) == 1:
+                    print(f"Sent Data after {rcount + 1} tries")
+                    self.host = host
+                    self.port = port
                     return 1
             else:
                 print(f'Fatal Error: SocketBroken')
@@ -117,22 +120,24 @@ class GetData:
                 self.sockRecursionCount = 0
                 return -1
 
-        print("Sent Data")
+        print(f"Sent Data after {rcount + 1} tries")
         self.host = host
         self.port = port
+        return 1
 
     def receiveBytes(self, dataTx, host, port):
         #Checks the connection to the servers, sends the prompt and then receives numSensors * 3 bytes
         #Collects one sample and returns the data as a byte array
         count = 0
         #sock = socket.socket()
-        print()
         print("receiveBytes()")
         print(f'dataTx: {dataTx}')  
         #dataTx = struct.pack("=B", 34)  
         print("Sending prompt to server")
         #print(f'dataTx: {dataTx}') 
-        if self.promptServer(dataTx, host, port, 0) != 1:
+        if self.promptServer(dataTx, host, port, 0) == 1:
+            print("Prompt Success") 
+        else:       
             print("Failed Prompt")
             return -1   
         
@@ -232,6 +237,7 @@ def main():
     i = 0
     sample100RxStartMS = int(time.time() * 1000)
     while i < 100:
+        print()
         print(f'Sample: {i}')
         dataStream.receiveBytes(dataStream.dataTx, dataStream.host, dataStream.port)
         if dataStream.dataTx == 0xFF:
@@ -243,7 +249,7 @@ def main():
         i += 1
     sample100RxStopMS = int(time.time() * 1000)
     sample100RxTimeMS = sample100RxStopMS - sample100RxStartMS
-    print(f'Sample receive time in ms: {sample100RxTimeMS}')
+    print(f'100 Sample receive time in ms: {sample100RxTimeMS}')
 
 
 if __name__ == "__main__": main()
