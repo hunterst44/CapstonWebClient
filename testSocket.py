@@ -228,28 +228,30 @@ def main():
     # sampleRxTimeMS = sampleRxStopMS - sampleRxStartMS
     # print(f'Sample receive time in ms: {sampleRxTimeMS}')
 
-    # message = "TELUSWiFi6810" + "__--__" + "aMLu4CR7yf" + "__--__"
+    #message = "TELUSWiFi6810" + "__--__" + "aMLu4CR7yf" + "__--__"
     
-    # dataStream.extraRxByte = 0
-    # dataStream.socketSendStr(message)
+    message = "Bakery204-2_4GHz" + "__--__" + "Electronics204" + "__--__"
+
+    dataStream.extraRxByte = 0
+    dataStream.socketSendStr(message)
 
 
-    i = 0
-    sample100RxStartMS = int(time.time() * 1000)
-    while i < 100:
-        print()
-        print(f'Sample: {i}')
-        dataStream.receiveBytes(dataStream.dataTx, dataStream.host, dataStream.port)
-        if dataStream.dataTx == 0xFF:
-            dataStream.extraRxByte = 1
-            dataStream.dataTx = struct.pack("=B", 0x0F)
-        elif dataStream.dataTx == 0x0F:
-            dataStream.extraRxByte = 1
-            dataStream.dataTx = struct.pack("=B", 0xFF)
-        i += 1
-    sample100RxStopMS = int(time.time() * 1000)
-    sample100RxTimeMS = sample100RxStopMS - sample100RxStartMS
-    print(f'100 Sample receive time in ms: {sample100RxTimeMS}')
+    # i = 0
+    # sample100RxStartMS = int(time.time() * 1000)
+    # while i < 100:
+    #     print()
+    #     print(f'Sample: {i}')
+    #     dataStream.receiveBytes(dataStream.dataTx, dataStream.host, dataStream.port)
+    #     if dataStream.dataTx == 0xFF:
+    #         dataStream.extraRxByte = 1
+    #         dataStream.dataTx = struct.pack("=B", 0x0F)
+    #     elif dataStream.dataTx == 0x0F:
+    #         dataStream.extraRxByte = 1
+    #         dataStream.dataTx = struct.pack("=B", 0xFF)
+    #     i += 1
+    # sample100RxStopMS = int(time.time() * 1000)
+    # sample100RxTimeMS = sample100RxStopMS - sample100RxStartMS
+    # print(f'100 Sample receive time in ms: {sample100RxTimeMS}')
 
 
 if __name__ == "__main__": main()
