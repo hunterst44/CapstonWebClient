@@ -502,9 +502,9 @@ class Loss_CategoricalCrossEntropy(Loss):
         #Number of sample in a batch
         samples = len(y_pred)
         
-        print(f'len(y_pred): {len(y_pred)}') 
-        print(f'len(y_pred): {len(y_pred)}') 
-        print(f'y_true: {y_true}') 
+        # print(f'len(y_pred): {len(y_pred)}') 
+        # print(f'len(y_pred): {len(y_pred)}') 
+        # print(f'y_true: {y_true}') 
         
         #Clip data to prevent division by 0
         #Clip both sidfes to not drag mean towards any value
@@ -515,9 +515,9 @@ class Loss_CategoricalCrossEntropy(Loss):
         #Probabilities for target values
         #Only if categorical labels
         if len(y_true.shape) == 1:
-            print(f'samples): {samples}') 
-            print(f'y_pred_clipped: {y_pred_clipped}')
-            print(f'len(y_pred_clipped): {len(y_pred_clipped)}')
+            # print(f'samples): {samples}') 
+            # print(f'y_pred_clipped: {y_pred_clipped}')
+            # print(f'len(y_pred_clipped): {len(y_pred_clipped)}')
             correct_confidences = y_pred_clipped[range(samples), y_true]
         
         #Mask values - only for one-hot encoded labels
@@ -1282,7 +1282,7 @@ def trainOrientation(pathPreface, pathList, packetSize, numSensors, numGestures)
     print(f'truths array for model: {y}') 
     print(f'data array for model: {X}') 
     #y = y.reshape(y.shape[0])  #reshape truth data only if truth data is formatted as 2-D
-    EPOCHS = 100
+    EPOCHS = 200
     BATCH_SIZE = 1
     
     modelOk = 0

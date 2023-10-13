@@ -54,7 +54,7 @@ class OSCWriter:
         ## Methods to check conditions
 
         def checkHoldGesture(self, gesture, threshold):
-            # print("checkHoldGesture")
+            print("checkHoldGesture")
             # print(f"gesture: {gesture}")
             # print(f"Value: {threshold}")
             # print(f"self.predictions: {self.predictions}")
@@ -73,7 +73,7 @@ class OSCWriter:
                 startIdx = lenPred-threshold
 
             for i in range(startIdx,lenPred):
-                #print(f"self.predictions[i]: {self.predictions[i]}")
+                print(f"self.predictions[i]: {self.predictions[i]}")
                 if self.predictions[i] != gesture:
                     return -1
             self.ToFEnable = 1    
@@ -129,6 +129,7 @@ class OSCWriter:
         #2 Create Address list
         addressList = [address00]
    
+        self.ToFEnable = 0
         for address in addressList:
             #2 Check conditions
             address.checkConditions()

@@ -19,10 +19,10 @@ class UX:
         self.writer = oscWriter.OSCWriter()
         self.packetLimit = 30
         self.packetSize = 1
-        self.numSensors = 2
+        self.numSensors = 4
         self.numGestures = 3   #How many gestures trained by the model
         self.pathPreface = "data/test/"
-        self.dataTx = 0xFF
+        #self.dataTx = 0xFF
         self.trainCountDown = 0 # Counter for training countdown
         self.sampleCount = 0 #counter for the number of samples collected per gesture while training
         self.gestureCount = 0 #counter for the number of gestures collected while training

@@ -38,7 +38,7 @@ class GetData:
         self.y = []
         self.dataGot = 0   #data received flag
         self.sock = socket.socket()    # One Socket connection to rule them all
-        self.sockRecursionCount = 0
+        #self.sockRecursionCount = 0
         self.sockConnection = 0
         
         while self.makeSockConnection() == -1:
