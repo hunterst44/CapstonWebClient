@@ -101,34 +101,35 @@ class UX:
             #         return -1
             return 1
 
-        def socketSendStr(self, dataTx, ip, ssid):
+        def socketSendStr(self, message):
             print()
-            print(f'UX.connnectDevice')
-            print(f"Sending connection info {dataTx}")
+            print(f'socketSendStr()')
+            response0 = []
 
-            #sock = socket.socket()
-            #sock.connect((ip, 80))
-            print(f"Connected to server at {ip} on {ssid}")
-            print(f"Sending connection info {dataTx}")
+            #Send the prompt to get ESP32 ready to receive text
+            self.dataTx = struct.pack("=B", 34)
+            #self.promptServer(self.dataTx, self.host, self.port)
+            print(f'self.dataTx (0x22): {self.dataTx}')
+            response0 = self.receiveBytes(self.dataTx, self.host, self.port)
+            print(f"Got response0: {response0}")
+            print(f'response0[0]: {response0[0]}')
+            print(f'response0[1]: {response0[1]}')
 
-            # try:
-            #     sock.send(dataTx)
-            #     #print("Sent Data")
-            # except:
-            #     sock.connect((ip, 80))
-            #     #print("Socket Reconnected")
-            #     sock.send(dataTx)
-            #     recvByte = sock.recv(1)
+            first = struct.unpack("=B", response0[0]) 
+            second = struct.unpack("=B", response0[1]) 
+            first = first[0]
+            second = second[0]
 
-            #     if recvByte == 0xF0:
-                     #sock.close()
-            #         return 1
-            #     else:
-                      #sock.close()
-            #         return -1
-                #     #TODO Have the ESP32 disconnet and reconnect on the new socket
-
-            return 1
+            if first == 0xFF and second == 0x0F:
+                print(f'Server is ready sending message to server: {message}')
+                self.dataTx = message.encode()
+                print(f"Encoded message: {self.dataTx}")
+                if self.promptServer(self.dataTx, self.host, self.port, 0):
+                    return 1
+                else:
+                    return -1 
+            else:
+                return -1   
 
         def sendNetworkInfo(self, newSSID, pswd):
             print()
@@ -139,10 +140,10 @@ class UX:
                 dataLen = 50 - dataLen
 
                 for i in range(dataLen):
-                    dataTx.append('0')
+                    dataTx = dataTx + '0'
 
-                #send connection infos
-                if self.socketSendStr(dataTx, self.HostIP, self.SSID) == 1:
+                if self.socketSendStr(dataTx) == 1:
+                    self.logNetwork()
                     return 1
                 else:
                     return -1
@@ -345,6 +346,7 @@ class UX:
                             connector.newIP = ''
                             print(f'IP: {connector.HostIP}, SSID: {connector.SSID}')
                             #Get Network data from the air
+                            #TODO give user an option to refresh the SSID list...
                             self.SSIDList = connector.getNetworks()
                             window['-TOPMESSAGE-'].update(f'Conductor Connected!  IP Address: {connector.HostIP}')
                             window['-TOPMESSAGE01-'].update(f'To use this network click continue. To connect to another network enter the network info below and click Reconect')

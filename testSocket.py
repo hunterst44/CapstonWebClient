@@ -198,7 +198,7 @@ class GetData:
         second = second[0]
 
         if first == 0xFF and second == 0x0F:
-            print(f'Server is ready sending length of the message to server: {len(message)}')
+            print(f'Server is ready sending message to server: {message}')
             self.dataTx = message.encode()
             print(f"Encoded message: {self.dataTx}")
             if self.promptServer(self.dataTx, self.host, self.port, 0):
@@ -228,12 +228,17 @@ def main():
     # sampleRxTimeMS = sampleRxStopMS - sampleRxStartMS
     # print(f'Sample receive time in ms: {sampleRxTimeMS}')
 
-    #message = "TELUSWiFi6810" + "__--__" + "aMLu4CR7yf" + "__--__"
+    message = "TELUSWiFi6810" + "__--__" + "aMLu4CR7yf" + "__--__"
     
-    message = "Bakery204-2_4GHz" + "__--__" + "Electronics204" + "__--__"
+    # #message = "Bakery204-2_4GHz" + "__--__" + "Electronics204" + "__--__"
 
     dataStream.extraRxByte = 0
-    dataStream.socketSendStr(message)
+    if dataStream.socketSendStr(message):
+       print("Sent network info to Server. Disconnecting from socket.")
+       print("Reconnect PC to the same network and reconnect socket")
+       dataStream.sock.close()
+    else:
+        print("Nope Nope Nope. Connection error.")
 
 
     # i = 0
