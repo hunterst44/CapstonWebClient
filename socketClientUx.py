@@ -19,13 +19,17 @@ import matplotlib.pyplot as plt
 import os.path 
 import NeuralNetwork
 import dill  
-import oscWriter       
+import oscWriter
+import csv  
+import subprocess     
 
 class GetData:
     
     def __init__(self, *, host="192.168.4.1", port=80, packetSize=1, numSensors=4, pathPreface='data/data', labelPath="Test", label=0, getTraining=True):
         self.host = host
         self.port = port
+        self.ssid = "TheConductor"
+        self.pswd = 'NoneShallPass'
         self.packetSize = packetSize
         self.numSensors = numSensors
         self.packetData = np.zeros([1, self.packetSize * self.numSensors * 3]) #one packet of data corresponding to a gesture - 3 axis * number of sensors times the number of samples per gesture
@@ -45,38 +49,114 @@ class GetData:
         self.ToFByte = -1 #Holds the ToF sensor data value
         self.y = []
         self.dataGot = 0   #data received flag
+        self.sockRecursionCount = 0
         self.sock = socket.socket()
         self.sockConnection = 0
 
-        while self.makeSockConnection() == -1:
+        #On dataStream init try to connect to The Conductor on AP network, if not carry on
+        connectTries = 0
+        #Try the last connection
+        cntList = self.getloggedNetworks()
+    
+        if cntList[0][0] != '-1':
+            cntListLen = len(cntList)
+            print(f'cntListLen: {cntListLen}')
+            self.host = cntList[cntListLen-2][2]
+            self.port = int(cntList[cntListLen-2][3])
+
+        while connectTries < 1:
             print("Trying to make a socket connection")
-            time.sleep(2)
+            if self.makeSockConnection(self.host, self.port) == -1:
+                connectTries += 1
+                time.sleep(1)
+            else:
+                print("Connected to The Conductor!")
+                break
         
-        print("Connected to The Conductor!")
+        if connectTries == 1:
+            print("Can't connect to the Conductor")
 
 
-    def makeSockConnection(self):        #self.sock.close()
+    def makeSockConnection(self, host, port):        #self.sock.close()
         print()
         print("makeSockConnection()")
         print(f'dataTx: {self.dataTx}')
-        print(f'host {self.host}')
-        print(f'port: {self.port}')
+        print(f'host {host}')
+        print(f'port: {port}')
+
+        self.sock = socket.socket()
         try:
-            self.sock.connect((self.host, self.port))
+            self.sock.connect((host, port))
 
         except socket.timeout as err:
             print(f"TCP/IP Socket Timeout Error {self.sockRecursionCount}: {err}")
+            self.sockConnection = 0
             return -1
 
         except socket.error as err:
             print(f"TCP/IP Socket Error: {err}")
+            self.sockConnection = 0
             return -1
             #self.sock.close()
             #self.socket.create_connection((self.host, self.port), timeout=2)
             #self.sock.connect((host, port), timeout=2)
 
+        self.sockRecursionCount = 0
+        self.sockConnection = 1
         return 1
     
+    def checkPriorConnection(self, network):
+        priorNetworks = self.loggedNetworks
+        for i in range(len(priorNetworks)):
+            if priorNetworks[i][0] == network:
+                print("We have a match - update password infos")
+    
+    def getNetworks(self):
+        #Get list of network from the air
+        SSIDList = []
+        networks = subprocess.check_output(["netsh", "wlan", "show", "network"])
+        networks = networks.decode("ascii")
+        networks = networks.replace("\r,","")
+        ls = networks.split('\n')
+        ls = ls[4:]
+
+        counter = 0
+        while counter < (len(ls)):
+            if counter % 5 == 0:
+                #print(ls[counter])
+                if len(ls[counter]) > 9:
+                    ls[counter] = ls[counter][9:]
+                    print(f'Network {counter}: {ls[counter]}')
+                    SSIDList.append(ls[counter])
+            counter += 1
+        return SSIDList
+    
+    def getloggedNetworks(self):
+        networkPath = self.pathPreface + "/networks.csv"
+        if os.path.exists(networkPath):
+            with open(networkPath, 'r') as csvfile:
+                networkList = list(csv.reader(csvfile, delimiter=","))
+                print(f'networkList; {networkList}')
+            return networkList
+        else:
+            return [['-1']]
+
+    def logNetwork(self):
+        print()
+        print(f'logNetwork()')
+        networkPath = self.pathPreface + "/networks.csv"
+        if os.path.exists(networkPath):
+            print(f"network file exists")
+            with open(networkPath, 'a') as csvfile:
+                csvWrite = csv.writer(csvfile)
+                csvWrite.writerow([self.ssid, self.pswd, self.host, self.port])
+        else:
+             print(f"Creating new network file")
+             with open(networkPath, 'w') as csvfile:
+                csvWrite = csv.writer(csvfile)
+                csvWrite.writerow([self.ssid, self.pswd, self.host, self.port])
+
+
     def promptServer(self, dataTx, host, port, rcount):
         print()
         print("promptServer")
