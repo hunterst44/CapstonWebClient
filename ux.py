@@ -456,7 +456,13 @@ class UX:
                             window.refresh()
 
                 if event == '-SSIDIN-':
-                    self.dataStream.checkPriorConnection(values["-IPIN-"])           
+                    pswdInt, pswdStr = self.dataStream.checkPriorConnection(values["-IPIN-"])  
+                    if pswdInt == 1:
+                        newPSWD = pswdStr
+                        window['-MESSAGE-'].update(f"The Conductor remembers your password for {values['-IPIN-']}. Just hit Reconnect")
+                        window['-PSWDIN-'].update(f"**********")
+ 
+
                 
                 if event == '-CONTBTN-':
                     #Continue button - for accepting current connection and moving to window01 - model

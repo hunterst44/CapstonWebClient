@@ -1,10 +1,10 @@
-import socketClient
-import NeuralNetwork
+# import socketClientUx
+# import NeuralNetwork
 import numpy as np
-import pythonosc
-import os.path
-import dill
-import socket
+# import pythonosc
+# import os.path
+# import dill
+# import socket
 import struct
 import time
 import threading
@@ -13,8 +13,8 @@ from xml.sax.xmlreader import InputSource
 import rtmidi
 from rtmidi.midiconstants import CONTROL_CHANGE
 from scipy import signal
-import sys
-import numpy as np
+# import sys
+
 """ 
     'noteon': NOTE_ON,
     'noteoff': NOTE_OFF,
@@ -44,11 +44,15 @@ class MiDiWriter:
         available_ports = self.midiout.get_ports()
         self.channelList = []
         self.loadChannels() #Load the Channels above - must be defined in loadChannels
+        available_ports = self.midiout.get_ports()
+        print(f'available_ports: {available_ports}')
+        print(f'available_ports[0]: {available_ports[0]}')
+        print(f'available_ports[1][0]: {available_ports[1][0]}')
         if available_ports:
-            self.midiout.open_port(port_name)
+            self.midiout.open_port(0)
         else:
             print(f"Could not find {port_name} in available ports. Opening the first port.")
-            self.midiout.open_port(port_name)
+            self.midiout.open_port(0)
         
     class MidiChannel:
         def __init__(self, *, ToFEnable=0, updateFlag=0, predictions=[], conditionType=0, conditionData=[], value=-1, channel=None, controller=None, midiLoopCount = 0):
@@ -265,11 +269,17 @@ class MiDiWriter:
         # Gesture (conditionData[0]) = 1
         # threshold (conditionData[1]) = 3 
         # Data (self.conditionData[3]) = dist
-        self.channel00 = self.MidiChannel(channel=0, predictions=self.predictions, conditionType=0, conditionData=[0,3,10], midiLoopCount=self.channelCounters[0])
-        self.channelList.append[self.channel00]
+        print(f'self.channelCounters: {self.channelCounters}')
+        if len(self.channelCounters) == 0:
+            self.channelCounters.append(0)
+        else:
+            self.channelCounters[0] += 1
+            self.channel00 = self.MidiChannel(channel=0, predictions=self.predictions, conditionType=0, conditionData=[0,3,10], midiLoopCount=self.channelCounters[0])
+            self.channelList.append[self.channel00]
 
     def conductor(self):
         ##Conducts the process of gathering and sending data
+        #Called once per prediction loop
         #Add as many channeles as you need to get the effects you want
         # Eventually I will write a channel generator so you can create channeles and conditions        
 

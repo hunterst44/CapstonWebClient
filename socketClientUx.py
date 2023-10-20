@@ -108,8 +108,13 @@ class GetData:
     def checkPriorConnection(self, network):
         priorNetworks = self.loggedNetworks
         for i in range(len(priorNetworks)):
-            if priorNetworks[i][0] == network:
-                print("We have a match - update password infos")
+            if len(priorNetworks[i] > 3):
+                if priorNetworks[i][0] == network:
+                    print("We have a match - update password infos")
+                    return 1, priorNetworks[i][1]
+                else:
+                    print("Network not found please provide a password")
+                    return -1, '-1'
     
     def getNetworks(self):
         #Get list of network from the air
