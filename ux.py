@@ -294,6 +294,7 @@ class UX:
         newIP = "192.168.4.1"
         newSSID = "TheCOnductor"
         newPSWD = "NoneShallPass"
+        stopPredict = 0
        
         ##Methods to collect run time data required for the GUI
         modelPath = self.pathPreface + 'model.model'
@@ -653,7 +654,14 @@ class UX:
                     print()
                     print("-GOBTN-")
                     #print(f'Collected sample {sampleCount + 1} of {self.packetLimit} samples for gesture {self.gestureCount + 1} of {self.numGestures} gestures')
-                    prediction = self.predictSample()
+                    if stopPredict < 10:
+                        prediction = self.predictSample()
+                        stopPredict += 1
+                    else:
+                        stopPredict = 0
+                        window.write_event_value("-STOPBTN-", '')
+
+
                     print(f'prediction: {prediction}')
                     if self.writer.ToFEnable == 1 and self.dataStream.ToFByte > 0 and self.dataStream.ToFByte < 128:   #TOF enabled and Valid ToFData
                         self.writer.ToFByte = self.dataStream.ToFByte     #Pass ToF data to midiWriter

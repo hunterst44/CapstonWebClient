@@ -31,7 +31,7 @@ from scipy import signal
 
 class MiDiWriter:
 
-    def __init__(self, *, predictions=[], port_name=0, channel=0, cc_num=75, bpm=120, rate='s', ToFByte=-1):
+    def __init__(self, *, predictions=[], port_name=1, channel=0, cc_num=75, bpm=120, rate='s', ToFByte=-1):
         self.midiOut = rtmidi.MidiOut()
         self.port_name = port_name
         self.bpm = bpm
@@ -175,17 +175,27 @@ class MiDiWriter:
             print("sendBeat")
             while True:
                 beatStart = int(time.time() * 1000)
+                #print(f'beatStart: {beatStart}')
                 beatStop = beatStart + self.beatMillis
+                # print(f'beatStop: {beatStart}')
                 #Add other commands here...
                 if self.updateFlag:
-                    midiOut.send_message(self.midiMessage)    
+                    try:
+                        midiOut.send_message(self.midiMessage)   
+                        print(f'midiOut sent: {self.midiMessage}')
+                    except:
+                        print('midiOut failure') 
                 beatNow = int(time.time() * 1000)
-                while beatNow < beatStop:
-                    time.sleep(beatStop - beatNow)
-                if self.threadToggle == 1:
-                    self.threadToggle = 0
-                else:
-                   self.threadToggle = 1 
+                # print(f'beatNow: {beatNow}')
+                # print(f'beatStop - beatNow: {beatStop - beatNow}') 
+                while beatStop - beatNow > 1:
+                    beatNow = int(time.time() * 1000)
+                    #print(f'beatStop - beatNow: {beatStop - beatNow}') 
+                    time.sleep(0.001)
+                # if self.threadToggle == 1:
+                #     self.threadToggle = 0
+                # else:
+                #    self.threadToggle = 1 
                 
         def getBeatMillis(self):
         #beatMillis is 1000 * (noteFactor * bps) 
