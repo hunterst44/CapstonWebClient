@@ -32,7 +32,7 @@ from scipy import signal
 class MiDiWriter:
 
     def __init__(self, *, predictions=[], port_name=0, channel=0, cc_num=75, bpm=120, rate='s', ToFByte=-1):
-        self.midiout = rtmidi.MidiOut()
+        self.midiOut = rtmidi.MidiOut()
         self.port_name = port_name
         self.bpm = bpm
         self.predictions = predictions
@@ -41,18 +41,18 @@ class MiDiWriter:
         self.memorySizeMin = 100 #How many predictions to keep on purge
         self.ToFByte = ToFByte
         #self.channelCounters = []  #Use this to count each channels loops outside the loop
-        available_ports = self.midiout.get_ports()
+        available_ports = self.midiOut.get_ports()
         self.channelList = []
         self.loadChannels() #Load the Channels above - must be defined in loadChannels
-        available_ports = self.midiout.get_ports()
-        print(f'available_ports: {available_ports}')
-        print(f'available_ports[0]: {available_ports[0]}')
-        print(f'available_ports[1][0]: {available_ports[1][0]}')
+        available_ports = self.midiOut.get_ports()
+        
         if available_ports:
-            self.midiout.open_port(0)
+            print(f'available_ports: {available_ports}')
+            print(f'available_ports[0]: {available_ports[0]}')
+            self.midiOut.open_port(port_name)
         else:
             print(f"Could not find {port_name} in available ports. Opening the first port.")
-            self.midiout.open_port(0)
+            self.midiOut.open_port(1)
 
     def loadChannels(self):
         #1. Define Channels
@@ -63,10 +63,10 @@ class MiDiWriter:
         #conditionData = [0,3,10]
         # Gesture (conditionData[0]) = 1
         # threshold (conditionData[1]) = 3 
-        # Data (self.conditionData[3]) = dist
-        print(f'self.channelCounters: {self.channelCounters}')
-        self.channel00 = self.MidiChannel(channel=0, predictions=self.predictions, conditionType=0, conditionData=[0,3,10])
-        self.channelList.append[self.channel00]
+
+        self.channel00 = self.MidiChannel(channelLabel="Channel0", midiOut=self.midiOut, channel=0, predictions=self.predictions, conditionType=0, conditionData=[0,3], bpm = self.bpm, controller=0, controllerType=0)
+        
+        self.channelList = [self.channel00]
                   
     def garbageMan(self):
         length = len(self.predictions)
@@ -78,6 +78,8 @@ class MiDiWriter:
             self.predictions = newPredict
 
     def getPredictions(self, prediction):
+        print()
+        print('getPredictions()')
         # Called in socketClient after prediction has been made 
         # Hands prediction data to the OSCWriter
         self.predictions.append(prediction)
@@ -86,44 +88,56 @@ class MiDiWriter:
 
 
     def conductor(self):
+        print()
+        print('conductor()')
         ##Conducts the process of gathering and sending data
         #Called once per prediction loop
         #Add as many channeles as you need to get the effects you want
-        # Eventually I will write a channel generator so you can create channeles and conditions        
-
-        #1. Define Channeles
-        #Channel 0
-        #condition type = 0 
-        # method = modulateDist()
-        # ToF enable = 1
-        #conditionData = [0,3,10]
-        # Gesture (conditionData[0]) = 1
-        # threshold (conditionData[1]) = 3 
-        # Data (self.conditionData[3]) = dist
+        # Eventually I will write a channel generator so you can create channeles and conditions            
        
         self.ToFEnable = 0
+        #print(f'channel List: {self.channelList}')
         for channel in self.channelList:
             #2 Check conditions
+            print(f'threadToggle: {channel.threadToggle}')
             channel.checkConditions()
+            print(f'channel enabled?: {channel.updateFlag}')
+            if channel.updateFlag:
             #channel.channelCounters[channel.channel]  += 1 #Check the conditions then update the loop
             
-            #3 Toggle ToFEnable
-            self.ToFEnable = channel.ToFEnable
-            if self.ToFEnable:
-                channel.controlValue = self.ToFByte    #ToF supplies the the control value 
-
+                #3 Toggle ToFEnable / get ToFByte
+                self.ToFEnable = channel.ToFEnable
+                if self.ToFEnable:
+                    print(f'ToFByte: {self.ToFByte}')
+                    if self.ToFByte > 0 and self.ToFByte < 128:   #Make sure we have a valid ToF value
+                        channel.controlValue = self.ToFByte    #ToF supplies the control value 
+                channel.buildMidi()
         #4 Start channelThread if it's not going already
             #WriterThread = Thread(target=channel00.sendBeat)
-            if  not channel.thread.is_alive():
-                channel.thread.start()
+                if channel.thread == None:
+                    channel.thread = threading.Thread(name=channel.channelLabel, target=channel.sendBeat, args=(self.midiOut,))
+                    channel.thread.start()
+                    print(f'channel name {channel.thread.getName()}')
+                    print(f'channel is alive {channel.thread.is_alive()}')
+                    print(f'Threads (In writer): {threading.enumerate()}')
+                else:
+                    print(f'channel is alive? {channel.thread.is_alive()}')
+                #channel.thread.start()
         
         # while threading.active_count() > 1:    #wait for the last threads to finish processing
         #     #print(f'threading.active_count(): {threading.active_count()}')
         #     OSCThread.join() 
-        
+
+
+    ##############################################################################################################
+    # ###           MidiChannel
+    # ############################################################################################################    
     class MidiChannel:
-        def __init__(self, *, ToFEnable=0, updateFlag=0, predictions=[], conditionType=0, conditionData=[], value=-1, channel=None, controller=None, midiLoopCount = 0):
+        def __init__(self, *, channelLabel='', midiOut=None, ToFEnable=0, updateFlag=0, predictions=[], conditionType=0, conditionData=[], value=-1, channel=None, controller=None, midiLoopCount = 0, bpm=0, controllerType=0):
             self.midiLoopCount = midiLoopCount #Precious value fed in each time the loop runs
+            self.channelLabel = channelLabel
+            self.midiOut = midiOut
+            self.bpm = bpm
             self.channel = channel
             self.controller = controller
             self.updateFlag = updateFlag
@@ -134,7 +148,6 @@ class MiDiWriter:
             #       checks for a gesture (conditionData[0]) 
             #       held for a threshold (conditionData[1])
             self.conditionType = conditionType 
-           
             self.conditionData = conditionData   ##
             self.value = value
             self.predictions = predictions
@@ -152,10 +165,28 @@ class MiDiWriter:
             self.min_val = 0
             self.max_val = 127
             self.period = 2
-            self.thread = threading.Thread(target=self.sendBeat)
+            self.thread = None
+            self.controllerType = controllerType
+            self.threadToggle = 0 #toggle this within the thread to see what it is doing
 
             #self.midiMessage = ([CONTROL_CHANGE | self.channel, self.controller, self.controlValue])
 
+        def sendBeat(self, midiOut):
+            print("sendBeat")
+            while True:
+                beatStart = int(time.time() * 1000)
+                beatStop = beatStart + self.beatMillis
+                #Add other commands here...
+                if self.updateFlag:
+                    midiOut.send_message(self.midiMessage)    
+                beatNow = int(time.time() * 1000)
+                while beatNow < beatStop:
+                    time.sleep(beatStop - beatNow)
+                if self.threadToggle == 1:
+                    self.threadToggle = 0
+                else:
+                   self.threadToggle = 1 
+                
         def getBeatMillis(self):
         #beatMillis is 1000 * (noteFactor * bps) 
         # bps = 60 / self.bpm  
@@ -183,10 +214,12 @@ class MiDiWriter:
                 beatMillis = 0
 
             return beatMillis #returns miliseconds / beat
-        
+   
         def checkConditions(self):
             ## Checks the updated predictions list for conditions on each channel
             ## Called once for each channel in OSCWriter.conductor
+            print()
+            print('checkConditions(self)')
             match self.conditionType:
                 case 0:
                     ## 0 - gestureThreshold(gesture, threshold) 
@@ -194,21 +227,18 @@ class MiDiWriter:
                     #       held for a threshold (conditionData[1])
                     #       writes conditionData[3] to self.value
                     if self.gestureThreshold(self.conditionData[0], self.conditionData[1]) == 0:
-                        self.controlValue = self.conditionData[2]
+                        #self.controlValue = self.conditionData[2]
                         self.updateFlag = 1
 
-            return self.ToFEnable
+        def buildMidi(self):
+            match self.controllerType:
+                case 0:
+                    print(f'channel:{self.channel}')
+                    print(f'controller:{self.controller}')
+                    print(f'controlValue:{self.controlValue}')
 
-        def sendBeat(self):
-            print("sendBeat")
-            beatStart = int(time() * 1000)
-            beatStop = beatStart + self.beatMillis
-            
-            #Add other commands here...
-            self.midiout.send_message(self.midiMessage)    
-            beatNow = int(time() * 1000)
-            while beatNow < beatStop:
-                time.sleep(beatStop - beatNow)
+                    self.midiMessage = ([CONTROL_CHANGE | int(self.channel), int(self.controller), int(self.controlValue)])
+
 
 #####################################################################################      
 #Condition checking methods - called in checkConditions() based on switch case result
@@ -223,9 +253,6 @@ class MiDiWriter:
             #       checks for a gesture (conditionData[0]) 
             #       held for a threshold (conditionData[1])
             #       writes conditionData[3] to self.value
-            if self.value == self.conditionData[2]:
-                #No need to update if the value is already set
-                return - 1
             lenPred = len(self.predictions)
             #print(f"Predictions Length: {lenPred}")
             if lenPred < threshold:
@@ -234,7 +261,7 @@ class MiDiWriter:
                 startIdx = lenPred-threshold
 
             for i in range(startIdx,lenPred):
-                print(f"self.predictions[i]: {self.predictions[i]}")
+                #print(f"self.predictions[i]: {self.predictions[i]}")
                 if self.predictions[i] != gesture:
                     return -1
             self.ToFEnable = 1    

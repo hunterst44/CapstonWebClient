@@ -1,7 +1,7 @@
 import PySimpleGUI as sg
 import socketClientUx
 import NeuralNetwork
-import oscWriter
+import midiWriter
 import os.path
 import time
 import struct
@@ -15,7 +15,7 @@ class UX:
 
     def __init__(self, *, theme='BluePurple'):
         self.theme = theme
-        self.writer = oscWriter.OSCWriter()
+        self.writer = midiWriter.MiDiWriter()
         self.packetLimit = 30
         self.packetSize = 1
         self.numSensors = 4
@@ -151,24 +151,26 @@ class UX:
         #NeuralNetwork.trainOrientation(pathPreface, labelPathList, 1, numSensors, self.numGestures)        
 
     def predictSample(self):
+        print()
+        print('predictSample()')
         #writer = oscWriter.OSCWriter()
         self.dataStream.getSample()
         predictionList = self.dataStream.predictSample()
-        print(f'Converting gesture to OSC...') 
+        print(f'Converting gesture to midi...') 
         self.writer.getPredictions(predictionList[0])
         if self.writer.ToFEnable:
-            print(f'Enable Time of Flight Sensor...') 
+            #print(f'Enable Time of Flight Sensor...') 
             self.dataStream.dataTx = 0 #Reset dataTx
             self.dataStream.dataTx = struct.pack("=B", 15)   #Enable ToF sensor
             self.dataStream.extraRxByte = 1
         else:
-            print(f'Disable Time of Flight Sensor...') 
+            #print(f'Disable Time of Flight Sensor...') 
             self.dataStream.dataTx = 0 #Reset dataTx
             self.dataStream.dataTx = struct.pack("=B", 255)   #Disable ToF sensor 
             self.dataStream.extraRxByte = 0
         self.dataStream.dataGot = 0   #Reset the dataGot flag for the next sample
 
-        return predictionList[0], self.writer.ToFEnable
+        return predictionList[0]
         
 
     def makeModelFileMessage(self, modelPath):
@@ -651,11 +653,20 @@ class UX:
                     print()
                     print("-GOBTN-")
                     #print(f'Collected sample {sampleCount + 1} of {self.packetLimit} samples for gesture {self.gestureCount + 1} of {self.numGestures} gestures')
-                    prediction, ToFEnable = self.predictSample()
-                    if ToFEnable:
+                    prediction = self.predictSample()
+                    print(f'prediction: {prediction}')
+                    if self.writer.ToFEnable == 1 and self.dataStream.ToFByte > 0 and self.dataStream.ToFByte < 128:   #TOF enabled and Valid ToFData
+                        self.writer.ToFByte = self.dataStream.ToFByte     #Pass ToF data to midiWriter
                         PredictMessage = "ToF enabled. Detected Gesture " + str(prediction)
-                    else:
+                        #self.writer.getPredictions(prediction)
+                    elif self.writer.ToFEnable == 1 and self.dataStream.ToFByte == -1:      #TOF enabled and not valid ToF data
+                        print(f"TOFByte not set: {self.writer.ToFByte}")
+                        PredictMessage = "ToF enabled, but no data available. Detected Gesture " + str(prediction)
+                    else:                                                                   #ToF not enabled
                         PredictMessage = "ToF disabled. Detected Gesture " + str(prediction)
+                    
+                    #self.writer.getPredictions(prediction)
+
                     window['-GESTURE-'].update(PredictMessage)
                     window['-STOPBTN-'].update(visible=True)
                     window['-GOBTN-'].update(visible=False)

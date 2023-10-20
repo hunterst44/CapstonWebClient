@@ -19,7 +19,7 @@ import matplotlib.pyplot as plt
 import os.path 
 import NeuralNetwork
 import dill  
-import oscWriter
+#import midiWriter
 import csv  
 import subprocess     
 
@@ -200,7 +200,7 @@ class GetData:
             if rcount < 5:
                 rcount += 1
                 if self.promptServer(dataTx, host, port, rcount) == 1:
-                    print(f"Sent Data after {rcount + 1} tries")
+                    #print(f"Sent Data after {rcount + 1} tries")
                     self.host = host
                     self.port = port
                     return 1
@@ -211,22 +211,22 @@ class GetData:
                 self.sockRecursionCount = 0
                 return -1
 
-        print(f"Sent Data after {rcount + 1} tries")
+        #print(f"Sent Data after {rcount + 1} tries")
         self.host = host
         self.port = port
         return 1
 
 
     def processData(self, binaryData):
-        print()
-        print(f'processData()')
-        print(f'binaryData: {binaryData}')
+        # print()
+        # print(f'processData()')
+        # print(f'binaryData: {binaryData}')
 
         #packetStartMS = int(time() * 1000)
         #global processCount
 
         def formatData(binaryData, sensorIndex):
-            print(f'sensor: {sensorIndex}')
+            #print(f'sensor: {sensorIndex}')
             #print()
             #print(f'binaryData: {binaryData}')
             #Parse binary data and recombine into ints
@@ -238,7 +238,7 @@ class GetData:
             XAccTuple = struct.unpack("=b", binaryData[0 + (sensorIndex * 3)])  ##MSB is second byte in axis RX; Just a nibble
             XAcc = XAccTuple[0]
             #XAcc = float(int(binaryData[0 + (sensorIndex * 3 * self.numSensors)]),0)
-            print(f'XAcc Raw: {XAcc}')
+            #print(f'XAcc Raw: {XAcc}')
             if self.getTraining is False:
                 self.packetData[0, (3 * sensorIndex)] = XAcc / 127
             else:
@@ -247,7 +247,7 @@ class GetData:
             #Y Axis
             YAccTuple = struct.unpack("=b", binaryData[1 + (sensorIndex * 3)])
             YAcc = YAccTuple[0]
-            print(f'YAcc Raw: {YAcc}')
+            #print(f'YAcc Raw: {YAcc}')
             if self.getTraining is False:
                 self.packetData[0, 1 + (3 * sensorIndex)] = YAcc / 127
             else:       
@@ -256,7 +256,7 @@ class GetData:
             #Z Axis
             ZAccTuple = struct.unpack("=b", binaryData[2 + (sensorIndex * 3)])
             ZAcc = ZAccTuple[0]
-            print(f'ZAcc Raw: {ZAcc}')
+            #print(f'ZAcc Raw: {ZAcc}')
             if self.getTraining is False:
                 self.packetData[0, 2 + (3 * sensorIndex)] = ZAcc / 127
             else:
@@ -267,7 +267,7 @@ class GetData:
             if self.dataTx[0] == 0x0F and sensorIndex == self.numSensors - 1:  #If ToF is enabled and we are on the last sensor - get the ToF byte
                 ToFTuple = struct.unpack("=b", binaryData[(self.numSensors * 3)])   #ToF data is the last byte
                 self.ToFByte = ToFTuple[0]
-                print(f"self.ToFByte: {self.ToFByte}")
+                #print(f"self.ToFByte: {self.ToFByte}")
             else:
                 #reset ToFByte
                 self.ToFByte = -1
@@ -280,20 +280,21 @@ class GetData:
         #Collects one sample and returns the data as a byte array
         count = 0
         #sock = socket.socket()
-        print("receiveBytes()")
-        print(f'dataTx: {dataTx}')  
+        #print("receiveBytes()")
+        #print(f'dataTx: {dataTx}')  
         #dataTx = struct.pack("=B", 34)  
-        print("Sending prompt to server")
+        #print("Sending prompt to server")
         #print(f'dataTx: {dataTx}') 
-        if self.promptServer(dataTx, host, port, 0) == 1:
-            print("Prompt Success") 
-        else:       
+        if self.promptServer(dataTx, host, port, 0) != 1:
             print("Failed Prompt")
-            return -1   
+            return -1
+        # else:  
+        #     #print("Prompt Success")      
+               
         
         #Now receive the response
         #y = self.sock.recv(numSensors * 3)
-        print(f'y at the start: {self.y}')
+        #print(f'y at the start: {self.y}')
         self.y = [] #Reset y
         a = 0
         errorCount = 0
@@ -325,7 +326,7 @@ class GetData:
         
         #sock.close()
         self.dataGot = 1
-        print(f"self.y returned: {self.y}")
+        #print(f"self.y returned: {self.y}")
         return self.y
     
     def socketSendStr(self, message):
@@ -409,20 +410,26 @@ class GetData:
     #print(f'Sample Received - One byte')
 
     def getSample(self): #recvCount counts samples in a packet in training mode; in prediction mode it is the index for the circular buffer
-        print()
-        print('getSample()')
+        # print()
+        # print('getSample()')
         packetStartMS = 0 
 
             #Sends one byte from dataPacket and asks for more
             #while recvCount < self.packetSize:
         sampleRxStartMS = int(time.time() * 1000)
-        dataThread = Thread(target=self.receiveBytes, args=(self.dataTx, self.host, self.port))
+        dataThread = threading.Thread(name='socketThread', target=self.receiveBytes, args=(self.dataTx, self.host, self.port))
         dataThread.start()
                 #y = self.receiveBytes()
                 #print(f'Receive Bytes')
 
-        while threading.active_count() > 1:
-            #print(f'threading.active_count(): {threading.active_count()}')
+        while dataThread.is_alive():
+            # print(f'threading.active_count(): {threading.active_count()}')
+            # print(f'Threads (in socketloop): {threading.enumerate()}')
+            # testVariable = threading.enumerate()
+            # print(f'thread[0]: {testVariable[0]}')
+            # print(f'thread[0][0]: {testVariable[0][0]}')
+            # print(f'thread[0][0] type: {type(testVariable[0][0])}')
+
             dataThread.join()
 
         sampleRxStopMS = int(time.time() * 1000)
