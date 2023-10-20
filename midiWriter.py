@@ -40,7 +40,7 @@ class MiDiWriter:
         self.memorySize = 10000 #How many samples to save before purging
         self.memorySizeMin = 100 #How many predictions to keep on purge
         self.ToFByte = ToFByte
-        self.channelCounters = []  #Use this to count each channels loops outside the loop
+        #self.channelCounters = []  #Use this to count each channels loops outside the loop
         available_ports = self.midiout.get_ports()
         self.channelList = []
         self.loadChannels() #Load the Channels above - must be defined in loadChannels
@@ -65,14 +65,9 @@ class MiDiWriter:
         # threshold (conditionData[1]) = 3 
         # Data (self.conditionData[3]) = dist
         print(f'self.channelCounters: {self.channelCounters}')
-        if len(self.channelCounters) == 0:
-            self.channelCounters.append(0)
-        else:
-            self.channelCounters[0] += 1
-            self.channel00 = self.MidiChannel(channel=0, predictions=self.predictions, conditionType=0, conditionData=[0,3,10], midiLoopCount=self.channelCounters[0])
-            self.channelList.append[self.channel00]
-            
-            
+        self.channel00 = self.MidiChannel(channel=0, predictions=self.predictions, conditionType=0, conditionData=[0,3,10])
+        self.channelList.append[self.channel00]
+                  
     def garbageMan(self):
         length = len(self.predictions)
         if length > self.memorySize:
@@ -110,7 +105,7 @@ class MiDiWriter:
         for channel in self.channelList:
             #2 Check conditions
             channel.checkConditions()
-            channel.channelCounters[channel.channel]  += 1 #Check the conditions then update the loop
+            #channel.channelCounters[channel.channel]  += 1 #Check the conditions then update the loop
             
             #3 Toggle ToFEnable
             self.ToFEnable = channel.ToFEnable
@@ -132,11 +127,14 @@ class MiDiWriter:
             self.channel = channel
             self.controller = controller
             self.updateFlag = updateFlag
-            self.conditionType = conditionType 
-            ## 0 - gestureThreshold(gesture, threshold) 
+            ##ConditionType determines what methods will be used to determine when and which attributes to change
+            #Parameters for condition checcking methods will be passed in conditionData[]
+            ###Condition Type definitions:
+             ## 0 - gestureThreshold(gesture, threshold) 
             #       checks for a gesture (conditionData[0]) 
             #       held for a threshold (conditionData[1])
-            #       writes conditionData[3] to self.value
+            self.conditionType = conditionType 
+           
             self.conditionData = conditionData   ##
             self.value = value
             self.predictions = predictions
@@ -191,6 +189,10 @@ class MiDiWriter:
             ## Called once for each channel in OSCWriter.conductor
             match self.conditionType:
                 case 0:
+                    ## 0 - gestureThreshold(gesture, threshold) 
+                    #       checks for a gesture (conditionData[0]) 
+                    #       held for a threshold (conditionData[1])
+                    #       writes conditionData[3] to self.value
                     if self.gestureThreshold(self.conditionData[0], self.conditionData[1]) == 0:
                         self.controlValue = self.conditionData[2]
                         self.updateFlag = 1
@@ -201,8 +203,6 @@ class MiDiWriter:
             print("sendBeat")
             beatStart = int(time() * 1000)
             beatStop = beatStart + self.beatMillis
-            if self.messageType == 0xB:  #This is a control command so send this data...
-                self.midiMessage = ([CONTROL_CHANGE | self.channel, self.controller, self.controlValue])
             
             #Add other commands here...
             self.midiout.send_message(self.midiMessage)    
@@ -247,9 +247,11 @@ class MiDiWriter:
             print("modulateDist")
             self.gestureThreshold(gesture, threshold) 
 
-            while self.channelCounters < self.modXIdx * 0.01:
+            while self.midiLoopCount < self.modXIdx * 0.01:
                 self.modulate()
-                self.channelCounters += 1
+                if self.messageType == 0xB:  #This is a control command so send this data...
+                    self.midiMessage = ([CONTROL_CHANGE | self.channel, self.controller, self.controlValue])
+                self.midiLoopCount += 1
 
         def modulate(self):
         #How does self.ToFByte change the modulation?
