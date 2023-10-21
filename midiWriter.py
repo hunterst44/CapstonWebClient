@@ -240,14 +240,14 @@ class MiDiWriter:
                     if self.onNotOff == 1: #if on check if we need to turn it off
                         
                         #When Control is ON it uses the second list in conditionData to set gesture and threshold
-                        if self.gestureThreshold(self.conditionData[1][0], self.conditionData[1][1]) == 0:
+                        if self.gestureThreshold(self.conditionData[1][0], self.conditionData[1][1], 0) == 0:
                         #self.controlValue = self.conditionData[2]
                             self.updateFlag = 1
                         else:
                             self.updateFlag = 0
                     else:
                          #When Control is OFF it uses the first list in conditionData to set gesture and threshold
-                        if self.gestureThreshold(self.conditionData[0][0], self.conditionData[0][1]) == 0:
+                        if self.gestureThreshold(self.conditionData[0][0], self.conditionData[0][1], 0) == 0:
                         #self.controlValue = self.conditionData[2]
                             self.updateFlag = 1
                         else:
@@ -313,7 +313,7 @@ class MiDiWriter:
 ######################################################################################       
         def modulateDist(self, gesture, threshold):
             print("modulateDist")
-            self.gestureThreshold(gesture, threshold) 
+            self.gestureThreshold(gesture, threshold, 0) 
 
             while self.midiLoopCount < self.modXIdx * 0.01:
                 self.modulate()
