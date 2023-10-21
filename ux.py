@@ -654,12 +654,12 @@ class UX:
                     print()
                     print("-GOBTN-")
                     #print(f'Collected sample {sampleCount + 1} of {self.packetLimit} samples for gesture {self.gestureCount + 1} of {self.numGestures} gestures')
-                    if stopPredict < 10:
-                        prediction = self.predictSample()
-                        stopPredict += 1
-                    else:
-                        stopPredict = 0
-                        window.write_event_value("-STOPBTN-", '')
+                    #if stopPredict < 10:
+                    prediction = self.predictSample()
+                     #   stopPredict += 1
+                    #else:
+                     #   stopPredict = 0
+                      #  window.write_event_value("-STOPBTN-", '')
 
 
                     print(f'prediction: {prediction}')
