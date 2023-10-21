@@ -60,9 +60,10 @@ class MiDiWriter:
         #condition type = 0 
         # method = modulateDist()
         # ToF enable = 1
-        #conditionData = [0,3,10]
-        # Gesture (conditionData[0]) = 1
-        # threshold (conditionData[1]) = 3 
+        #conditionData = [[0,3],[1,3]]
+        #First list is for the ON state, second list is for OFF state
+        # Gesture -> conditionData[x][0] 
+        # threshold -> conditionData[x][1])
 
         self.control00 = self.MidiControl(controlLabel="Channel0", midiOut=self.midiOut, channel=0, predictions=self.predictions, conditionType=0, conditionData=[0,3], bpm = self.bpm, controlNum=0, controllerType=0)
         
