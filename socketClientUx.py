@@ -83,8 +83,9 @@ class GetData:
         print(f'dataTx: {self.dataTx}')
         print(f'host {host}')
         print(f'port: {port}')
-
+        
         self.sock = socket.socket()
+        self.sock.setblocking(False)
         try:
             self.sock.connect((host, port))
 

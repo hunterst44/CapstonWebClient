@@ -1,5 +1,6 @@
 # import socketClientUx
 # import NeuralNetwork
+
 import numpy as np
 # import pythonosc
 # import os.path
@@ -13,7 +14,8 @@ from xml.sax.xmlreader import InputSource
 import rtmidi
 from rtmidi.midiconstants import CONTROL_CHANGE
 from scipy import signal
-# import sys
+
+import sys
 
 """ 
     'noteon': NOTE_ON,
@@ -46,13 +48,13 @@ class MiDiWriter:
         self.loadChannels() #Load the Channels above - must be defined in loadChannels
         available_ports = self.midiOut.get_ports()
         
-        if len(available_ports) > 1:
+        if available_ports:
             print(f'available_ports: {available_ports}')
             print(f'available_ports[0]: {available_ports[0]}')
             self.midiOut.open_port(port_name)
         else:
             print(f"Could not find {port_name} in available ports. Opening the first port.")
-            #self.midiOut.open_port(1)
+            self.midiOut.open_port(1)
 
     def loadChannels(self):
         #1. Define Channels
@@ -112,13 +114,14 @@ class MiDiWriter:
                     print(f'ToFByte: {self.ToFByte}')
                     if self.ToFByte > 0 and self.ToFByte < 128:   #Make sure we have a valid ToF value
                         control.controlValue = self.ToFByte    #ToF supplies the control value 
-                #control.buildMidi()
+                # control.buildMidi()
                 control.changeRate()
-
+                
+                
         #4 Start controlThread if it's not going already
             #WriterThread = Thread(target=control00.sendBeat)
                 if control.thread == None:
-                    control.thread = threading.Thread(name=control.controlLabel, target=control.sendBeat, args=(self.midiOut,))
+                    # control.thread = threading.Thread(name=control.controlLabel, target=control.sendBeat, args=(self.midiOut,))
                     control.thread =  threading.Thread(name=control.controlLabel, target=control.play_modulation_loop, args=( control.period, control.max_duration, control.invert))
                     control.thread.start()
                     print(f'control name {control.thread.getName()}')
@@ -126,7 +129,7 @@ class MiDiWriter:
                     print(f'Threads (In writer): {threading.enumerate()}')
                 else:
                     print(f'control is alive? {control.thread.is_alive()}')
-                #control.thread.start()
+                # control.thread.start()
         
         # while threading.active_count() > 1:    #wait for the last threads to finish processing
         #     #print(f'threading.active_count(): {threading.active_count()}')
@@ -137,7 +140,7 @@ class MiDiWriter:
     # ###           MidiControl
     # ############################################################################################################    
     class MidiControl:
-        def __init__(self, *, controlLabel='', midiOut=None, ToFEnable=0, updateFlag=0, predictions=[], conditionType=0, conditionData=[[0,3], [1,3]], value=-1, channel=None, controlNum=None, midiLoopCount = 0, bpm=0, controllerType=0):
+        def __init__(self, *, controlLabel='', midiOut=None, ToFEnable=0, updateFlag=0, predictions=[], conditionType=0, conditionData=[[0,3], [1,3]], value=-1, channel=None, controlNum=None, midiLoopCount = 0, bpm=0, controllerType=0, controlNumType = 0, max_duration = 1, cc_num = 75):
             self.midiLoopCount = midiLoopCount #Precious value fed in each time the loop runs
             self.controlLabel = controlLabel
             self.midiOut = midiOut
@@ -164,7 +167,7 @@ class MiDiWriter:
             self.onNotOff = 0 #off by default
             self.midiMessage = ([0x80, 70, 20])
             self.invert = 1 #1 or -1 only!
-            self.shape = 0 # 0 = sin; 1 = saw; 2 = square
+            self.shape = 'sine' #0 # 0 = sin; 1 = saw; 2 = square
             self.modLenS = 16 #The modulation duration in seconds
             self.min_val = 0
             self.max_val = 127
@@ -172,9 +175,12 @@ class MiDiWriter:
             self.thread = None
             self.controllerType = controllerType
             self.threadToggle = 0 #toggle this within the thread to see what it is doing
-            #self.max_duration = max_duration
+            self.controlNumType = controlNumType
+            self.max_duration = max_duration
+            self.cc_num = cc_num
 
             #self.midiMessage = ([CONTROL_CHANGE | self.channel, self.controlNum, self.controlValue])
+
         def play_modulation_loop(self, period, max_duration, signal):
             if self.getBeatMillis():
                 modulation = self.modulation_shape(self.shape, self.period, 1, self.invert)
@@ -204,8 +210,10 @@ class MiDiWriter:
                 # beatNow = int(time() * 1000)
                 # while beatNow < beatStop:
                 time.sleep((self.getBeatMillis()/1000)/10)
+            
         def sendBeat(self, midiOut):
             print("sendBeat")
+            
             self.getBeatMillis()
             while True:
                 beatStart = int(time.time() * 1000)
@@ -267,7 +275,7 @@ class MiDiWriter:
             print('checkConditions(self)')
             match self.conditionType:
                 case 0:
-                     ## ConditionType 0: Threshold
+                        ## ConditionType 0: Threshold
                         # gestureThreshold(gesture, threshold) 
                         #       checks for a gesture (conditionData[0]) 
                         #       held for a threshold (conditionData[1])
@@ -281,12 +289,13 @@ class MiDiWriter:
                         else:
                             self.updateFlag = 0
                     else:
-                         #When Control is OFF it uses the first list in conditionData to set gesture and threshold
+                            #When Control is OFF it uses the first list in conditionData to set gesture and threshold
                         if self.gestureThreshold(self.conditionData[0][0], self.conditionData[0][1], 0) == 0:
                         #self.controlValue = self.conditionData[2]
                             self.updateFlag = 1
                         else:
                             self.updateFlag = 0
+                            
 
         def buildMidi(self):
             match self.controlNumType:
@@ -296,7 +305,7 @@ class MiDiWriter:
                     print(f'controlValue:{self.controlValue}')
 
                     self.midiMessage = ([CONTROL_CHANGE | int(self.channel), int(self.controlNum), int(self.controlValue)])
-
+                    
         def changeRate(self):  
                 newRate = self.controlValue
                 print(newRate)
@@ -313,11 +322,13 @@ class MiDiWriter:
                
                 print(self.beatLenStr)
 
+
 #####################################################################################      
 #Condition checking methods - called in checkConditions() based on switch case result
 ##################################################################################### 
 
         def gestureThreshold(self, gesture, threshold, startIdx):
+            # loopIdx = 0
             print("gestureThreshold")
             #startIdx counts back from the last element in the list
             # print(f"gesture: {gesture}")
@@ -333,8 +344,8 @@ class MiDiWriter:
             lenPred = len(self.predictions)
             #print(f"Predictions Length: {lenPred}")
             if lenPred < threshold:
-                #startIdx = startIdx
                 return -1
+                #     startIdx = startIdx
             else:
                 loopIdx =  lenPred-(startIdx + threshold)
 
@@ -378,46 +389,66 @@ class MiDiWriter:
             y = self.convert_range(y, -1.0, 1.0, 0, 127)
             y = self.convert_range(y, 0, 127, self.min_val, self.max_val) 
             self.controlValue = int((y * self.ToFByte) / 256)
-
-
-        #Joel's modulation shape function - uses self.xxx atributes to set shape etc. 
-        # We need these there so they can be exposed to the GUI        
-        def modulation_shape(self, period, x, xArrIdx):
-            xArr = np.arrange(0, self.modLenS, 0.01)
-            x = xArr[xArrIdx]
+            
+        def modulation_shape(self, shape, period, max_duration, signal_invert):
+            x = np.arange(0, max_duration, 0.01)
             y = 1
+            sig_invert = 1
 
-            if self.shape == 0: #'sine':
-                y = self.invert * np.sin(2 * np.pi / period * x)
-            elif self.shape == 1: #'saw':
-                y = self.invert * signal.sawtooth(2 * np.pi / period * x)
-            elif self.shape == 2: #'square':
-                y = self.invert * signal.square(2 * np.pi / period * x)
+            if signal_invert:
+                sig_invert = -1
+
+            if shape == 'sine':
+                y = sig_invert * np.sin(2 * np.pi / period * x)
+            elif shape == 'saw':
+                y = sig_invert * signal.sawtooth(2 * np.pi / period * x)
+            elif shape == 'square':
+                y = sig_invert * signal.square(2 * np.pi / period * x)
             else:
                 print("That wave is not supported")
+                sys.exit()
 
-            return y   
-
-        # def modulation_shape(self, shape, period, max_duration, signal_invert):
-        #     x = np.arange(0, max_duration, 0.01)
+            return y
+                
+        # def modulation_shape(self, period, x, xArrIdx):
+        #     xArr = np.arrange(0, self.modLenS, 0.01)
+        #     x = xArr[xArrIdx]
         #     y = 1
-        #     sig_invert = 1
 
-        #     if signal_invert:
-        #         sig_invert = -1
-
-        #     if shape == 'sine':
-        #         y = sig_invert * np.sin(2 * np.pi / period * x)
-        #     elif shape == 'saw':
-        #         y = sig_invert * signal.sawtooth(2 * np.pi / period * x)
-        #     elif shape == 'square':
-        #         y = sig_invert * signal.square(2 * np.pi / period * x)
+        #     if self.shape == 0: #'sine':
+        #         y = self.invert * np.sin(2 * np.pi / period * x)
+        #     elif self.shape == 1: #'saw':
+        #         y = self.invert * signal.sawtooth(2 * np.pi / period * x)
+        #     elif self.shape == 2: #'square':
+        #         y = self.invert * signal.square(2 * np.pi / period * x)
         #     else:
         #         print("That wave is not supported")
-        #         sys.exit()  #We need to exit 
 
-        #     return y  
-                
+        #     return y     
+                # print(f"value: {value}")
+        # print(f"channel: {channel}")
+        # print(f"self.host: {self.host}")
+        # print(f"self.host: {type(self.host)}")
+        # print(f"self.host: {self.port}")
+        # print(f"self.host: {type(self.port)}")
+        # OSCsock = socket.socket()
+        # OscChannel = self.host + channel
+        # #OSCsock.connect((OscChannel, self.port))
+        # print("Connected to server")
+        # print(f"Channel: {OscChannel}")
+        # print(f"Value: {value}")
+        #print()
+
+        # #try:
+        # OSCsock.send(value);
+       
+        # OSCsock.close()
+        # def play_modulation_loop(self, shape, period, max_duration, signal_invert):
+        #     # if self.getBeatMillis():
+        #         modulation = self.modulation_shape(shape, period, max_duration, signal_invert)
+        #         while True:
+        #             self.play_modulation(modulation, 1)
+                # def play_modulation(self, y, max_duration):
             # bpm = self.bpm
             # bps = bpm/60
             # pause_duration = self.getBeatMillis()/y.size

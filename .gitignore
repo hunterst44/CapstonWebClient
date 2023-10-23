@@ -7,3 +7,14 @@ data/Train00Fig_0_1.png
 data/Train00Fig_1_1.png
 data/Train00Fig_2_1.png
 interpolation.py
+oscWriter.py
+predictGestures3Classes.py
+predictOrientation.py
+predictOrientation01.py
+predictTest.py
+predictToOSC.py
+socketClient.py
+testSocket.py
+trainOrientation.py
+trainOrientation01.py
+midiWriternew.py
