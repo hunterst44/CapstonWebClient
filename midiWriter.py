@@ -46,13 +46,13 @@ class MiDiWriter:
         self.loadChannels() #Load the Channels above - must be defined in loadChannels
         available_ports = self.midiOut.get_ports()
         
-        if available_ports:
+        if len(available_ports) > 1:
             print(f'available_ports: {available_ports}')
             print(f'available_ports[0]: {available_ports[0]}')
             self.midiOut.open_port(port_name)
         else:
             print(f"Could not find {port_name} in available ports. Opening the first port.")
-            self.midiOut.open_port(1)
+            #self.midiOut.open_port(1)
 
     def loadChannels(self):
         #1. Define Channels
