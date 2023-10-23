@@ -1300,7 +1300,7 @@ def trainOrientation(pathPreface, pathList, packetSize, numSensors, numGestures)
     if modelOk == 0:   
         print('Creating a new model')                                 #Or create a new one
         model = Model()   #Instanstiate the model
-        
+
         #Add layers
         #Input is 15 features (3 Axis * 5 samples)
         model.add(Layer_Dense(3*packetSize * numSensors,300, weight_regularizer_l2=5e-4, bias_regularizer_l2=5e-4))
