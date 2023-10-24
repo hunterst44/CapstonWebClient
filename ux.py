@@ -1,27 +1,20 @@
 import PySimpleGUI as sg
 import socketClientUx
 import NeuralNetwork
-import midiWriter
 import os.path
 import time
 import struct
-import csv
-import NeuralNetwork
 # import socket
 # import subprocess
 # import shutil
 #import sys
 
 
-#TODO continue on window 1 - Add read model data from the logged files
-
-
-
 class UX:
 
     def __init__(self, *, theme='BluePurple'):
         self.theme = theme
-        self.writer = midiWriter.MiDiWriter()
+        self.writer = oscWriter.OSCWriter()
         self.packetLimit = 30
         #self.packetSize = 1
         #self.numSensors = 4
@@ -36,7 +29,7 @@ class UX:
         self.windowSizeX = 900
         self.windowSizeY = 500
         self.stopPredict = 0
-        self.dataStream = socketClientUx.GetData() # default values: host="192.168.4.1", port=80, packetSize=1, numSensors=4, pathPreface='data/test', labelPath="Test", label=0, getTraining=True
+        self.dataStream = socketClientUx.GetData(packetSize=self.packetSize, numSensors=self.numSensors, pathPreface=self.pathPreface)
         self.IPAddress = ''
         self.SSIDList = []
         self.positionPathList = []
@@ -45,6 +38,118 @@ class UX:
 ###############################################################################################
 ##############                  Control Methods                               #################
 ###############################################################################################
+
+    class ConductorConnector:
+
+        def __init__(self):
+            self.SSID = "TheConductor"
+            self.HostIP = ""
+            self.PSWD = ""
+            self.newSSID = ""
+            self.newIP = ""
+            self.newPSWD = ""
+
+        def getNetworks(self):
+            SSIDList = []
+            networks = subprocess.check_output(["netsh", "wlan", "show", "network"])
+            networks = networks.decode("ascii")
+            #networks = networks.replace("\r,","")
+            ls = networks.split('\n')
+            ls = ls[4:]
+
+            counter = 0
+            while counter < (len(ls)):
+                if counter % 5 == 0:
+                    #print(ls[counter])
+                    if len(ls[counter]) > 9:
+                        ls[counter] = ls[counter][9:]
+                        print(f'Network {counter}: {ls[counter]}')
+                        SSIDList.append(ls[counter])
+                counter += 1
+            return SSIDList
+
+        def socketConnect(self, ip, ssid):
+            print()
+            print(f'UX.connnectDevice')
+            # dataTx = struct.pack("=B", 0xF0)
+            sock = socket.socket()
+            connection = 0
+            while connection == 0:
+                # sock = socket.socket()
+                # sock.connect((ip, 80))
+                print(f"Connected to server at {ip} at {ssid}")
+                connection = 1
+            #Test the connection
+            
+            
+            # try:
+            #     sock.send(dataTx)
+            #     #print("Sent Data")
+            # except:
+            #     sock.connect((ip, 80))
+            #     #print("Socket Reconnected")
+            #     sock.send(dataTx)
+        #     #TODO Set ESP32 to respond with display when client connects to AP
+        #     recvByte = sock.recv(1)
+
+            #     if recvByte == 0xFF:
+
+            #        return 1
+            #     else:
+            #         return -1
+            return 1
+
+        def socketSendStr(self, dataTx, ip, ssid):
+            print()
+            print(f'UX.connnectDevice')
+            print(f"Sending connection info {dataTx}")
+
+            #sock = socket.socket()
+            #sock.connect((ip, 80))
+            print(f"Connected to server at {ip} on {ssid}")
+            print(f"Sending connection info {dataTx}")
+
+            # try:
+            #     sock.send(dataTx)
+            #     #print("Sent Data")
+            # except:
+            #     sock.connect((ip, 80))
+            #     #print("Socket Reconnected")
+            #     sock.send(dataTx)
+            #     recvByte = sock.recv(1)
+
+            #     if recvByte == 0xF0:
+                     #sock.close()
+            #         return 1
+            #     else:
+                      #sock.close()
+            #         return -1
+                #     #TODO Have the ESP32 disconnet and reconnect on the new socket
+
+            return 1
+
+        def sendNetworkInfo(self, newSSID, pswd):
+            print()
+            print(f'sendNetworkInfo')
+            if newSSID != '' and pswd != '':
+                dataTx = newSSID + "__--__" + pswd
+                #TODO Connect to AP network
+                    #send connection infos
+                if self.socketSendStr(dataTx, self.HostIP, self.SSID) == 1:
+                    return 1
+                else:
+                    return -1
+
+        def logNetwork(self):
+            print()
+            print(f'logNetwork()')
+            networkPath = self.pathPreface + "/networks.csv"
+            with open(networkPath, 'w') as csvfile:
+                csvWrite = csv.writer(csvfile)
+                csvWrite.writerow([self.SSID, self.PSWD])
+
+        #Things to log - Network connections
+            # model parameters: numSensors, numGestures, pathPreface, pathList
 
     def trainModel(self):
         #iterate through all the handPositions and collect packetLimit samples of each
@@ -94,26 +199,24 @@ class UX:
         return 1
             
     def predictSample(self):
-        print()
-        print('predictSample()')
         #writer = oscWriter.OSCWriter()
         self.dataStream.getSample()
         predictionList = self.dataStream.predictSample()
         print(f'Converting handPosition to midi...') 
         self.writer.getPredictions(predictionList[0])
         if self.writer.ToFEnable:
-            #print(f'Enable Time of Flight Sensor...') 
+            print(f'Enable Time of Flight Sensor...') 
             self.dataStream.dataTx = 0 #Reset dataTx
             self.dataStream.dataTx = struct.pack("=B", 15)   #Enable ToF sensor
             self.dataStream.extraRxByte = 1
         else:
-            #print(f'Disable Time of Flight Sensor...') 
+            print(f'Disable Time of Flight Sensor...') 
             self.dataStream.dataTx = 0 #Reset dataTx
             self.dataStream.dataTx = struct.pack("=B", 255)   #Disable ToF sensor 
             self.dataStream.extraRxByte = 0
         self.dataStream.dataGot = 0   #Reset the dataGot flag for the next sample
 
-        return predictionList[0]
+        return predictionList[0], self.writer.ToFEnable
         
 
     def makeModelFileMessage(self, modelPath):
@@ -134,50 +237,24 @@ class UX:
 ##############                  Window Definitions                            #################
 ###############################################################################################
 
-    def makeWindow0(self, connected):
-
-        if connected:
-            topMessage = 'The Conductor is connected on ' + self.dataStream.ssid + ' at ' + self.dataStream.host
-            connectVis = True   #Use to set visibility of an item when The Conductor is connected
-            disconnectVis = False  #Use to unset visibility of an item when The Conductor is not connected
-            self.SSIDList = self.dataStream.getNetworks()  #Get the network list from the air so user can reconnect
-
-        else:
-            topMessage = 'Start up The Conductor and connect your PC to the SSID displayed on the screen. Then enter IP address on the screen and click "Connect."'
-            connectVis = False
-            disconnectVis = True
-
+    def makeWindow0(self):
     #Window zero welcome, set up wifi
-    #sg row builder... 
-                # [
-                #     sg.pin(
-                #         sg.Column(
-                #             [
-                #                 [sg.Listbox(self.SSIDList, size=(15, 4), key="-SSIDIN-", expand_y=True, enable_events=True, visible=False)
-                #                 ], 
-                #                 [sg.Button('Refresh', key='-SSIDLISTRFH-', visible=visibility)
-                #                 ]
-                #             ], 
-                #             pad=(0,0)), 
-                #         shrink=True)
-                # ],
         layout = [[sg.Text('The Conductor: Window 0: Connect to The Conductor.'), sg.Text(size=(2,1), key='-OUTPUT-')],
-                [sg.pin(sg.Column([[sg.Text(topMessage, key='-TOPMESSAGE-', size=(100,2))]]))],
-                [sg.pin(sg.Column([[sg.Text(f"To use this network click 'Continue.' To connect to another network enter the network info below and click 'Reconnect'. Click 'Don't Connect' to continue without connecting", key='-TOPMESSAGE01-', size=(100,2), visible=connectVis)]]), shrink=True)],
-                [sg.pin(sg.Column([[sg.Input('192.168.XX.XX', key="-IPIN-", visible=disconnectVis)], [sg.Button('Connect', key='-APCNTEBTN-', visible=disconnectVis)]], pad=(0,0)), shrink=True)],
-                [sg.pin(sg.Column([[sg.Input('192.168.XX.XX', key="-IPNEW-", visible=False)]]), shrink=True)],
-                [sg.pin(sg.Column([[sg.Button('Connect', key='-STNCNTEBTN-', visible=False)]], pad=(0,0)), shrink=True)],
-                [sg.pin(sg.Column([[sg.Button("Don't Connect", key='-NOCNTBTN-', visible=disconnectVis)]], pad=(0,0)), shrink=True)],
-                # [sg.pin(sg.Column([[sg.Listbox(self.SSIDList, size=(15, 4), key="-SSIDIN-", expand_y=True, enable_events=True, visible=False)]]), shrink=True)],
-                [sg.pin(sg.Column([[sg.Button('Continue', key='-CONTBTN-', visible=connectVis)]], pad=(0,0)), shrink=True)],
-                [sg.pin(sg.Column([[sg.Listbox(self.SSIDList, size=(15, 8), key="-SSIDIN-", expand_y=True, enable_events=True, visible=connectVis)], [sg.Button('Refresh', key='-SSIDLISTRFH-', visible=connectVis)]], pad=(0,0)), shrink=True)],
+                #[sg.Text('Connect to The Conductor.'), sg.Text(size=(5,1), key='-OUTPUT-')], 
+                [sg.pin(sg.Column([[sg.Text('Start up The Conductor and connect your PC to the SSID displayed on the screen.', key='-TOPMESSAGE-'), sg.Text(size=(2,1))]]))],
+                [sg.pin(sg.Column([[sg.Text('Then enter IP address on the screen and click "Connect."', key='-TOPMESSAGE01-'), sg.Text(size=(2,1))]]))],
+                [sg.pin(sg.Column([[sg.Input('IP Address', key="-IPIN-", visible=True)]]), shrink=False)],
+                [sg.pin(sg.Column([[sg.Input('IP Address', key="-IPNEW-", visible=False)]]), shrink=False)],
+                [sg.pin(sg.Column([[sg.Button('Connect', key='-STNCNTEBTN-', visible=False)]], pad=(0,0)), shrink=False)],
+                [sg.pin(sg.Column([[sg.Listbox(self.SSIDList, size=(15, 4), key="-SSIDIN-", expand_y=True, enable_events=True, visible=False)]]), shrink=False)],
                 #[sg.pin(sg.Column([[sg.Input('Network SSID', key="-SSIDIN-", visible=False)]]), shrink=False)],
-                [sg.pin(sg.Column([[sg.Input('Password', key="-PSWDIN-", visible=connectVis)]]), shrink=True)],
-                #[sg.pin(sg.Column([[sg.Button('Connect', key='-APCNTEBTN-', visible=visibility)]], pad=(0,0)), shrink=False)],
-                [sg.pin(sg.Column([[sg.Button('Reconnect', key='-RECNTBTN-', visible=connectVis)]], pad=(0,0)), shrink=True)],
+                [sg.pin(sg.Column([[sg.Input('Password', key="-PSWDIN-", visible=False)]]), shrink=False)],
+                [sg.pin(sg.Column([[sg.Button('Connect', key='-APCNTEBTN-', visible=True)]], pad=(0,0)), shrink=False)],
+                [sg.pin(sg.Column([[sg.Button('Continue', key='-CONTBTN-', visible=False)]], pad=(0,0)), shrink=False)],
+                [sg.pin(sg.Column([[sg.Button('Reconnect', key='-RECNTBTN-', visible=False)]], pad=(0,0)), shrink=False)],
                 #[sg.pin(sg.Column([[sg.Text('Upload a model'), sg.Text(size=(2,1), key='-UPLOADMODEL-'), sg.Input(), sg.FileBrowse(), sg.Button('Ok', key='-UPLOADMODELBTN-')]]))],
                 #[sg.Text(''), sg.Text(size=(2,1), key='-OUTPUT-'), sg.Button('Ok', key='-APCONNECTBTN-')],
-                [sg.pin(sg.Column([[sg.Text("If your network doesn't show up in the list open Windows network manager before clicking Refresh", visible=connectVis, key='-MESSAGE-'), sg.Text(size=(2,1))]], pad=(0,0)), shrink=True)]   
+                [sg.pin(sg.Column([[sg.Text('', visible=True, key='-MESSAGE-'), sg.Text(size=(2,1))]], pad=(0,0)), shrink=False)]   
                 ]
         return sg.Window('THE CONDUCTOR: Step 0', layout, size=(self.windowSizeX,self.windowSizeY), finalize=True)
     
@@ -251,18 +328,14 @@ class UX:
     def uxLoop(self):
         print()
         print('uxLoop Start')
-        newIP = "192.168.4.1"
-        newSSID = "TheCOnductor"
-        newPSWD = "NoneShallPass"
-        stopPredict = 0
        
         ##Methods to collect run time data required for the GUI
-        modelPath = self.dataStream.pathPreface + 'model.model'
+        modelPath = self.pathPreface + 'model.model'
         print(f'modelPath: {modelPath}')
         modelMessage = self.makeModelFileMessage(modelPath)
 
         sg.theme(self.theme)
-        #connector = self.ConductorConnector()
+        connector = self.ConductorConnector()
         #connector.getNetworks()
 
         positionLabelCount = 0
@@ -270,7 +343,7 @@ class UX:
         newPositionLabelList = []
 
         # Set all windows to Noe except window 1 to start
-        window0 = self.makeWindow0(self.dataStream.sockConnection)
+        window0 = self.makeWindow0()
         #window1 = self.makeWindow1(modelMessage)
         window1 = None
         window2 = None
@@ -285,7 +358,7 @@ class UX:
 
 
 ##############     Window0          #################
-            #events for window0 (Create connection)
+            #events for window1 (welcome, load / create model)
             #TODO Add option to choose from previous connections
             #Add option to select from detected networks
             if window == window0:
@@ -297,7 +370,6 @@ class UX:
                     break
 
                 if event == "-APCNTEBTN-":
-                    #Connect to the default AP network "TheCondutor"
                     print()
                     print(f'Window 0 -APCNTEBTN-')
                     #Get and validate input
@@ -305,67 +377,42 @@ class UX:
                         #TODO better validation
                             #Check pattern for IP, Get list of available networks aand let user check
                         #connector.SSID = values["-SSIDIN-"]
-                        self.dataStream.host = values["-IPIN-"]
+                        connector.newIP = values["-IPIN-"]
                         #connector.PSWD = "NoneShallPass"
                         
-                        window['-MESSAGE-'].update(f'Connecting to The Conductor at IP Address {self.dataStream.host}...')
+                        window['-MESSAGE-'].update(f'Connecting to The Conductor at IP Address {connector.HostIP}...')
                         window.refresh()
-                        connectTries = 0
-                        while connectTries < 3:
-                            print("Trying to make a socket connection")
-                            if self.dataStream.makeSockConnection(self.dataStream.host, self.dataStream.port) == -1:
-                                connectTries += 1
-                                time.sleep(1)
-                            else:
-                                print("Connected to The Conductor!")
-                                break
-        
-                    if connectTries == 3:
-                        print("Can't connect to the Conductor")
-                    
-                    if self.dataStream.sockConnection == 1:
-                        print(f'IP: {self.dataStream.host}, SSID: {self.dataStream.ssid}')
-                
-                    #Get Network data from the air
-                        self.SSIDList = self.dataStream.getNetworks()
-                        window['-TOPMESSAGE-'].update(f'Conductor Connected!  SSID: {self.dataStream.ssid}, IP Address: {self.dataStream.host}')
-                        window['-TOPMESSAGE01-'].update(visible=True)
-                        window['-TOPMESSAGE01-'].update(f'To use this network click continue. To connect to another network enter the network info below and click Reconnect')
-                        window['-MESSAGE-'].update(visible=True)
-                        window['-CONTBTN-'].update(visible=True)
-                    
-                    else:
-                        window['-TOPMESSAGE-'].update(f'Conductor Not Connected on  SSID: {self.dataStream.ssid}, IP Address: {self.dataStream.host}')
-                        window['-TOPMESSAGE01-'].update(visible=True)
-                        window['-TOPMESSAGE01-'].update(f'To connect to another network enter the network info below and click Reconnect')
-                        window['-CONTBTN-'].update(visible=False)
-                        window['-MESSAGE-'].update(visible=True)
-                    
-                    self.SSIDList = self.dataStream.getNetworks()
-                    window['-IPIN-'].update(visible=False)
-                    window['-SSIDIN-'].update(self.SSIDList)
-                    window['-SSIDIN-'].update(visible=True)
-                    window['-PSWDIN-'].update(visible=True)
-                    window['-RECNTBTN-'].update(visible=True)
-                    window['-APCNTEBTN-'].update(visible=False)
-                    window['-MESSAGE-'].update(visible=False)
-                    window.refresh()  
+                        if connector.socketConnect(connector.newIP, connector.SSID) == 1:
+                            #if self.dataStream.promptServer(connector.newIP, connector.SSID) == 1:   #New version with unified socket connection
+                            connector.HostIP = connector.newIP
+                            connector.newIP = ''
+                            print(f'IP: {connector.HostIP}, SSID: {connector.SSID}')
+                            #Get Network data from the air
+                            self.SSIDList = connector.getNetworks()
+                            window['-TOPMESSAGE-'].update(f'Conductor Connected!  IP Address: {connector.HostIP}')
+                            window['-TOPMESSAGE01-'].update(f'To use this network click continue. To connect to another network enter the network info below and click Reconect')
+                            #window['-TOPMESSAGE01-'].update(visible=False)
+                            window['-IPIN-'].update(visible=False)
+                            window['-SSIDIN-'].update(self.SSIDList)
+                            window['-SSIDIN-'].update(visible=True)
+                            window['-PSWDIN-'].update(visible=True)
+                            window['-RECNTBTN-'].update(visible=True)
+                            window['-CONTBTN-'].update(visible=True)
+                            window['-APCNTEBTN-'].update(visible=False)
+                            window['-MESSAGE-'].update(visible=False)
+                            window.refresh()  
 
-                if event == '-SSIDLISTRFH-':
-                    #Refresh SSID list button
+                if event == '-CONTBTN-':
                     print()
-                    print(f'Window 0 -SSIDLISTRFH-')
-                    self.SSIDList = self.dataStream.getNetworks()
-                    window['-SSIDIN-'].update(self.SSIDList)
-                    window['-SSIDIN-'].update(visible=True)
-                    window.refresh()
-
+                    print(f'Window 0 -CONTBTN-')
+                    window0.hide()
+                    window1 = self.makeWindow1(modelMessage)
                     
                 if event == '-RECNTBTN-':
                     print()
                     print(f'Window 0 -RECNTBTN-')
-                    newSSID = values["-SSIDIN-"][0].strip()
-                    newPSWD = values["-PSWDIN-"].strip()
+                    connector.newSSID = values["-SSIDIN-"][0]
+                    connector.newPSWD = values["-PSWDIN-"]
                     window['-SSIDIN-'].update(visible=False)
                     window['-PSWDIN-'].update(visible=False)
                     window['-RECNTBTN-'].update(visible=False)
@@ -373,38 +420,28 @@ class UX:
                     window['-APCNTEBTN-'].update(visible=False)
                     window.refresh()
 
-                    if newSSID != "Network SSID" and newPSWD != "Password":
+                    if connector.newSSID != "Network SSID" and connector.newPSWD != "Password":
                         #TODO better validation
                             #Check pattern for IP, Get list of available networks aand let user check
                         #connector.SSID = values["-SSIDIN-"]
                         #connector.PSWD = "NoneShallPass"
-                        print(f'New IP: {newSSID}')
-                        window['-TOPMESSAGE-'].update(f'Connecting Conductor to Network: {newSSID}. Please reconnect your PC to this network.')
+                        print(f'IP: {connector.HostIP}')
+                        window['-TOPMESSAGE-'].update(f'Connecting Conductor to Network {connector.newSSID}. Please reconnect your PC to this network.')
                         window['-TOPMESSAGE01-'].update(f"Check The Conductor's display for connection information, and enter the new IP Address below.")
                         window['-IPNEW-'].update(visible=True)
                         window['-STNCNTEBTN-'].update(visible=True)
                         window.refresh()
-
-                        message = newSSID + "__--__" + newPSWD + "__--__"
-
-                        if self.dataStream.socketSendStr(message):
-                            print("Sent network info to Server. Disconnecting from socket.")
-                            print("Reconnect PC to the same network and reconnect socket")
-                            self.dataStream.sock.close()
+                        if connector.sendNetworkInfo(connector.newSSID, connector.newPSWD) == 1:
                             window['-MESSAGE-'].update(visible=True)
-                            window['-SSIDLISTRFH-'].update(visible=False)
                             window['-MESSAGE-'].update(f"Sent Network Information")
-
-                        else:
-                            print("Nope Nope Nope. Connection error.")
 
                 if event == '-STNCNTEBTN-':
                     print()
                     print(f'Window 0 -IPNEW-')
                     if window['-IPNEW-'] != 'IP Address':
                         #TODO add better validation
-                        newIP = values['-IPNEW-']
-                        window['-TOPMESSAGE-'].update(f'Connecting to The Conductor at {newIP} on {newSSID}.')
+                        connector.newIP = values['-IPNEW-']
+                        window['-TOPMESSAGE-'].update(f'Connecting to The Conductor at {connector.newIP} on {connector.newSSID}.')
                         window['-TOPMESSAGE01-'].update(visible=False)
                         self.dataStream.dataTx = self.dataTx = struct.pack("=B", 0x44)
                         if self.dataStream.makeSockConnection(newIP, self.dataStream.port) == 1:
@@ -418,30 +455,6 @@ class UX:
                             time.sleep(2)
                             window1 = self.makeWindow1(modelMessage)
                             window0.hide()
-                        else:
-                            print(f"Error Connecting to {newIP} at {newSSID}")
-                            window['-MESSAGE-'].update(f"Error Connecting to {newIP} on {newSSID}")
-                            window.refresh()
-
-                if event == '-SSIDIN-':
-                    pswdInt, pswdStr = self.dataStream.checkPriorConnection(values["-IPIN-"])  
-                    if pswdInt == 1:
-                        newPSWD = pswdStr
-                        window['-MESSAGE-'].update(f"The Conductor remembers your password for {values['-IPIN-']}. Just hit Reconnect")
-                        window['-PSWDIN-'].update(f"**********")
- 
-                if event == '-CONTBTN-':
-                    #Continue button - for accepting current connection and moving to window01 - model
-                    print()
-                    print(f'Window 0 -CONTBTN-')
-
-                    window0.hide()
-                    window1 = self.makeWindow1(modelMessage)
-
-                if event == '-NOCNTBTN-':
-                    self.dataStream.sock.close()
-                    window0.hide()
-                    window1 = self.makeWindow1(modelMessage)
            
 ##############     Window1          #################            
             if window == window1:
@@ -700,6 +713,8 @@ class UX:
                     self.dataStream.label = self.handPositionCount
                     self.dataStream.labelPath = self.positionPathList[self.handPositionCount] 
                     self.dataStream.getTraining = True
+                    self.dataStream.numSensors = self.numSensors
+                    self.dataStream.pathPreface = self.pathPreface
 
                     window['GO!'].hide_row() 
                     window['-GESTURE-'].update(f'Get ready to train Gesture {self.handPositionCount} in .....3')
@@ -781,15 +796,8 @@ class UX:
                     if self.writer.ToFEnable == 1 and self.dataStream.ToFByte > 0 and self.dataStream.ToFByte < 128:   #TOF enabled and Valid ToFData
                         self.writer.ToFByte = self.dataStream.ToFByte     #Pass ToF data to midiWriter
                         PredictMessage = "ToF enabled. Detected Gesture " + str(prediction)
-                        #self.writer.getPredictions(prediction)
-                    elif self.writer.ToFEnable == 1 and self.dataStream.ToFByte == -1:      #TOF enabled and not valid ToF data
-                        print(f"TOFByte not set: {self.writer.ToFByte}")
-                        PredictMessage = "ToF enabled, but no data available. Detected Gesture " + str(prediction)
-                    else:                                                                   #ToF not enabled
+                    else:
                         PredictMessage = "ToF disabled. Detected Gesture " + str(prediction)
-                    
-                    #self.writer.getPredictions(prediction)
-
                     window['-GESTURE-'].update(PredictMessage)
                     window['-STOPBTN-'].update(visible=True)
                     window['-GOBTN-'].update(visible=False)

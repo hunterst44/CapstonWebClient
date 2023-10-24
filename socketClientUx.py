@@ -18,18 +18,14 @@ from threading import Thread
 import matplotlib.pyplot as plt 
 import os.path 
 import NeuralNetwork
-import dill  
-#import midiWriter
-import csv  
-import subprocess     
+import dill   
+import subprocess      
 
 class GetData:
     
-    def __init__(self, *, host="192.168.4.1", port=80, packetSize=1, numSensors=4, pathPreface='data/test', labelPath="Test", label=0, getTraining=True):
+    def __init__(self, *, host="192.168.1.75", port=80, packetSize=1, numSensors=4, pathPreface='data/data', labelPath="Test", label=0, getTraining=True):
         self.host = host
         self.port = port
-        self.ssid = "TheConductor"
-        self.pswd = 'NoneShallPass'
         self.packetSize = packetSize
         self.numSensors = numSensors
         self.packetData = np.zeros([1, self.packetSize * self.numSensors * 3]) #one packet of data corresponding to a handPosition - 3 axis * number of sensors times the number of samples per handPosition
@@ -227,15 +223,15 @@ class GetData:
 
 
     def processData(self, binaryData):
-        # print()
-        # print(f'processData()')
-        # print(f'binaryData: {binaryData}')
+        print()
+        print(f'processData()')
+        print(f'binaryData: {binaryData}')
 
         #packetStartMS = int(time() * 1000)
         #global processCount
 
         def formatData(binaryData, sensorIndex):
-            #print(f'sensor: {sensorIndex}')
+            print(f'sensor: {sensorIndex}')
             #print()
             #print(f'binaryData: {binaryData}')
             #Parse binary data and recombine into ints
@@ -247,7 +243,7 @@ class GetData:
             XAccTuple = struct.unpack("=b", binaryData[0 + (sensorIndex * 3)])  ##MSB is second byte in axis RX; Just a nibble
             XAcc = XAccTuple[0]
             #XAcc = float(int(binaryData[0 + (sensorIndex * 3 * self.numSensors)]),0)
-            #print(f'XAcc Raw: {XAcc}')
+            print(f'XAcc Raw: {XAcc}')
             if self.getTraining is False:
                 self.packetData[0, (3 * sensorIndex)] = XAcc / 127
             else:
@@ -256,7 +252,7 @@ class GetData:
             #Y Axis
             YAccTuple = struct.unpack("=b", binaryData[1 + (sensorIndex * 3)])
             YAcc = YAccTuple[0]
-            #print(f'YAcc Raw: {YAcc}')
+            print(f'YAcc Raw: {YAcc}')
             if self.getTraining is False:
                 self.packetData[0, 1 + (3 * sensorIndex)] = YAcc / 127
             else:       
@@ -265,7 +261,7 @@ class GetData:
             #Z Axis
             ZAccTuple = struct.unpack("=b", binaryData[2 + (sensorIndex * 3)])
             ZAcc = ZAccTuple[0]
-            #print(f'ZAcc Raw: {ZAcc}')
+            print(f'ZAcc Raw: {ZAcc}')
             if self.getTraining is False:
                 self.packetData[0, 2 + (3 * sensorIndex)] = ZAcc / 127
             else:
@@ -276,169 +272,80 @@ class GetData:
             if self.dataTx[0] == 0x0F and sensorIndex == self.numSensors - 1:  #If ToF is enabled and we are on the last sensor - get the ToF byte
                 ToFTuple = struct.unpack("=b", binaryData[(self.numSensors * 3)])   #ToF data is the last byte
                 self.ToFByte = ToFTuple[0]
-                #print(f"self.ToFByte: {self.ToFByte}")
+                print(f"self.ToFByte: {self.ToFByte}")
             else:
                 #reset ToFByte
                 self.ToFByte = -1
         
         for i in range(self.numSensors):
             formatData(binaryData, i)
-
-    def receiveBytes(self, dataTx, host, port):
-        #Checks the connection to the servers, sends the prompt and then receives numSensors * 3 bytes
-        #Collects one sample and returns the data as a byte array
-        count = 0
-        #sock = socket.socket()
-        #print("receiveBytes()")
-        #print(f'dataTx: {dataTx}')  
-        #dataTx = struct.pack("=B", 34)  
-        #print("Sending prompt to server")
-        #print(f'dataTx: {dataTx}') 
-        if self.promptServer(dataTx, host, port, 0) != 1:
-            print("Failed Prompt")
-            return -1
-        # else:  
-        #     #print("Prompt Success")      
-               
+    
+    def receiveBytes(self):
+        print()
+        print(f'receiveBytes(self)')
+        #Signals the server then receives a byte from the sample
         
-        #Now receive the response
-        #y = self.sock.recv(numSensors * 3)
-        #print(f'y at the start: {self.y}')
-        self.y = [] #Reset y
+        sock = socket.socket()
+        sock.connect((self.host, self.port))
+        print()
+        print("Connected to server")
+        try:
+            sock.send(self.dataTx)
+            #print("Sent Data")
+        except:
+           sock.connect((self.host, self.port))
+           #print("Socket Reconnected")
+           sock.send(self.dataTx)
+        # print(f'sockname: {sock.getsockname()}')
+        # print(f'sockpeer: {sock.getpeername()}')
+        #y = []
+        #time.sleep(0.01)
+        #y = sock.recv(18)
         a = 0
         errorCount = 0
         #sampleRxStartMS = int(time.time() * 1000)
-        while a < ((self.numSensors * 3 + self.extraRxByte)):                #iterate through the number of sensors * the number of bytes per sample
+        while a < ((self.numSensors * 3) + self.extraRxByte):                #iterate through the number of sensors * the number of bytes per sample
             #print(f'while loop a')
             try:
-                self.y.append(self.sock.recv(1))
+                self.y.append(sock.recv(1))
                 #print(f'Received 1')
-            except socket.error as err:
-                print(f"TCP/IP Socket RX Error: {err}")
-                #print(f"Failed transmission: {self.dataTx}, length: {len(self.dataTx)}")
-                print(f"Unable to reach client with socket: Retrying...")
+            except ConnectionError:
+                print(f"Unable to reach client with socket: Retrying")
                 #Close and reopen the connection
-    
-                # while errorCount < 2:      #If you get ten connection errors in a row close and reopen the socket
-                #     #Close and reopen the connection
-                #     # self.sock.close()
-                #     # self.sock.connect((self.host, self.port))
-                #     a -= 1     #Ask for a resend (decrement data index)
-                #     errorCount += 1
-                if self.promptServer(dataTx, host, port, 0) == -1:
+                if errorCount < 10:      #If you get ten connection errors in a row close and reopen the socket
+                    #Close and reopen the connection
+                    sock.close()
+                    sock = socket.socket()
+                    sock.connect((self.host, self.port))
+                    a -= 1     #Ask for a resend (decrement data index)
+                    errorCount += 1
+                    sock.send(self.dataTx)
+                else:
                     print(f'Fatal Error: SocketBroken')
-                    #a -= 1
-                    #print(f"TCP/IP Socket Error: {err}")
-                    print(f"Failed transmission: {dataTx}, length: {len(dataTx)}")
                     return -1
             a += 1 
-        
-        #sock.close()
+        sock.close()
         self.dataGot = 1
-        #print(f"self.y returned: {self.y}")
+        #print(f"self.y: {self.y}")
         return self.y
-    
-    def socketSendStr(self, message):
-        print()
-        print(f'socketSendStr()')
-        response0 = []
-
-        #Send the prompt to get ESP32 ready to receive text
-        self.dataTx = struct.pack("=B", 34)
-        #self.promptServer(self.dataTx, self.host, self.port)
-        print(f'self.dataTx (0x22): {self.dataTx}')
-        response0 = self.receiveBytes(self.dataTx, self.host, self.port)
-        print(f"Got response0: {response0}")
-        print(f'response0[0]: {response0[0]}')
-        print(f'response0[1]: {response0[1]}')
-
-        first = struct.unpack("=B", response0[0]) 
-        second = struct.unpack("=B", response0[1]) 
-        first = first[0]
-        second = second[0]
-
-        if first == 0xFF and second == 0x0F:
-            print(f'Server is ready sending length of the message to server: {len(message)}')
-            self.dataTx = message.encode()
-            print(f"Encoded message: {self.dataTx}")
-            if self.promptServer(self.dataTx, self.host, self.port, 0):
-                return 1
-            else:
-                return -1
-    
-    #Old and busted receiveBytes
-    # def receiveBytes(self):
-    #     print()
-    #     print(f'receiveBytes(self)')
-    #     #Signals the server then receives a byte from the sample
-        
-    #     sock = socket.socket()
-    #     sock.connect((self.host, self.port))
-    #     print()
-    #     print("Connected to server")
-    #     try:
-    #         sock.send(self.dataTx)
-    #         #print("Sent Data")
-    #     except:
-    #        sock.connect((self.host, self.port))
-    #        #print("Socket Reconnected")
-    #        sock.send(self.dataTx)
-    #     # print(f'sockname: {sock.getsockname()}')
-    #     # print(f'sockpeer: {sock.getpeername()}')
-    #     #y = []
-    #     #time.sleep(0.01)
-    #     #y = sock.recv(18)
-    #     a = 0
-    #     errorCount = 0
-    #     #sampleRxStartMS = int(time.time() * 1000)
-    #     while a < ((self.numSensors * 3) + self.extraRxByte):                #iterate through the number of sensors * the number of bytes per sample
-    #         #print(f'while loop a')
-    #         try:
-    #             self.y.append(sock.recv(1))
-    #             #print(f'Received 1')
-    #         except ConnectionError:
-    #             print(f"Unable to reach client with socket: Retrying")
-    #             #Close and reopen the connection
-    #             if errorCount < 10:      #If you get ten connection errors in a row close and reopen the socket
-    #                 #Close and reopen the connection
-    #                 sock.close()
-    #                 sock = socket.socket()
-    #                 sock.connect((self.host, self.port))
-    #                 a -= 1     #Ask for a resend (decrement data index)
-    #                 errorCount += 1
-    #                 sock.send(self.dataTx)
-    #             else:
-    #                 print(f'Fatal Error: SocketBroken')
-    #                 return -1
-    #         a += 1 
-    #     sock.close()
-    #     self.dataGot = 1
-    #     #print(f"self.y: {self.y}")
-    #     return self.y
     
     #print(f'Sample Received - One byte')
 
     def getSample(self): #recvCount counts samples in a packet in training mode; in prediction mode it is the index for the circular buffer
-        # print()
-        # print('getSample()')
+        print()
+        print('getSample()')
         packetStartMS = 0 
 
             #Sends one byte from dataPacket and asks for more
             #while recvCount < self.packetSize:
         sampleRxStartMS = int(time.time() * 1000)
-        dataThread = threading.Thread(name='socketThread', target=self.receiveBytes, args=(self.dataTx, self.host, self.port))
+        dataThread = Thread(target=self.receiveBytes)
         dataThread.start()
                 #y = self.receiveBytes()
                 #print(f'Receive Bytes')
 
-        while dataThread.is_alive():
-            # print(f'threading.active_count(): {threading.active_count()}')
-            # print(f'Threads (in socketloop): {threading.enumerate()}')
-            # testVariable = threading.enumerate()
-            # print(f'thread[0]: {testVariable[0]}')
-            # print(f'thread[0][0]: {testVariable[0][0]}')
-            # print(f'thread[0][0] type: {type(testVariable[0][0])}')
-
+        while threading.active_count() > 1:
+            #print(f'threading.active_count(): {threading.active_count()}')
             dataThread.join()
 
         sampleRxStopMS = int(time.time() * 1000)
