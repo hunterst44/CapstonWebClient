@@ -5,10 +5,16 @@ import midiWriter
 import os.path
 import time
 import struct
+import csv
+import NeuralNetwork
 # import socket
 # import subprocess
 # import shutil
 #import sys
+
+
+#TODO continue on window 1 - Add read model data from the logged files
+
 
 
 class UX:
@@ -19,20 +25,21 @@ class UX:
         self.packetLimit = 30
         #self.packetSize = 1
         #self.numSensors = 4
-        self.numGestures = 3   #How many gestures trained by the model
+        self.numHandPositions = 3   #How many handPositions trained by the model
         #self.pathPreface = "data/test/"
         #self.dataTx = 0xFF
         self.trainCountDown = 0 # Counter for training countdown
-        self.sampleCount = 0 #counter for the number of samples collected per gesture while training
-        self.gestureCount = 0 #counter for the number of gestures collected while training
+        self.sampleCount = 0 #counter for the number of samples collected per handPosition while training
+        self.handPositionCount = 0 #counter for the number of handPositions collected while training
         self.goTrain = 0
         self.Test = 0 # A variable to test things
-        self.windowSizeX = 800
+        self.windowSizeX = 900
         self.windowSizeY = 500
         self.stopPredict = 0
         self.dataStream = socketClientUx.GetData() # default values: host="192.168.4.1", port=80, packetSize=1, numSensors=4, pathPreface='data/test', labelPath="Test", label=0, getTraining=True
         self.IPAddress = ''
         self.SSIDList = []
+        self.positionPathList = []
 
 
 ###############################################################################################
@@ -40,29 +47,59 @@ class UX:
 ###############################################################################################
 
     def trainModel(self):
-        #iterate through all the gestures and collect packetLimit samples of each
+        #iterate through all the handPositions and collect packetLimit samples of each
         #Called in window 2 and 2.1 where user provides data to set up model and data
         #Switches to window 3 to output data 
-            print()
-            print(f'UX.trainModel')
-            # self.dataStream.label = label
-            # self.dataStream.labelPath = labelPath 
-            # self.dataStream.getTraining = True
-            # self.dataStream.numSensors = numSensors
-            # self.dataStream.pathPreface = pathPreface
-            self.dataStream.getSample()
-            self.dataStream.prepTraining()
+        print()
+        print(f'UX.trainModel')
+        # self.dataStream.label = label
+        # self.dataStream.labelPath = labelPath 
+        # self.dataStream.getTraining = True
+        # self.dataStream.numSensors = numSensors
+        # self.dataStream.pathPreface = pathPreface
+        self.dataStream.getSample()
+        self.dataStream.prepTraining()
         
-        #CSend all the gestures to neural network
-        #NeuralNetwork.trainOrientation(pathPreface, labelPathList, 1, numSensors, self.numGestures)        
+        #CSend all the handPositions to neural network
+        NeuralNetwork.trainOrientation(self.dataStream.pathPreface, self.positionPathList, 1, self.dataStream.numSensors, self.numHandPositions)        
 
+    def createNeuralModel(self):
+        modelPath = self.dataStream.pathPreface + '\model.model'
+        #Add layers
+        #Input is 15 features (3 Axis * 5 samples)
+        print()
+        print('createNeuralModel()')                                 #Or create a new one
+        model = NeuralNetwork.Model()   #Instanstiate the model
+
+        model.add(NeuralNetwork.Layer_Dense(3*self.dataStream.packetSize * self.dataStream.numSensors, 300, weight_regularizer_l2=5e-4, bias_regularizer_l2=5e-4))
+        model.add(NeuralNetwork.Activation_ReLu())
+        model.add(NeuralNetwork.Layer_Dropout(0.1))
+        model.add(NeuralNetwork.Layer_Dense(300,self.numHandPositions))
+        model.add(NeuralNetwork.Activation_Softmax())
+        
+        model.set(
+            loss=NeuralNetwork.Loss_CategoricalCrossEntropy(),
+            optimizer=NeuralNetwork.Optimizer_Adam(learning_rate=0.05, decay=5e-5),
+            accuracy=NeuralNetwork.Accuracy_Categorical()
+        )
+        
+        try:
+            model.finalize()
+            print(f'Model USccessfully created at: {modelPath}') 
+        except:
+            print('Model file failure.')
+            return -1 
+        
+        model.save(modelPath)
+        return 1
+            
     def predictSample(self):
         print()
         print('predictSample()')
         #writer = oscWriter.OSCWriter()
         self.dataStream.getSample()
         predictionList = self.dataStream.predictSample()
-        print(f'Converting gesture to midi...') 
+        print(f'Converting handPosition to midi...') 
         self.writer.getPredictions(predictionList[0])
         if self.writer.ToFEnable:
             #print(f'Enable Time of Flight Sensor...') 
@@ -149,23 +186,39 @@ class UX:
     def makeWindow1(self, modelMessage):
     #Window one welcome, load / create model
         layout = [[sg.Text('The Conductor: Window 1'), sg.Text(size=(2,1), key='-OUTPUT-')],
-                [sg.Text('Upload an existing neural network model or create a new one.'), sg.Text(size=(5,1), key='-OUTPUT-')], 
-                [sg.pin(sg.Column([[sg.Text(modelMessage), sg.Text(size=(2,1), key='-MODELMESSAGE-'), sg.Button('Ok', key='-MODELMESAGEBTN-')]]))],
-                [sg.pin(sg.Column([[sg.Text('Upload a model'), sg.Text(size=(2,1), key='-UPLOADMODEL-'), sg.Input(), sg.FileBrowse(), sg.Button('Upload', key='-UPLOADMODELBTN-')]]))],
-                [sg.Text('Create a New Model'), sg.Text(size=(2,1), key='-OUTPUT-'), sg.Button('Ok', key='-CREATE-')],
-                [sg.pin(sg.Column([[sg.Text('', visible=True, key='-MESSAGE-'), sg.Text(size=(2,1))]], pad=(0,0)), shrink=False)],
+                [sg.pin(sg.Column([[sg.Text(f"The Conductor will look in {os.path.abspath(os.getcwd()) + '/' + self.dataStream.pathPreface} for Neural Network model files\n. Click 'Ok' to use this folder.", key="-MODELMESSAGE00-", visible=True)], [sg.Button('Ok', key='-USEDEFAULTBTN-', visible=True)], [sg.Button('Ok', key='-CREATEMOEDLBTN-', visible=False)]], pad=(0,0)), shrink=True)], 
+                [sg.pin(sg.Column([[sg.FolderBrowse(size=(8,1), visible=True, key='-CHOOSEDIR-')],[sg.Text(f"Or Browse for a new folder and click 'New Folder.'", key="-MODELMESSAGE01-", visible=True)], [sg.Button('New Folder', key='-NEWFOLDER-', visible=True)], [sg.Button('Ok', key='-ACCPTDEFAULT-', visible=False)]], pad=(0,0)), shrink=True)],
+                [sg.pin(sg.Column([[sg.Input('How many hand positions will you train?', key="-NUMPOS-", visible=False, enable_events=True)]], pad=(0,0)), shrink=True)],
+                [sg.pin(sg.Column([[sg.Input('Position 1 label', key="-POSLABEL-", visible=False)], [sg.Button('SUBMIT', key='-SUBLABELBTN-', visible=False)]], pad=(0,0)), shrink=True)],
+                [sg.pin(sg.Column([[sg.Text('Train Model', key='-TRAIN-', visible=False), sg.Text(size=(2,1)), sg.Button('Train', key='-TRAINBTN-', visible=False)]]))],
+                [sg.pin(sg.Column([[sg.Text('Predict hand positions', key='-PREDICT-', visible=False), sg.Text(size=(2,1)), sg.Button('Predict', key='-PREDICTBTN-',visible=False)]]))]
+                  
+                #[sg.Text(f'The Conductor will look in {os.path.abspath(os.getcwd()) + self.dataStream.pathPreface} for Neural Network model files.'), sg.Text(size=(5,1), key='-OUTPUT-')],
+                # [sg.pin(sg.Column([[sg.Text(modelMessage), sg.Text(size=(2,1), key='-MODELMESSAGE-'), sg.Button('Ok', key='-MODELMESAGEBTN-')]]))],
+                # [sg.pin(sg.Column([[sg.Text('Upload a model'), sg.Text(size=(2,1), key='-UPLOADMODEL-'), sg.Input(), sg.FileBrowse(), sg.Button('Upload', key='-UPLOADMODELBTN-')]]))],
+                # [sg.Text('Create a New Model'), sg.Text(size=(2,1), key='-OUTPUT-'), sg.Button('Ok', key='-CREATE-')],
+                # [sg.pin(sg.Column([[sg.Text('', visible=True, key='-MESSAGE-'), sg.Text(size=(2,1))]], pad=(0,0)), shrink=False)],
                 #[sg.pin(sg.Column([[sg.Button('-MODELOK-', visible=False)]], pad=(0,0)), shrink=False)]
                         #sg.Text('Not a valid model file. Please try again.', size=(2,1), key='-invalidModel-', visible=True, pad=(0,0)), sg.Text(size=(2,1))]
                 ]
 
         return sg.Window('THE CONDUCTOR: Step 1', layout, size=(self.windowSizeX,self.windowSizeY), finalize=True)
     
+    def makeWindow2(self):
+        #Window3 Training or prediction select
+        layout = [[sg.Text('The Conductor: Window 2'), sg.Text(size=(2,1), key='-OUTPUT-')],
+                  [sg.pin(sg.Column([[sg.Text('Train Model'), sg.Text(size=(2,1), key='-TRAIN-'), sg.Button('Train', key='-TRAINBTN-')]]))],
+                  [sg.pin(sg.Column([[sg.Text('Predict hand positions'), sg.Text(size=(2,1), key='-PREDICT-'), sg.Button('Predict', key='-PREDICTBTN-')]]))],
+                  [sg.pin(sg.Column([[sg.Text('', visible=True, key='-WORDS-'), sg.Text(size=(2,1))]], pad=(0,0)), shrink=False)],
+        ]
+        return sg.Window('THE CONDUCTOR: Step 2 Map positions to controls', layout, layout, size=(self.windowSizeX,self.windowSizeY), finalize=True)
+    
 
     def makeWindow2_1(self):
         #Window3 Training or prediction select
         layout = [[sg.Text('The Conductor: Window 2.1'), sg.Text(size=(2,1), key='-OUTPUT-')],
                   [sg.pin(sg.Column([[sg.Text('Train Model'), sg.Text(size=(2,1), key='-TRAIN-'), sg.Button('Train', key='-TRAINBTN-')]]))],
-                  [sg.pin(sg.Column([[sg.Text('Predict gestures'), sg.Text(size=(2,1), key='-PREDICT-'), sg.Button('Predict', key='-PREDICTBTN-')]]))],
+                  [sg.pin(sg.Column([[sg.Text('Predict hand positions'), sg.Text(size=(2,1), key='-PREDICT-'), sg.Button('Predict', key='-PREDICTBTN-')]]))],
                   [sg.pin(sg.Column([[sg.Text('', visible=True, key='-WORDS-'), sg.Text(size=(2,1))]], pad=(0,0)), shrink=False)],
         ]
         return sg.Window('THE CONDUCTOR: Step 2.1', layout, layout, size=(self.windowSizeX,self.windowSizeY), finalize=True)
@@ -212,10 +265,15 @@ class UX:
         #connector = self.ConductorConnector()
         #connector.getNetworks()
 
+        positionLabelCount = 0
+        positionLabelMessage01 = ''
+        newPositionLabelList = []
+
         # Set all windows to Noe except window 1 to start
         window0 = self.makeWindow0(self.dataStream.sockConnection)
         #window1 = self.makeWindow1(modelMessage)
         window1 = None
+        window2 = None
         window2_1 = None
         window3 = None
         window3_1 = None
@@ -356,7 +414,7 @@ class UX:
                             window['-MESSAGE-'].update(f"Connected to server at {self.dataStream.host} on {self.dataStream.ssid}")
                         
                             window.refresh()
-                            self.dataStream.logNetwork()
+                            self.dataStream.logCSVRow('networks.csv', [self.ssid, self.pswd, self.host, self.port])
                             time.sleep(2)
                             window1 = self.makeWindow1(modelMessage)
                             window0.hide()
@@ -394,49 +452,199 @@ class UX:
                 #window['-invalidModel-'].update(visible=False)
                 if event == sg.WIN_CLOSED or event == 'Exit':
                     break
-
-                if event == '-UPLOADMODELBTN-':
+                
+                if event == '-USEDEFAULTBTN-':
+                    #Use default path
                     print()
-                    print(f'Window 1 -UPLOADMODEL-')
-                    window['-MESSAGE-'].update('Sorry feature not enabled yet.')
+                    print(f'Window 1 -USEDEFAULTBTN-')
+                    modelPath = self.dataStream.pathPreface + '/model.model'
+                    print(f'modelPath: {modelPath}')
+                    modelLogPath = self.dataStream.pathPreface + '/modelLog.csv'
+                    print(f'modelLogPath: {modelLogPath}')
+                    if os.path.exists(modelPath) and os.path.exists(modelLogPath):
+                        positionLabelMessage00 = 'The model at ' + self.dataStream.pathPreface + 'has these positions trained:\n'
+                        with open(modelLogPath, 'r') as csvfile:
+                            handPositionList = list(csv.reader(csvfile, delimiter=","))
+                            print(f'handPositionList: {handPositionList}')
+                            for i in range(len(handPositionList[0])):
+                                newPositionLabelList.append(handPositionList[0][i])
+                                positionLabelMessage00 = positionLabelMessage00 + str(i+1) + '. ' + handPositionList[0][i] + '\n'
+                            window['-MODELMESSAGE00-'].update(positionLabelMessage00)
+                            window['-MODELMESSAGE01-'].update("Use this model?")
+                            window['-MODELMESSAGE00-'].update(visible=True)
+                            window['-MODELMESSAGE01-'].update(visible=True)
+                            window['-ACCPTDEFAULT-'].update(visible=True)
+                            window['-USEDEFAULTBTN-'].update(visible=False)
+                            window['-CREATEMOEDLBTN-'].update(visible=False)
+                            window['-CHOOSEDIR-'].update(visible=False)
+                            window['-NEWFOLDER-'].update(visible=False)
+                            window.refresh()
 
-                    #TODO backup existing model file if it exists and save model to pathPreface/model.model
-                    # if modelOk == -1:
-                    #     window['-MESSAGE-'].update('')
+                        #TODO write the positions to the GUI and let the user select
+                    else:
+                        newPathPreface = self.dataStream.pathPreface
+                        print(f"No model at {self.dataStream.pathPreface}. Use this folder and create new model?")
+                        window['-MODELMESSAGE00-'].update(f"No model at {self.dataStream.pathPreface}. Use this folder and create new model?")
+                        window['-USEDEFAULTBTN-'].update(visible=False)
+                        window['-CREATEMOEDLBTN-'].update(visible=True)
+                        window['-CHOOSEDIR-'].update(visible=False)
+                        window['-MODELMESSAGE01-'].update(visible=False)
+                        window['-NEWFOLDER-'].update(visible=False)
+                        window.refresh()
 
-                    # else:
-                    #     modelPath = self.dataStream.pathPreface + 'model.model'
-
-                    #     #Save model to pathPreface
-                    #     shutil.copy(values[0], modelPath)
-                    #     try:
-                    #         model.load(modelPath)
-                    #     except:
-                    #         window['-MESSAGE-'].update('Bad copy')
-                    #         print(f'BadCopy')
-
-                if event == '-MODELMESAGEBTN-':
-                    print()
-                    print(f'Window 1 -MODELMESAGEBTN-')
-                    # model = NeuralNetwork.Model()                                
-                    # try:
-                    #     model.load(modelPath)
-                    # except:
-                    #     window['-MESSAGE-'].update('Not a valid model file. Please try again.')
-                    #     print(f'Invalid model')
-                    #     modelOk = 0
-
-                    # if modelOk == -1:
-                    modelOk = 1
+                if event == '-ACCPTDEFAULT-':
+                    self.positionPathList = newPositionLabelList
+                    window['-MODELMESSAGE00-'].update('Model selected')
+                    window['-MODELMESSAGE00-'].update(visible=True)
+                    window['-MODELMESSAGE01-'].update(visible=False)
+                    window['-ACCPTDEFAULT-'].update(visible=False)
                     window1.hide()
-                    window2_1 = self.makeWindow2_1()
+                    window2 = self.makeWindow2()
+                    # window['-TRAIN-'].update(visible=True)
+                    # window['-PREDICT-'].update(visible=True)
+                    # window['-TRAINBTN-'].update(visible=True)
+                    # window['-PREDICTBTN-'].update(visible=True)
 
-                if event == '-CREATE-':
+
+                if event == '-NEWFOLDER-':
                     print()
-                    print(f'Window 1 -CREATE-')
-                    print(f'Value: {values[0]}')
-                    window1.hide()
-                    window2_1 = self.makeWindow2_1()
+                    print(f'Window 1 -NEWFOLDER-')
+                    print(f'Directory Chosen: {values["-CHOOSEDIR-"]}')
+                    newPathPreface = values["-CHOOSEDIR-"]
+                    newModelPath = newPathPreface + '/model.model'
+                    newModelLogPath = newPathPreface + '/modelLog.csv'
+
+                    if os.path.exists(newModelPath) and os.path.exists(newModelLogPath):
+                        positionLabelMessage00 = 'The model at ' + newPathPreface + 'has these positions trained:\n'
+                        with open(newModelLogPath, 'r') as csvfile:
+                            handPositionList = list(csv.reader(csvfile, delimiter=","))
+                            print(f'handPositionList: {handPositionList}')
+                            for i in range(len(handPositionList[0])):
+                                newPositionLabelList.append(handPositionList[0][i])
+                                positionLabelMessage00 = positionLabelMessage00 + str(i+1) + '. ' + handPositionList[0][i] + '\n'
+                            window['-MODELMESSAGE00-'].update(positionLabelMessage00)
+                            window['-MODELMESSAGE01-'].update("Use this model?")
+                            window['-MODELMESSAGE00-'].update(visible=True)
+                            window['-MODELMESSAGE01-'].update(visible=True)
+                            window['-ACCPTDEFAULT-'].update(visible=True)
+                            window['-USEDEFAULTBTN-'].update(visible=False)
+                            window['-CREATEMOEDLBTN-'].update(visible=False)
+                            window['-CHOOSEDIR-'].update(visible=False)
+                            window['-NEWFOLDER-'].update(visible=False)
+                            window.refresh()
+                    else:
+                        print(f"No model at {newPathPreface}. Use this folder and create new model?")
+                        window['-MODELMESSAGE00-'].update(f"No model at {newPathPreface}. Use this folder and create new model?")
+                        window['-USEDEFAULTBTN-'].update(visible=False)
+                        window['-CREATEMOEDLBTN-'].update(visible=True)
+                        window['-CHOOSEDIR-'].update(visible=False)
+                        window['-MODELMESSAGE01-'].update(visible=False)
+                        window['-NEWFOLDER-'].update(visible=False)
+                        window.refresh()
+
+                if event == '-CREATEMOEDLBTN-':
+                    print()
+                    print(f'Window 1 --CREATEMOEDLBTN-')
+                    window['-NUMPOS-'].update(visible=True)
+                    window['-USEDEFAULTBTN-'].update(visible=False)
+                    window['-MODELMESSAGE01-'].update(visible=False)
+                    window['-MODELMESSAGE00-'].update(visible=False)
+                    window['-CREATEMOEDLBTN-'].update(visible=False)
+                    window['-POSLABEL-'].update(visible=False)
+                    window['-SUBLABELBTN-'].update(visible=False)
+                    window.refresh()
+
+                if event == '-NUMPOS-':
+                    print()
+                    print(f'Window 1 -NUMPOS-')
+                    print(f'positionLabelCount: {positionLabelCount}')
+                    print(f'self.positionPathList: {self.positionPathList}')
+                    print(f'self.numHandPositions: {self.numHandPositions}')
+                    window['-NUMPOS-'].update(visible=False)
+                    window['-USEDEFAULTBTN-'].update(visible=False)
+                    if positionLabelCount == 0:
+                        self.dataStream.pathPreface = newPathPreface
+                        
+                        window.refresh()
+                        numPositions = values['-NUMPOS-']
+                        numPositions = int(numPositions)
+
+                        print(f'numPositions: {numPositions}')
+                        print(f'type numPositions: {type(numPositions)}')
+                        if numPositions < 16:
+                            self.numHandPositions = numPositions
+
+                        else: 
+                            window.write_event_value("-CREATEMOEDLBTN-", '') #Back to create model option
+ 
+                    if positionLabelCount < self.numHandPositions:
+                        window['-MODELMESSAGE00-'].update(f'Add a label for hand position {positionLabelCount + 1}...')
+                        window['-MODELMESSAGE00-'].update(visible=True)
+                        window['-POSLABEL-'].update(visible=True)
+                        window['-SUBLABELBTN-'].update(visible=True)
+                        window.refresh()
+                    
+                    else: #All the labels are in log em...
+                        self.dataStream.logCSVRow('modelLog.csv', self.positionPathList, append=False)
+                        window['-POSLABEL-'].update(visible=False)
+                        window['-SUBLABELBTN-'].update(visible=False)
+                        #self.dataStream.logCSVRow('modelLog.csv', self.positionPathList)
+                        window['-MODELMESSAGE00-'].update(f'Hand position labels logged to {self.dataStream.pathPreface}/modelLog.csv.')
+                        
+                        if self.createNeuralModel() == 1:
+                            window['-MODELMESSAGE01-'].update(f'A neural network model has been created at {self.dataStream.pathPreface} model.model.\n Now you can train the model or use it to predict hand positions. Note you cannot predict until you have trained the model.')
+                        else:
+                            window['-MODELMESSAGE01-'].update(f'There is a problem with the neural network model. The network will try to create a new model when you train.\n Now you can train the model or use it to predict hand positions. Note you cannot predict until you have trained the model.')
+
+                        window['-MODELMESSAGE01-'].update(visible=True)
+                        window1.hide()
+                        window2 = self.makeWindow2()  #model complete go to window two - map positions
+                        # window['-TRAIN-'].update(visible=True)
+                        # window['-PREDICT-'].update(visible=True)
+                        # window['-TRAINBTN-'].update(visible=True)
+                        # window['-PREDICTBTN-'].update(visible=True)
+
+                if event == '-SUBLABELBTN-':
+                    print()
+                    print(f'Window 1 -NUMPOS-')
+                    self.positionPathList.append(values['-POSLABEL-'])
+                    positionLabelCount += 1
+                    positionLabelMessage01 = ''
+                    for i in range(len(self.positionPathList)):
+                        positionLabelMessage01 = positionLabelMessage01 + str(i+1) + '. ' + self.positionPathList[i] + '\n'
+                    window['-MODELMESSAGE01-'].update(positionLabelMessage01)
+                    window['-MODELMESSAGE01-'].update(visible=True)
+                    window.refresh()
+                    window.write_event_value("-NUMPOS-", '')
+                
+                # if event == "-TRAINBTN-":
+                #     print()
+                #     print("-TRAINBTN- ")
+                #     #setup datastream how we want it for training
+                #     #dataStream = socketClientUx.GetData(packetSize=self.packetSize, label=label, labelPath=labelPath, getTraining=True, numSensors=numSensors, pathPreface=pathPreface)
+                #     window1.hide()
+                #     window3 =self.makeWindow3()
+                           
+                # if event == "-PREDICTBTN-":  
+                #     print() 
+                #     print("-PREDICTBTN-")
+                #     window1.hide()
+                #     window3_1 =self.makeWindow3_1()
+
+##############     Window2          #################
+            if window == window2:
+                #User chooses training or prediction 
+                #Currently used for testing
+                print()
+                print()
+                print("Window 2")
+                #print(self.Test)
+                
+                if event == sg.WIN_CLOSED or event == 'Exit':
+                    window2.hide()
+                    window1 =self.makeWindow1()   
+
+
 
 ##############     Window2_1          #################
             if window == window2_1:
@@ -475,7 +683,7 @@ class UX:
                 print()
                 print("window 3")
                 class0 = "baseStationaryC00"   #Class 0 is the reference orientation with no movement
-                pathList = ["class00", "class01", "class02"]
+                self.positionPathList = ["class00", "class01", "class02"]
 
                 if event == sg.WIN_CLOSED or event == 'Exit':
                     break
@@ -484,59 +692,59 @@ class UX:
                     print()
                     print("GO!")
                     #self.goTrain = 1
-                    #gestureIdx = self.numGestures #hard coded for now, will be provided by user with GUI
+                    #handPositionIdx = self.numHandPositions #hard coded for now, will be provided by user with GUI
                     sampleCount = 0
                     testCount = 0
 
                     #Setup dataStream
-                    self.dataStream.label = self.gestureCount
-                    self.dataStream.labelPath = pathList[self.gestureCount] 
+                    self.dataStream.label = self.handPositionCount
+                    self.dataStream.labelPath = self.positionPathList[self.handPositionCount] 
                     self.dataStream.getTraining = True
 
                     window['GO!'].hide_row() 
-                    window['-GESTURE-'].update(f'Get ready to train Gesture {self.gestureCount} in .....3')
+                    window['-GESTURE-'].update(f'Get ready to train Gesture {self.handPositionCount} in .....3')
                     window.refresh()
                     time.sleep(2)
-                    window['-GESTURE-'].update(f'Get ready to train Gesture {self.gestureCount} in .....2')
+                    window['-GESTURE-'].update(f'Get ready to train Gesture {self.handPositionCount} in .....2')
                     window.refresh()
                     time.sleep(1)
-                    window['-GESTURE-'].update(f'Get ready to train Gesture {self.gestureCount} in .....1')
+                    window['-GESTURE-'].update(f'Get ready to train Gesture {self.handPositionCount} in .....1')
                     window.refresh()
                     time.sleep(1)
-                    window['-GESTURE-'].update(f'Get ready to train Gesture {self.gestureCount} in .....GO!')
+                    window['-GESTURE-'].update(f'Get ready to train Gesture {self.handPositionCount} in .....GO!')
                     window.refresh()
                     time.sleep(1)
 
                     print("Start Training")
 
                     while sampleCount < self.packetLimit:
-                        print(f'Collected sample {sampleCount + 1} of {self.packetLimit} samples for gesture {self.gestureCount + 1} of {self.numGestures} gestures')
+                        print(f'Collected sample {sampleCount + 1} of {self.packetLimit} samples for hand position {self.handPositionCount + 1} of {self.numHandPositions} hand positions')
                         self.trainModel()
                         sampleCount += 1
                     sampleCount = 0
 
-                    self.dataStream.labelPath = pathList[self.gestureCount] + '_test'  #collect test data to testing the network
+                    self.dataStream.labelPath = self.positionPathList[self.handPositionCount] + '_test'  #collect test data to testing the network
                     if self.packetLimit /10 > 1:
                         testIdx = self.packetLimit /10
                     else:
                         testIdx = 1
 
                     while testCount < testIdx:
-                        print(f'Collected sample {sampleCount + 1} of {self.packetLimit} samples for gesture {self.gestureCount + 1} of {self.numGestures} gestures')
+                        print(f'Collected sample {sampleCount + 1} of {self.packetLimit} samples for hand position {self.handPositionCount + 1} of {self.numHandPositions} hand positions')
                         self.trainModel()
                         testCount += 1
                     testCount = 0
-                    self.gestureCount += 1
+                    self.handPositionCount += 1
 
-                    if self.gestureCount < self.numGestures:
-                        #gestureMessage = 'Training Gesture ' + str(self.gestureCount + 1) + ' of ' + str(self.numGestures) +  ' gestures'
-                        # window['-GESTURE-'].update(gestureMessage)
+                    if self.handPositionCount < self.numHandPositions:
+                        #handPositionMessage = 'Training Gesture ' + str(self.handPositionCount + 1) + ' of ' + str(self.numHandPositions) +  ' handPositions'
+                        # window['-GESTURE-'].update(handPositionMessage)
                         # window.refresh()
                         window.write_event_value("GO!", '') 
                     else:
-                        #trainOrientation(basePath, pathList, packetSize, numSensors, numClasses):
-                        self.gestureCount = 0
-                        NeuralNetwork.trainOrientation(self.pathPreface, pathList, self.packetSize, self.numSensors, self.numGestures)
+                        #trainOrientation(basePath, self.positionPathList, packetSize, numSensors, numClasses):
+                        self.handPositionCount = 0
+                        NeuralNetwork.trainOrientation(self.pathPreface, self.positionPathList, self.packetSize, self.numSensors, self.numHandPositions)
 
                         window['-GESTURE-'].update(f'Training Complete')
                         window['-CountDown-'].update('')
@@ -560,7 +768,7 @@ class UX:
                 if event == "-GOBTN-":
                     print()
                     print("-GOBTN-")
-                    #print(f'Collected sample {sampleCount + 1} of {self.packetLimit} samples for gesture {self.gestureCount + 1} of {self.numGestures} gestures')
+                    #print(f'Collected sample {sampleCount + 1} of {self.packetLimit} samples for hand position {self.handPositionCount + 1} of {self.numHandPositions} hand positions')
                     #if stopPredict < 10:
                     prediction = self.predictSample()
                      #   stopPredict += 1

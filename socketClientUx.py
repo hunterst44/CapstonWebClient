@@ -5,7 +5,7 @@
 #  Connect to server and send test byte
 #  Receive 24 bytes data and decode into 3x1 vector
 #  Decodes binary code in 12 bit twos complement into 16 bit signed integers
-#  Organizes samples into packets of packetSize corresponding to a gesture
+#  Organizes samples into packets of packetSize corresponding to a handPosition
 #  Writes packets to files cumulatively - binary and human readable (CSV)
 #  Generates plot images of each packet
 
@@ -32,8 +32,8 @@ class GetData:
         self.pswd = 'NoneShallPass'
         self.packetSize = packetSize
         self.numSensors = numSensors
-        self.packetData = np.zeros([1, self.packetSize * self.numSensors * 3]) #one packet of data corresponding to a gesture - 3 axis * number of sensors times the number of samples per gesture
-        #self.packetArr = np.zeros([1, self.packetSize * self.numSensors * 3]) #An array of packets (gestures) used while collecting data for training
+        self.packetData = np.zeros([1, self.packetSize * self.numSensors * 3]) #one packet of data corresponding to a handPosition - 3 axis * number of sensors times the number of samples per handPosition
+        #self.packetArr = np.zeros([1, self.packetSize * self.numSensors * 3]) #An array of packets (handPositions) used while collecting data for training
         self.packetCount = 0
         self.packetDone = 0
         self.pathPreface = pathPreface 
@@ -56,7 +56,7 @@ class GetData:
         #On dataStream init try to connect to The Conductor on AP network, if not carry on
         connectTries = 0
         #Try the last connection
-        cntList = self.getloggedNetworks()
+        cntList = self.getloggedCSV("networks.csv")
     
         if cntList[0][0] != '-1':
             cntListLen = len(cntList)
@@ -66,12 +66,14 @@ class GetData:
 
         while connectTries < 1:
             print("Trying to make a socket connection")
-            if self.makeSockConnection(self.host, self.port) == -1:
-                connectTries += 1
-                time.sleep(1)
-            else:
-                print("Connected to The Conductor!")
-                break
+            #disable connect on start up to test GUI
+            connectTries += 1
+            # if self.makeSockConnection(self.host, self.port) == -1:
+            #     connectTries += 1
+            #     time.sleep(1)
+            # else:
+            #     print("Connected to The Conductor!")
+            #     break
         
         if connectTries == 1:
             print("Can't connect to the Conductor")
@@ -85,7 +87,7 @@ class GetData:
         print(f'port: {port}')
         
         self.sock = socket.socket()
-        self.sock.setblocking(False)
+        #self.sock.setblocking(False)
         try:
             self.sock.connect((host, port))
 
@@ -107,7 +109,7 @@ class GetData:
         return 1
     
     def checkPriorConnection(self, network):
-        priorNetworks = self.getloggedNetworks()
+        priorNetworks = self.getloggedCSV("networks.csv")
         for i in range(len(priorNetworks)):
             if len(priorNetworks[i]) > 3:
                 if priorNetworks[i][0] == network:
@@ -137,8 +139,8 @@ class GetData:
             counter += 1
         return SSIDList
     
-    def getloggedNetworks(self):
-        networkPath = self.pathPreface + "/networks.csv"
+    def getloggedCSV(self, pathSuffix):
+        networkPath = self.pathPreface + '/' + pathSuffix #"/networks.csv"
         if os.path.exists(networkPath):
             with open(networkPath, 'r') as csvfile:
                 networkList = list(csv.reader(csvfile, delimiter=","))
@@ -147,20 +149,26 @@ class GetData:
         else:
             return [['-1']]
 
-    def logNetwork(self):
+    def logCSVRow(self, pathSuffix, csvRowList, *, append=True):
         print()
-        print(f'logNetwork()')
-        networkPath = self.pathPreface + "/networks.csv"
+        print(f'logCSVRow()')
+        if append == True:
+            mode = 'a'
+        else:
+            mode = 'w'
+        networkPath = self.pathPreface + '/' + pathSuffix #"/networks.csv"
+        print(f'networkPath: {networkPath}')
         if os.path.exists(networkPath):
             print(f"network file exists")
-            with open(networkPath, 'a') as csvfile:
+            with open(networkPath, mode) as csvfile:
                 csvWrite = csv.writer(csvfile)
-                csvWrite.writerow([self.ssid, self.pswd, self.host, self.port])
+                csvWrite.writerow(csvRowList)
+                #[self.ssid, self.pswd, self.host, self.port]
         else:
              print(f"Creating new network file")
              with open(networkPath, 'w') as csvfile:
                 csvWrite = csv.writer(csvfile)
-                csvWrite.writerow([self.ssid, self.pswd, self.host, self.port])
+                csvWrite.writerow(csvRowList)
 
 
     def promptServer(self, dataTx, host, port, rcount):
@@ -456,21 +464,6 @@ class GetData:
 
         return prediction            
 
-        # print(f'Converting gesture to OSC...') 
-        # writer = oscWriter.OSCWriter()   #writer is passed during GetData.__init__()
-        # writer.getPredictions(prediction[0])
-        # if writer.ToFEnable:
-        #     print(f'Enable Time of Flight Sensor...') 
-        #     self.dataTx = 0 #Reset dataTx
-        #     self.dataTx = struct.pack("=B", 15)   #Enable ToF sensor
-        #     self.extraRxByte = 1
-        # else:
-        #     print(f'Disable Time of Flight Sensor...') 
-        #     self.dataTx = 0 #Reset dataTx
-        #     self.dataTx = struct.pack("=B", 255)   #Disable ToF sensor 
-        #     self.extraRxByte = 0
-        # self.dataGot = 0   #Reset the dataGot flag for the next sample
-
     def prepTraining(self):    #Prep the packet for training
         print()
         print('prepTraining')
@@ -534,7 +527,7 @@ class GetData:
         dataPath = self.pathPreface + self.labelPath + '.csv'
         truthPath = self.pathPreface + self.labelPath + '_truth.csv'
         
-        #Data - 2D array axis 0 (rows) are gestures, axis 1 (cols) are features within a gesture
+        #Data - 2D array axis 0 (rows) are handPositions, axis 1 (cols) are features within a handPosition
         if os.path.exists(dataPath):
             tmpArr = np.loadtxt(dataPath,dtype=float, delimiter=',', ndmin=2)       
             #print(f'tmpArr.shape 1: {tmpArr.shape}')
