@@ -19,7 +19,8 @@ import matplotlib.pyplot as plt
 import os.path 
 import NeuralNetwork
 import dill   
-import subprocess      
+import subprocess
+import csv      
 
 class GetData:
     
