@@ -1,5 +1,5 @@
 testing.py
-__pychache__/*
+__pycache__/*
 data/*
 data.npy
 data/data.csv
