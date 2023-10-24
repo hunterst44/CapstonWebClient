@@ -186,8 +186,8 @@ class UX:
     def makeWindow1(self, modelMessage):
     #Window one welcome, load / create model
         layout = [[sg.Text('The Conductor: Window 1'), sg.Text(size=(2,1), key='-OUTPUT-')],
-                [sg.pin(sg.Column([[sg.Text(f"The Conductor will look in {os.path.abspath(os.getcwd()) + '/' + self.dataStream.pathPreface} for Neural Network model files. Click 'Ok' to use this folder.", key="-MODELMESSAGE00-", visible=True)], [sg.Button('Ok', key='-USEDEFAULTBTN-', visible=True)], [sg.Button('Ok', key='-CREATEMOEDLBTN-', visible=False)]], pad=(0,0)), shrink=True)], 
-                [sg.pin(sg.Column([[sg.FolderBrowse(size=(8,1), visible=True, key='-CHOOSEDIR-')],[sg.Text(f"Or Browse for a new folder and click 'New Folder.'", key="-MODELMESSAGE01-", visible=True)],[sg.Button('New Folder', key='-CREATENEWBTN-', visible=True)]], pad=(0,0)), shrink=True)],
+                [sg.pin(sg.Column([[sg.Text(f"The Conductor will look in {os.path.abspath(os.getcwd()) + '/' + self.dataStream.pathPreface} for Neural Network model files\n. Click 'Ok' to use this folder.", key="-MODELMESSAGE00-", visible=True)], [sg.Button('Ok', key='-USEDEFAULTBTN-', visible=True)], [sg.Button('Ok', key='-CREATEMOEDLBTN-', visible=False)]], pad=(0,0)), shrink=True)], 
+                [sg.pin(sg.Column([[sg.FolderBrowse(size=(8,1), visible=True, key='-CHOOSEDIR-')],[sg.Text(f"Or Browse for a new folder and click 'New Folder.'", key="-MODELMESSAGE01-", visible=True)], [sg.Button('New Folder', key='-NEWFOLDER-', visible=True)], [sg.Button('Ok', key='-ACCPTDEFAULT-', visible=False)]], pad=(0,0)), shrink=True)],
                 [sg.pin(sg.Column([[sg.Input('How many hand positions will you train?', key="-NUMPOS-", visible=False, enable_events=True)]], pad=(0,0)), shrink=True)],
                 [sg.pin(sg.Column([[sg.Input('Position 1 label', key="-POSLABEL-", visible=False)], [sg.Button('SUBMIT', key='-SUBLABELBTN-', visible=False)]], pad=(0,0)), shrink=True)],
                 [sg.pin(sg.Column([[sg.Text('Train Model', key='-TRAIN-', visible=False), sg.Text(size=(2,1)), sg.Button('Train', key='-TRAINBTN-', visible=False)]]))],
@@ -203,6 +203,15 @@ class UX:
                 ]
 
         return sg.Window('THE CONDUCTOR: Step 1', layout, size=(self.windowSizeX,self.windowSizeY), finalize=True)
+    
+    def makeWindow2(self):
+        #Window3 Training or prediction select
+        layout = [[sg.Text('The Conductor: Window 2'), sg.Text(size=(2,1), key='-OUTPUT-')],
+                  [sg.pin(sg.Column([[sg.Text('Train Model'), sg.Text(size=(2,1), key='-TRAIN-'), sg.Button('Train', key='-TRAINBTN-')]]))],
+                  [sg.pin(sg.Column([[sg.Text('Predict hand positions'), sg.Text(size=(2,1), key='-PREDICT-'), sg.Button('Predict', key='-PREDICTBTN-')]]))],
+                  [sg.pin(sg.Column([[sg.Text('', visible=True, key='-WORDS-'), sg.Text(size=(2,1))]], pad=(0,0)), shrink=False)],
+        ]
+        return sg.Window('THE CONDUCTOR: Step 2 Map positions to controls', layout, layout, size=(self.windowSizeX,self.windowSizeY), finalize=True)
     
 
     def makeWindow2_1(self):
@@ -258,11 +267,13 @@ class UX:
 
         positionLabelCount = 0
         positionLabelMessage01 = ''
+        newPositionLabelList = []
 
         # Set all windows to Noe except window 1 to start
         window0 = self.makeWindow0(self.dataStream.sockConnection)
         #window1 = self.makeWindow1(modelMessage)
         window1 = None
+        window2 = None
         window2_1 = None
         window3 = None
         window3_1 = None
@@ -446,12 +457,29 @@ class UX:
                     #Use default path
                     print()
                     print(f'Window 1 -USEDEFAULTBTN-')
-                    modelPath = self.dataStream.pathPreface + 'model.model'
-                    modelLogPath = self.dataStream.pathPreface + 'modelLog.csv'
+                    modelPath = self.dataStream.pathPreface + '/model.model'
+                    print(f'modelPath: {modelPath}')
+                    modelLogPath = self.dataStream.pathPreface + '/modelLog.csv'
+                    print(f'modelLogPath: {modelLogPath}')
                     if os.path.exists(modelPath) and os.path.exists(modelLogPath):
+                        positionLabelMessage00 = 'The model at ' + self.dataStream.pathPreface + 'has these positions trained:\n'
                         with open(modelLogPath, 'r') as csvfile:
                             handPositionList = list(csv.reader(csvfile, delimiter=","))
                             print(f'handPositionList: {handPositionList}')
+                            for i in range(len(handPositionList[0])):
+                                newPositionLabelList.append(handPositionList[0][i])
+                                positionLabelMessage00 = positionLabelMessage00 + str(i+1) + '. ' + handPositionList[0][i] + '\n'
+                            window['-MODELMESSAGE00-'].update(positionLabelMessage00)
+                            window['-MODELMESSAGE01-'].update("Use this model?")
+                            window['-MODELMESSAGE00-'].update(visible=True)
+                            window['-MODELMESSAGE01-'].update(visible=True)
+                            window['-ACCPTDEFAULT-'].update(visible=True)
+                            window['-USEDEFAULTBTN-'].update(visible=False)
+                            window['-CREATEMOEDLBTN-'].update(visible=False)
+                            window['-CHOOSEDIR-'].update(visible=False)
+                            window['-NEWFOLDER-'].update(visible=False)
+                            window.refresh()
+
                         #TODO write the positions to the GUI and let the user select
                     else:
                         newPathPreface = self.dataStream.pathPreface
@@ -461,24 +489,49 @@ class UX:
                         window['-CREATEMOEDLBTN-'].update(visible=True)
                         window['-CHOOSEDIR-'].update(visible=False)
                         window['-MODELMESSAGE01-'].update(visible=False)
-                        window['-CREATENEWBTN-'].update(visible=False)
+                        window['-NEWFOLDER-'].update(visible=False)
                         window.refresh()
 
+                if event == '-ACCPTDEFAULT-':
+                    self.positionPathList = newPositionLabelList
+                    window['-MODELMESSAGE00-'].update('Model selected')
+                    window['-MODELMESSAGE00-'].update(visible=True)
+                    window['-MODELMESSAGE01-'].update(visible=False)
+                    window['-ACCPTDEFAULT-'].update(visible=False)
+                    window1.hide()
+                    window2 = self.makeWindow2()
+                    # window['-TRAIN-'].update(visible=True)
+                    # window['-PREDICT-'].update(visible=True)
+                    # window['-TRAINBTN-'].update(visible=True)
+                    # window['-PREDICTBTN-'].update(visible=True)
 
-                if event == '-CREATENEWBTN-':
+
+                if event == '-NEWFOLDER-':
                     print()
-                    print(f'Window 1 -CREATENEWBTN-')
+                    print(f'Window 1 -NEWFOLDER-')
                     print(f'Directory Chosen: {values["-CHOOSEDIR-"]}')
                     newPathPreface = values["-CHOOSEDIR-"]
-                    newModelPath = newPathPreface + 'model.model'
-                    newModelLogPath = newPathPreface + 'modelLog.csv'
+                    newModelPath = newPathPreface + '/model.model'
+                    newModelLogPath = newPathPreface + '/modelLog.csv'
+
                     if os.path.exists(newModelPath) and os.path.exists(newModelLogPath):
-                        self.dataStream.pathPreface = newPathPreface
-                        print(f"model exists at {self.dataStream.pathPreface}")
-                        with open(modelLogPath, 'r') as csvfile:
+                        positionLabelMessage00 = 'The model at ' + newPathPreface + 'has these positions trained:\n'
+                        with open(newModelLogPath, 'r') as csvfile:
                             handPositionList = list(csv.reader(csvfile, delimiter=","))
                             print(f'handPositionList: {handPositionList}')
-                            #TODO print model details to the GUI
+                            for i in range(len(handPositionList[0])):
+                                newPositionLabelList.append(handPositionList[0][i])
+                                positionLabelMessage00 = positionLabelMessage00 + str(i+1) + '. ' + handPositionList[0][i] + '\n'
+                            window['-MODELMESSAGE00-'].update(positionLabelMessage00)
+                            window['-MODELMESSAGE01-'].update("Use this model?")
+                            window['-MODELMESSAGE00-'].update(visible=True)
+                            window['-MODELMESSAGE01-'].update(visible=True)
+                            window['-ACCPTDEFAULT-'].update(visible=True)
+                            window['-USEDEFAULTBTN-'].update(visible=False)
+                            window['-CREATEMOEDLBTN-'].update(visible=False)
+                            window['-CHOOSEDIR-'].update(visible=False)
+                            window['-NEWFOLDER-'].update(visible=False)
+                            window.refresh()
                     else:
                         print(f"No model at {newPathPreface}. Use this folder and create new model?")
                         window['-MODELMESSAGE00-'].update(f"No model at {newPathPreface}. Use this folder and create new model?")
@@ -486,7 +539,7 @@ class UX:
                         window['-CREATEMOEDLBTN-'].update(visible=True)
                         window['-CHOOSEDIR-'].update(visible=False)
                         window['-MODELMESSAGE01-'].update(visible=False)
-                        window['-CREATENEWBTN-'].update(visible=False)
+                        window['-NEWFOLDER-'].update(visible=False)
                         window.refresh()
 
                 if event == '-CREATEMOEDLBTN-':
@@ -544,10 +597,12 @@ class UX:
                             window['-MODELMESSAGE01-'].update(f'There is a problem with the neural network model. The network will try to create a new model when you train.\n Now you can train the model or use it to predict hand positions. Note you cannot predict until you have trained the model.')
 
                         window['-MODELMESSAGE01-'].update(visible=True)
-                        window['-TRAIN-'].update(visible=True)
-                        window['-PREDICT-'].update(visible=True)
-                        window['-TRAINBTN-'].update(visible=True)
-                        window['-PREDICTBTN-'].update(visible=True)
+                        window1.hide()
+                        window2 = self.makeWindow2()  #model complete go to window two - map positions
+                        # window['-TRAIN-'].update(visible=True)
+                        # window['-PREDICT-'].update(visible=True)
+                        # window['-TRAINBTN-'].update(visible=True)
+                        # window['-PREDICTBTN-'].update(visible=True)
 
                 if event == '-SUBLABELBTN-':
                     print()
@@ -562,19 +617,34 @@ class UX:
                     window.refresh()
                     window.write_event_value("-NUMPOS-", '')
                 
-                if event == "-TRAINBTN-":
-                    print()
-                    print("-TRAINBTN- ")
-                    #setup datastream how we want it for training
-                    #dataStream = socketClientUx.GetData(packetSize=self.packetSize, label=label, labelPath=labelPath, getTraining=True, numSensors=numSensors, pathPreface=pathPreface)
-                    window1.hide()
-                    window3 =self.makeWindow3()
+                # if event == "-TRAINBTN-":
+                #     print()
+                #     print("-TRAINBTN- ")
+                #     #setup datastream how we want it for training
+                #     #dataStream = socketClientUx.GetData(packetSize=self.packetSize, label=label, labelPath=labelPath, getTraining=True, numSensors=numSensors, pathPreface=pathPreface)
+                #     window1.hide()
+                #     window3 =self.makeWindow3()
                            
-                if event == "-PREDICTBTN-":  
-                    print() 
-                    print("-PREDICTBTN-")
-                    window1.hide()
-                    window3_1 =self.makeWindow3_1()
+                # if event == "-PREDICTBTN-":  
+                #     print() 
+                #     print("-PREDICTBTN-")
+                #     window1.hide()
+                #     window3_1 =self.makeWindow3_1()
+
+##############     Window2          #################
+            if window == window2:
+                #User chooses training or prediction 
+                #Currently used for testing
+                print()
+                print()
+                print("Window 2")
+                #print(self.Test)
+                
+                if event == sg.WIN_CLOSED or event == 'Exit':
+                    window2.hide()
+                    window1 =self.makeWindow1()   
+
+
 
 ##############     Window2_1          #################
             if window == window2_1:
