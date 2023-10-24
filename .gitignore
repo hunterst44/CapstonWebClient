@@ -8,3 +8,10 @@ data/Train00Fig_0_1.png
 data/Train00Fig_1_1.png
 data/Train00Fig_2_1.png
 interpolation.py
+__pycache__/midiWriter.cpython-310.pyc
+__pycache__/NeuralNetwork.cpython-310.pyc
+__pycache__/oscWriter.cpython-310.pyc
+__pycache__/socketClientUx.cpython-310.pyc
+__pycache__/NeuralNetwork.cpython-310.pyc
+__pycache__/oscWriter.cpython-310.pyc
+__pycache__/socketClientUx.cpython-310.pyc
