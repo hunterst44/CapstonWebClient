@@ -14,8 +14,8 @@ import NeuralNetwork
 import window
 
 
-# UX.py use this file for developing data bindings to the GUI. Window difinitions are defined in this file.
-
+# UXWindowDev.py use this file for testing the Window class in window.py. 
+# Once all the windows are defined in window.py this file will become ux.py
 
 
 class UX:
@@ -41,6 +41,7 @@ class UX:
         self.IPAddress = ''
         self.SSIDList = []
         self.positionPathList = []
+        self.window = window.Window()
 
 
 ###############################################################################################
@@ -271,8 +272,8 @@ class UX:
         newPositionLabelList = []
 
         # Set all windows to Noe except window 1 to start
-        window0 = self.makeWindow0(self.dataStream.sockConnection)
-        #window1 = self.makeWindow1(modelMessage)
+        window0 = self.window.makeWindow0(self.dataStream.sockConnection)
+        #window1 = self.window.makeWindow1(modelMessage)
         window1 = None
         window2 = None
         window2_1 = None
@@ -417,7 +418,7 @@ class UX:
                             window.refresh()
                             self.dataStream.logCSVRow('networks.csv', [self.ssid, self.pswd, self.host, self.port])
                             time.sleep(2)
-                            window1 = self.makeWindow1(modelMessage)
+                            window1 = self.window.makeWindow1(modelMessage)
                             window0.hide()
                         else:
                             print(f"Error Connecting to {newIP} at {newSSID}")
@@ -437,12 +438,12 @@ class UX:
                     print(f'Window 0 -CONTBTN-')
 
                     window0.hide()
-                    window1 = self.makeWindow1(modelMessage)
+                    window1 = self.window.makeWindow1(modelMessage)
 
                 if event == '-NOCNTBTN-':
                     self.dataStream.sock.close()
                     window0.hide()
-                    window1 = self.makeWindow1(modelMessage)
+                    window1 = self.window.makeWindow1(modelMessage)
            
 ##############     Window1          #################            
             if window == window1:
@@ -500,7 +501,7 @@ class UX:
                     window['-MODELMESSAGE01-'].update(visible=False)
                     window['-ACCPTDEFAULT-'].update(visible=False)
                     window1.hide()
-                    window2 = self.makeWindow2()
+                    window2 = self.window.makeWindow2()
                     # window['-TRAIN-'].update(visible=True)
                     # window['-PREDICT-'].update(visible=True)
                     # window['-TRAINBTN-'].update(visible=True)
@@ -599,7 +600,7 @@ class UX:
 
                         window['-MODELMESSAGE01-'].update(visible=True)
                         window1.hide()
-                        window2 = self.makeWindow2()  #model complete go to window two - map positions
+                        window2 = self.window.makeWindow2()  #model complete go to window two - map positions
                         # window['-TRAIN-'].update(visible=True)
                         # window['-PREDICT-'].update(visible=True)
                         # window['-TRAINBTN-'].update(visible=True)
@@ -624,13 +625,13 @@ class UX:
                 #     #setup datastream how we want it for training
                 #     #dataStream = socketClientUx.GetData(packetSize=self.packetSize, label=label, labelPath=labelPath, getTraining=True, numSensors=numSensors, pathPreface=pathPreface)
                 #     window1.hide()
-                #     window3 =self.makeWindow3()
+                #     window3 =self.window.makeWindow3()
                            
                 # if event == "-PREDICTBTN-":  
                 #     print() 
                 #     print("-PREDICTBTN-")
                 #     window1.hide()
-                #     window3_1 =self.makeWindow3_1()
+                #     window3_1 =self.window.makeWindow3_1()
 
 ##############     Window2          #################
             if window == window2:
@@ -643,7 +644,7 @@ class UX:
                 
                 if event == sg.WIN_CLOSED or event == 'Exit':
                     window2.hide()
-                    window1 =self.makeWindow1()   
+                    window1 =self.window.makeWindow1()   
 
 
 
@@ -658,7 +659,7 @@ class UX:
                 
                 if event == sg.WIN_CLOSED or event == 'Exit':
                     window2_1.hide()
-                    window1 =self.makeWindow1()   
+                    window1 =self.window.makeWindow1()   
 
                 if event == "-TRAINBTN-":
                     print()
@@ -666,13 +667,13 @@ class UX:
                     #setup datastream how we want it for training
                     #dataStream = socketClientUx.GetData(packetSize=self.packetSize, label=label, labelPath=labelPath, getTraining=True, numSensors=numSensors, pathPreface=pathPreface)
                     window2_1.hide()
-                    window3 =self.makeWindow3()
+                    window3 =self.window.makeWindow3()
                            
                 if event == "-PREDICTBTN-":  
                     print() 
                     print("-PREDICTBTN-")
                     window2_1.hide()
-                    window3_1 =self.makeWindow3_1()
+                    window3_1 =self.window.makeWindow3_1()
                 
                 if event == "-WORDS-":
                     window["-WORDS-"].update(values['-WORDS-'])
