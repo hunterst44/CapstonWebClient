@@ -42,6 +42,13 @@ class UX:
         self.SSIDList = []
         self.positionPathList = []
 
+        ports = self.writer.midiOut.get_ports()
+        print(f'ports {ports}')
+        
+        print(f'available_MiDiPortsOut {self.writer.available_MiDiPortsOut}')
+        ports = self.writer.midiOut.get_ports()
+        print(f'ports {ports}')
+
 
 ###############################################################################################
 ##############                  Control Methods                               #################
@@ -208,6 +215,7 @@ class UX:
     def makeWindow2(self):
         #Window3 Training or prediction select
         layout = [[sg.Text('The Conductor: Window 2'), sg.Text(size=(2,1), key='-OUTPUT-')],
+                  [sg.pin(sg.Column([[sg.Text(f"Let's map MiDi controls to hand positions.", key='-TOPMESSAGE01-', size=(100,2), visible=True)]]), shrink=True)],
                   [sg.pin(sg.Column([[sg.Text('Train Model'), sg.Text(size=(2,1), key='-TRAIN-'), sg.Button('Train', key='-TRAINBTN-')]]))],
                   [sg.pin(sg.Column([[sg.Text('Predict hand positions'), sg.Text(size=(2,1), key='-PREDICT-'), sg.Button('Predict', key='-PREDICTBTN-')]]))],
                   [sg.pin(sg.Column([[sg.Text('', visible=True, key='-WORDS-'), sg.Text(size=(2,1))]], pad=(0,0)), shrink=False)],
@@ -271,10 +279,10 @@ class UX:
         newPositionLabelList = []
 
         # Set all windows to Noe except window 1 to start
-        window0 = self.makeWindow0(self.dataStream.sockConnection)
+        window0 = None #self.makeWindow0(self.dataStream.sockConnection)
         #window1 = self.makeWindow1(modelMessage)
         window1 = None
-        window2 = None
+        window2 = self.makeWindow2()
         window2_1 = None
         window3 = None
         window3_1 = None
@@ -641,9 +649,34 @@ class UX:
                 print("Window 2")
                 #print(self.Test)
                 
+                # print(f'self.writer.available_MiDiPortsOut: {self.writer.available_MiDiPortsOut}')
+                # print(f'self.writer.available_MiDiPortsOut[0]: {self.writer.available_MiDiPortsOut[0]}')
+                # print(f'self.writer.available_MiDiPortsIn: {self.writer.available_MiDiPortsIn}')
+                # print(f'self.writer.available_MiDiPortsIn[0]: {self.writer.available_MiDiPortsIn[0]}')
+
+                self.writer.available_MiDiPortsOut = self.writer.midiOut.get_ports()
+                self.writer.available_MiDiPortsIn = self.writer.midiIn.get_ports()
+
+                print(f'self.writer.available_MiDiPortsOut: {self.writer.available_MiDiPortsOut}')
+                print(f'self.writer.available_MiDiPortsOut[0]: {self.writer.available_MiDiPortsOut[0]}')
+
+                #Get list of ports
+                    #If not enough ports - prompt user to create a port
+                    #User chooses ports
+                    #Connect to ports
+                #User selects BPM
+                #User selects Control Type
+                #User selects on condition for control
+                #User selects off condition for control
+                #User enters control specific variables
+
+                # 
+                
                 if event == sg.WIN_CLOSED or event == 'Exit':
                     window2.hide()
                     window1 =self.makeWindow1()   
+
+                
 
 
 

@@ -33,6 +33,7 @@ class MiDiWriter:
 
     def __init__(self, *, predictions=[], port_name=1, channel=0, cc_num=75, bpm=240, rate='s', ToFByte=-1):
         self.midiOut = rtmidi.MidiOut()
+        self.midiIn = rtmidi.MidiIn()
         self.port_name = port_name
         self.bpm = bpm
         self.predictions = predictions
@@ -41,14 +42,18 @@ class MiDiWriter:
         self.memorySizeMin = 100 #How many predictions to keep on purge
         self.ToFByte = ToFByte
         #self.channelCounters = []  #Use this to count each channels loops outside the loop
-        available_ports = self.midiOut.get_ports()
+        self.available_MiDiPortsOut = self.midiOut.get_ports()
         self.controlList = []
         self.loadChannels() #Load the Channels above - must be defined in loadChannels
-        available_ports = self.midiOut.get_ports()
+        self.available_MiDiPortsIn = self.midiIn.get_ports()
         
-        if len(available_ports) > 1:
-            print(f'available_ports: {available_ports}')
-            print(f'available_ports[0]: {available_ports[0]}')
+        # print(f'self.available_MiDiPortsOut: {self.available_MiDiPortsOut}')
+        # #print(f'self.available_MiDiPortsOut[0]: {self.available_MiDiPortsOut[0]}')
+        # print(f'self.available_MiDiPortsIn: {self.available_MiDiPortsIn}')
+        # #print(f'self.available_MiDiPortsIn[0]: {self.available_MiDiPortsIn[0]}')
+
+        if len(self.available_MiDiPortsOut) > 1:
+            
             self.midiOut.open_port(port_name)
         else:
             print(f"Could not find {port_name} in available ports. Opening the first port.")
