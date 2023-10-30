@@ -27,6 +27,7 @@ class GetData:
     def __init__(self, *, host="192.168.1.75", port=80, packetSize=1, numSensors=4, pathPreface='data/test', labelPath="Test", label=0, getTraining=True):
         self.host = host
         self.port = port
+        self.ssid = "TheConductor"
         self.packetSize = packetSize
         self.numSensors = numSensors
         self.packetData = np.zeros([1, self.packetSize * self.numSensors * 3]) #one packet of data corresponding to a handPosition - 3 axis * number of sensors times the number of samples per handPosition

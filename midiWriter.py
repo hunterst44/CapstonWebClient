@@ -34,7 +34,7 @@ class MiDiWriter:
     def __init__(self, *, predictions=[], port_name=1, channel=0, cc_num=75, bpm=240, rate='s', ToFByte=-1):
         self.midiOut = rtmidi.MidiOut()
         self.midiIn = rtmidi.MidiIn()
-        self.port_name = port_name
+        self.midiPortOut = port_name
         self.bpm = bpm
         self.predictions = predictions
         self.ToFEnable = 0

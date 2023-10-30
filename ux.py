@@ -213,12 +213,28 @@ class UX:
         return sg.Window('THE CONDUCTOR: Step 1', layout, size=(self.windowSizeX,self.windowSizeY), finalize=True)
     
     def makeWindow2(self):
+        self.writer.available_MiDiPortsOut = self.writer.midiOut.get_ports()
+        self.writer.available_MiDiPortsIn = self.writer.midiIn.get_ports()
+        
+        numOutPOrts = len(self.writer.available_MiDiPortsOut)
+        midiOutList = [] 
+        for i in range(numOutPOrts):
+            midiOutList.append(self.writer.available_MiDiPortsOut[i])
+
+        controlList = ['Modulate', 'Arrpegiate', 'Play Note']
+
         #Window3 Training or prediction select
         layout = [[sg.Text('The Conductor: Window 2'), sg.Text(size=(2,1), key='-OUTPUT-')],
-                  [sg.pin(sg.Column([[sg.Text(f"Let's map MiDi controls to hand positions.", key='-TOPMESSAGE01-', size=(100,2), visible=True)]]), shrink=True)],
-                  [sg.pin(sg.Column([[sg.Text('Train Model'), sg.Text(size=(2,1), key='-TRAIN-'), sg.Button('Train', key='-TRAINBTN-')]]))],
-                  [sg.pin(sg.Column([[sg.Text('Predict hand positions'), sg.Text(size=(2,1), key='-PREDICT-'), sg.Button('Predict', key='-PREDICTBTN-')]]))],
-                  [sg.pin(sg.Column([[sg.Text('', visible=True, key='-WORDS-'), sg.Text(size=(2,1))]], pad=(0,0)), shrink=False)],
+                  [sg.pin(sg.Column([[sg.Text(f"Let's map MiDi controls to hand positions.", key='-TOPMESSAGE00-', size=(100,2), visible=True)]]), shrink=True)],
+                  [sg.pin(sg.Column([[sg.Text(f"First choose a MiDi port to send commands to:", key='-TOPMESSAGE01-', size=(100,2), visible=True)]]), shrink=True)],
+                  [sg.pin(sg.Column([[sg.Text(f"BPM", key='-BPMLABEL-', size=(15,2), visible=False)], [sg.Slider(range=(30, 300), default_value=120, expand_x=True,orientation='horizontal', key='-BPMSLIDE-', visible=False)],  [sg.Button('Ok', key='-BPMBTN-', visible=True)]], pad=(0,0)), shrink=True)],
+                  [sg.pin(sg.Column([[sg.Listbox(controlList, size=(15, 3), key="-CTRLLIST-", expand_y=True, enable_events=True, visible=False)], [sg.Button('Select', key='-SELCNTRLTYPEBTN-', visible=False)]], pad=(0,0)), shrink=True)],
+                  [sg.pin(sg.Column([[sg.Listbox(midiOutList, size=(50, 15), key="-MIDIPORTOUT-", expand_y=True, enable_events=True, visible=True)], [sg.Button('Refresh', key='-MIDIOUTLISTRFH-', visible=True)], [sg.Button('Connect', key='-MIDIOUTCNTBTN-', visible=True)]], pad=(0,0)), shrink=True)],
+                 
+                 
+   #[sg.pin(sg.Column([[sg.Button('Reconnect', key='-RECNTBTN-', visible=True)]], pad=(0,0)), shrink=True)]#[sg.pin(sg.Column([[sg.Text('Train Model'), sg.Text(size=(2,1), key='-TRAIN-'), sg.Button('Train', key='-TRAINBTN-')]]))],
+                  #[sg.pin(sg.Column([[sg.Text('Predict hand positions'), sg.Text(size=(2,1), key='-PREDICT-'), sg.Button('Predict', key='-PREDICTBTN-')]]))],
+                  #[sg.pin(sg.Column([[sg.Text('', visible=True, key='-WORDS-'), sg.Text(size=(2,1))]], pad=(0,0)), shrink=False)],
         ]
         return sg.Window('THE CONDUCTOR: Step 2 Map positions to controls', layout, layout, size=(self.windowSizeX,self.windowSizeY), finalize=True)
     
@@ -279,10 +295,12 @@ class UX:
         newPositionLabelList = []
 
         # Set all windows to Noe except window 1 to start
+        #window0 = self.makeWindow0(self.dataStream.sockConnection)
         window0 = None #self.makeWindow0(self.dataStream.sockConnection)
-        #window1 = self.makeWindow1(modelMessage)
+       # window1 = self.makeWindow1(modelMessage)
         window1 = None
         window2 = self.makeWindow2()
+        #window2=None
         window2_1 = None
         window3 = None
         window3_1 = None
@@ -354,6 +372,7 @@ class UX:
                     window['-IPIN-'].update(visible=False)
                     window['-SSIDIN-'].update(self.SSIDList)
                     window['-SSIDIN-'].update(visible=True)
+                    window['-SSIDLISTRFH-'].update(visible=True)
                     window['-PSWDIN-'].update(visible=True)
                     window['-RECNTBTN-'].update(visible=True)
                     window['-APCNTEBTN-'].update(visible=False)
@@ -647,38 +666,103 @@ class UX:
                 print()
                 print()
                 print("Window 2")
-                #print(self.Test)
-                
+
+                # self.writer.available_MiDiPortsOut = self.writer.midiOut.get_ports()
+                # self.writer.available_MiDiPortsIn = self.writer.midiIn.get_ports()
+
                 # print(f'self.writer.available_MiDiPortsOut: {self.writer.available_MiDiPortsOut}')
                 # print(f'self.writer.available_MiDiPortsOut[0]: {self.writer.available_MiDiPortsOut[0]}')
-                # print(f'self.writer.available_MiDiPortsIn: {self.writer.available_MiDiPortsIn}')
-                # print(f'self.writer.available_MiDiPortsIn[0]: {self.writer.available_MiDiPortsIn[0]}')
-
-                self.writer.available_MiDiPortsOut = self.writer.midiOut.get_ports()
-                self.writer.available_MiDiPortsIn = self.writer.midiIn.get_ports()
-
-                print(f'self.writer.available_MiDiPortsOut: {self.writer.available_MiDiPortsOut}')
-                print(f'self.writer.available_MiDiPortsOut[0]: {self.writer.available_MiDiPortsOut[0]}')
-
-                #Get list of ports
-                    #If not enough ports - prompt user to create a port
-                    #User chooses ports
-                    #Connect to ports
-                #User selects BPM
-                #User selects Control Type
-                #User selects on condition for control
-                #User selects off condition for control
-                #User enters control specific variables
-
-                # 
                 
                 if event == sg.WIN_CLOSED or event == 'Exit':
                     window2.hide()
                     window1 =self.makeWindow1()   
 
-                
+                if event == '-MIDIOUTLISTRFH-':
+                    print()
+                    print(f'Window 2 -MIDIOUTLISTRFH-')
+                    self.writer.available_MiDiPortsOut = self.writer.midiOut.get_ports()
+                    self.writer.available_MiDiPortsIn = self.writer.midiIn.get_ports()
+        
+                    numOutPOrts = len(self.writer.available_MiDiPortsOut)
+                    midiOutList = [] 
+                    for i in range(numOutPOrts):
+                        midiOutList.append(self.writer.available_MiDiPortsOut[i])
 
+                    window['-MIDIPORTOUT-'].update(midiOutList)
+                    window.refresh()
 
+                if event == '-MIDIOUTCNTBTN-': 
+                    print()
+                    print(f'Window 2 -MIDIOUTCNTBTN-')
+                    print(f'values["-MIDIPORTOUT-"][0]: {values["-MIDIPORTOUT-"][0]}')
+                    newMidiOutPort = values["-MIDIPORTOUT-"][0]
+                    newPortlen = len(newMidiOutPort)
+                    self.writer.midiPortOut = int(newMidiOutPort[newPortlen-1])
+                    print(f'self.writer.midiPortOut: {self.writer.midiPortOut}')
+                    print(f'type(self.writer.midiPortOut): {type(self.writer.midiPortOut)}')
+
+                    if not self.writer.midiOut.is_port_open():
+                        try:
+                            self.writer.midiOut.open_port(self.writer.midiPortOut) 
+                        except:
+                            print(f'Unable to connect to port {newMidiOutPort}')  
+                    else:
+                        print(f'Port already open')
+                    print(f'midi port connected') 
+
+                    window['-TOPMESSAGE00-'].update("Set the Beats per minute")
+                    window['-TOPMESSAGE01-'].update(visible=False)
+                    window['-MIDIPORTOUT-'].update(visible=False)
+                    window['-MIDIOUTLISTRFH-'].update(visible=False)
+                    window['-MIDIOUTCNTBTN-'].update(visible=False)
+
+                    window['-BPMLABEL-'].update(visible=True)
+                    window['-BPMSLIDE-'].update(visible=True)
+                    #window['-MESSAGE-'].update(visible=False)
+                    window.refresh()  
+
+                if event == '-BPMBTN-':
+                    print()
+                    print(f'Window 2 -BPMBTM-')
+                    print(f'values["-BPMSLIDE-"][0]: {values["-BPMSLIDE-"]}')
+                    
+                    self.writer.bpm = values["-BPMSLIDE-"]
+                    print(f'self.writer.bpm: {self.writer.bpm}')
+
+                    window['-TOPMESSAGE00-'].update("Choose a Control Type.")
+                    window['-CTRLLIST-'].update(visible=True)
+                    window['-SELCNTRLTYPEBTN-'].update(visible=True)
+                    window['-BPMBTN-'].update(visible=False)
+                    window['-BPMSLIDE-'].update(visible=False)
+                    window['-BPMLABEL-'].update(visible=False)
+                    window.refresh()
+
+                if event == '-BPMSLIDE-':
+                    print()
+                    print(f'Window 2 -BPMSLIDE-')
+                    print(f'values["-BPMSLIDE-"][0]: {values["-BPMSLIDE-"]}')
+                    
+                    self.writer.bpm = values["-BPMSLIDE-"]
+                    print(f'self.writer.bpm: {self.writer.bpm}')
+
+                    # window['-TOPMESSAGE00-'].update("Choose a Control Type.")
+                    # window['-CTRLLIST-'].update(visible=True)
+                    # window['-SELCNTRLTYPEBTN-'].update(visible=True)
+                    # window.refresh()
+
+                if event == '-SELCNTRLTYPEBTN-':
+                    print()
+                    print(f'Window 2 -SELCNTRLTYPEBTN-')
+                    print(f'')
+
+                    #TODO set up windows to grab the data that we need
+                        #Set conditions and then add values...
+                    if values['-CTRLLIST-'][0] == 'Modulate':
+                        print(f'Modulate')
+                    elif values['-CTRLLIST-'][0] == 'Arrpegiate':
+                        print(f'Arrpegiate')
+                    elif values['-CTRLLIST-'][0] == 'Play Note':
+                        print(f'Play Note')
 
 ##############     Window2_1          #################
             if window == window2_1:
