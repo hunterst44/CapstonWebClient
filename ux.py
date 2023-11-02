@@ -227,6 +227,8 @@ class UX:
 
         controlList = ['Modulate', 'Arrpegiate', 'Play Note']
         waveList = ['sine', 'square', 'saw']
+        conditionTypeList = ['Hold', 'Transition']
+        currentPositionList = []
 
         
         #Window2 Training or prediction select
@@ -240,21 +242,29 @@ class UX:
 
         layout = [[sg.Text('The Conductor: Window 2'), sg.Text(size=(2,1), key='-OUTPUT-')],
                     [
-                        sg.Column([[sg.Text(f"Let's map MiDi controls to hand positions.", key='-TOPMESSAGE00-', size=(50,1), visible=True)], [sg.Text(f"First choose a MiDi port to send commands to:", key='-TOPMESSAGE01-', size=(50,1), visible=True)]], key='-COL1-', element_justification='left', background_color='Blue', expand_x = True, vertical_alignment='t', pad=(0,0)), 
-                        sg.Column([[sg.Listbox(midiOutList, size=(50, 8), key="-MIDIPORTOUT-", expand_x=True, expand_y=True,enable_events=True, visible=True)], [sg.Button('Refresh', key='-MIDIOUTLISTRFH-', visible=True)], [sg.Button('Connect', key='-MIDIOUTCNTBTN-', visible=True)]], key='-COL2-', background_color='Green', element_justification='left', expand_x = True, vertical_alignment='t', pad=(0,0))
+                        sg.Column([[sg.Text(f"Let's map MiDi controls to hand positions.", key='-TOPMESSAGE00-', size=(50,1), visible=True)], [sg.Text(f"First choose a MiDi port to send commands to:", key='-TOPMESSAGE01-', size=(50,1), visible=True)]], key='-TOPMESSAGE00COL-', element_justification='left', background_color='Blue', expand_x = True, vertical_alignment='t', pad=(0,0)), 
+                        sg.Column([[sg.Listbox(midiOutList, size=(50, 8), key="-MIDIPORTOUT-", expand_x=True, expand_y=True,enable_events=True, visible=True)], [sg.Button('Refresh', key='-MIDIOUTLISTRFH-', visible=True)], [sg.Button('Connect', key='-MIDIOUTCNTBTN-', visible=True)]], key='-MIDIPORTOUTCOL-', background_color='Green', element_justification='left', expand_x = True, vertical_alignment='t', pad=(0,0))
                     ],
                     [
-                        sg.pin(sg.Column([[sg.Text(f"BPM", key='-BPMLABEL-', visible=False)], [sg.Slider(range=(30, 300), default_value=120, expand_x=True,orientation='horizontal', key='-BPMSLIDE-', visible=False)], [sg.Button('Ok', key='-BPMBTN-', visible=False)]], key='-COL3-', background_color = 'Yellow', vertical_alignment='t', pad=(0,0)), shrink=True),
-                        sg.Column([[sg.Listbox(controlList, size=(10, 3), key="-CTRLLIST-", expand_y=True, enable_events=True, visible=False)], [sg.Button('Select', key='-SELCNTRLTYPEBTN-', visible=False)]], key='-COL4-', background_color = 'Red', vertical_alignment='t', pad=(0,0)),
-                        sg.Column([[sg.Text(f"Rate", key='-RATELABEL-', size=(15,2), visible=False)], [sg.Slider(range=(0, 127), default_value=30, expand_x=True,orientation='horizontal', key='-RATESLIDE-', visible=False)]], key='-COL5-', background_color = 'Red', vertical_alignment='t', pad=(0,0)),
-                        sg.Column([[sg.Text(f"Waveform", key='-WAVELABEL-', size=(15,2), visible=False)], [sg.Listbox(waveList, size=(50, 3), key="-WAVELIST-", enable_events=True, visible=False)]], key='-COL6-', background_color = 'Blue', vertical_alignment='t', pad=(0,0)),
-                        # sg.Column([[sg.Text(f"Minimum", key='-MINLABEL-', size=(15,2), visible=False)], [sg.Slider(range=(0, 127), default_value=30, expand_x=True,orientation='horizontal', key='-MINSLIDE-', visible=False)]], key='-COL7-', background_color = 'Pink', vertical_alignment='t', pad=(0,0)),
-                        # sg.Column([[sg.Text(f"Maximum", key='-MAXLABEL-', size=(15,2), visible=False)], [sg.Slider(range=(0, 127), default_value=30, expand_x=True,orientation='horizontal', key='-MAXSLIDE-', visible=False)]], key='-COL8-', background_color = 'Violet', vertical_alignment='t', pad=(0,0)),
-                        # #sg.Column([[sg.Text(f"Min / Max", key='-MINMAXLABEL-', size=(15,2), visible=False)], [sg.Listbox(waveList, size=(50, 15), key="-WAVELIST-", expand_y=True, enable_events=True, visible=False)]], key='-COL7-', background_color = 'Orange', vertical_alignment='t', pad=(0,0))
+                        sg.pin(sg.Column([[sg.Text(f"BPM", key='-BPMLABEL-', visible=False)], [sg.Slider(range=(30, 300), default_value=120, expand_x=True,orientation='horizontal', key='-BPMSLIDE-', visible=False)], [sg.Button('Ok', key='-BPMBTN-', visible=False)]], key='-BPMCOL-', background_color = 'Yellow', vertical_alignment='t', pad=(0,0)), shrink=True),
+                        sg.Column([[sg.Input('Control Name', key="-CTRLNAME-", visible=False)], [sg.Button('Ok', key='-CTRLNAMEBTN-', visible=False)]], key='-CTRLNAMECOL-', background_color = 'Yellow', vertical_alignment='t', visible=False, pad=(0,0)),
+                        sg.Column([[sg.Listbox(conditionTypeList, size=(10, 3), key="-CONDTYPE-", expand_y=True, enable_events=True, visible=False)]], key='-CONDTYPECOL-', background_color = 'Red', vertical_alignment='t', pad=(0,0), visible=False),
+                        sg.Column([[sg.Text(f"Choose a position and hold threshold to turn the control on.", key='-CURRPOSONLABEL-', size=(15,2), visible=False)], [sg.Listbox(currentPositionList, size=(10, 3), key="-CURRPOSLISTON-", expand_y=True, enable_events=True, visible=False)], [sg.Slider(range=(1, 25), default_value=3, expand_x=True,orientation='horizontal', key='-CURRPOSONSLIDE-', visible=False)]], key='-CURRPOSLISTONCOL-', background_color = 'Red', vertical_alignment='t', pad=(0,0), visible=False),
+                        sg.Column([[sg.Text(f"Choose a position and hold threshold for the end position of the transition when turning the control on.", key='-CURRPOSTRANSONLABEL-', size=(15,2), visible=False)], [sg.Listbox(currentPositionList, size=(10, 3), key="-CURRPOSLISTTRANSON-", expand_y=True, enable_events=True, visible=False)], [sg.Slider(range=(1, 25), default_value=3, expand_x=True,orientation='horizontal', key='-CURRPOSTRANSONSLIDE-', visible=False)]], key='-CURRPOSLISTTRANSONCOL-', background_color = 'Red', vertical_alignment='t', pad=(0,0), visible=False),
+                        
+                        sg.Column([[sg.Text(f"Choose a position and hold threshold to turn the control off.", key='-CURRPOSOFFLABEL-', size=(15,2), visible=False)], [sg.Listbox(currentPositionList, size=(10, 3), key="-CURRPOSLISTOFF-", expand_y=True, enable_events=True, visible=False)], [sg.Slider(range=(1, 25), default_value=3, expand_x=True,orientation='horizontal', key='-CURRPOSOFFSLIDE-', visible=False)], [sg.Button('Ok', key='-CONDBTN-', visible=False)]], key='-CURRPOSLISTOFFCOL-', background_color = 'Red', vertical_alignment='t', pad=(0,0), visible=False),
+                        sg.Column([[sg.Text(f"Choose a position and hold threshold for the end position of the transition when turning the control off.", key='-CURRPOSOFFTRANSLABEL-', size=(15,2), visible=False)], [sg.Listbox(currentPositionList, size=(10, 3), key="-CURRPOSLISTTRANSOFF-", expand_y=True, enable_events=True, visible=False)], [sg.Slider(range=(1, 25), default_value=3, expand_x=True,orientation='horizontal', key='-CURRPOSOFFTRANSSLIDE-', visible=False)], [sg.Button('Ok', key='-CONDTRANSBTN-', visible=False)]], key='-CURRPOSLISTTRANSOFFCOL-', background_color = 'Red', vertical_alignment='t', pad=(0,0), visible=False),
+                        
+                        sg.Column([[sg.Listbox(controlList, size=(10, 3), key="-CTRLLIST-", expand_y=True, enable_events=True, visible=False)], [sg.Button('Select', key='-SELCNTRLTYPEBTN-', visible=False)]], key='-CTRLLISTCOL-', background_color = 'Red', vertical_alignment='t', pad=(0,0)),
+                        sg.Column([[sg.Text(f"Rate", key='-RATELABEL-', size=(15,2), visible=False)], [sg.Slider(range=(0, 127), default_value=30, expand_x=True,orientation='horizontal', key='-RATESLIDE-', visible=False)]], key='-RATECOL-', background_color = 'Red', vertical_alignment='t', pad=(0,0)),
+                        sg.Column([[sg.Text(f"Waveform", key='-WAVELABEL-', size=(15,2), visible=False)], [sg.Listbox(waveList, size=(50, 3), key="-WAVELIST-", enable_events=True, visible=False)]], key='-WAVECOL-', background_color = 'Blue', vertical_alignment='t', pad=(0,0)),
+                        # sg.Column([[sg.Text(f"Minimum", key='-MINLABEL-', size=(15,2), visible=False)], [sg.Slider(range=(0, 127), default_value=30, expand_x=True,orientation='horizontal', key='-MINSLIDE-', visible=False)]], key='-MINCOL-', background_color = 'Pink', vertical_alignment='t', pad=(0,0)),
+                        # sg.Column([[sg.Text(f"Maximum", key='-MAXLABEL-', size=(15,2), visible=False)], [sg.Slider(range=(0, 127), default_value=30, expand_x=True,orientation='horizontal', key='-MAXSLIDE-', visible=False)]], key='-MAXCOL-', background_color = 'Violet', vertical_alignment='t', pad=(0,0)),
+                        # #sg.Column([[sg.Text(f"Min / Max", key='-MINMAXLABEL-', size=(15,2), visible=False)], [sg.Listbox(waveList, size=(50, 15), key="-WAVELIST-", expand_y=True, enable_events=True, visible=False)]], key='-MINCOL-', background_color = 'Orange', vertical_alignment='t', pad=(0,0))
                     ],
                     [
-                        sg.Column([[sg.Text(f"Minimum", key='-MINLABEL-', size=(15,2), visible=False)], [sg.Slider(range=(0, 127), default_value=30, expand_x=True,orientation='horizontal', key='-MINSLIDE-', visible=False)]], key='-COL7-', background_color = 'Pink', vertical_alignment='t', pad=(0,0)),
-                        sg.Column([[sg.Text(f"Maximum", key='-MAXLABEL-', size=(15,2), visible=False)], [sg.Slider(range=(0, 127), default_value=30, expand_x=True,orientation='horizontal', key='-MAXSLIDE-', visible=False)], [sg.Button('Ok', key='-MODDATABTN-', visible=False)]], key='-COL8-', background_color = 'Violet', vertical_alignment='t', pad=(0,0)),
+                        sg.Column([[sg.Text(f"Minimum", key='-MINLABEL-', size=(15,2), visible=False)], [sg.Slider(range=(0, 127), default_value=30, expand_x=True,orientation='horizontal', key='-MINSLIDE-', visible=False)]], key='-MINCOL-', background_color = 'Pink', vertical_alignment='t', pad=(0,0)),
+                        sg.Column([[sg.Text(f"Maximum", key='-MAXLABEL-', size=(15,2), visible=False)], [sg.Slider(range=(0, 127), default_value=30, expand_x=True,orientation='horizontal', key='-MAXSLIDE-', visible=False)], [sg.Button('Ok', key='-MODDATABTN-', visible=False)]], key='-MAXCOL-', background_color = 'Violet', vertical_alignment='t', pad=(0,0)),
                         
                     ]]
       
@@ -263,13 +273,13 @@ class UX:
         #         # 
         # 
         #           ,
-        #          [[sg.pin(sg.Column([[sg.Text(f"Let's map MiDi controls to hand positions.", key='-TOPMESSAGE00-', size=(100,2), visible=True)]], key='-COL1-', background_color = 'Green'), shrink=True, expand_x = True, expand_y = True)],
-        #           [sg.pin(sg.Column([[sg.Text(f"First choose a MiDi port to send commands to:", key='-TOPMESSAGE01-', size=(100,2), visible=True)]], key='-COL2-', background_color = 'Blue'), shrink=True, expand_x = True, expand_y = True)]],
-        #           [sg.pin(sg.Column([[sg.Listbox(midiOutList, size=(50, 8), key="-MIDIPORTOUT-", expand_y=True, expand_x=True, enable_events=True, visible=True)], [sg.Button('Refresh', key='-MIDIOUTLISTRFH-', visible=True)], [sg.Button('Connect', key='-MIDIOUTCNTBTN-', visible=True)]], size=(250,220), expand_x = True, expand_y = True, pad=(0,0), key='-COL3-', background_color = 'Red'), expand_x = True, expand_y = True, shrink=True)],
-        #           [sg.pin(sg.Column([[sg.Text(f"BPM", key='-BPMLABEL-', size=(15,2), visible=False)], [sg.Slider(range=(30, 300), default_value=120, expand_x=True,orientation='horizontal', key='-BPMSLIDE-', visible=False)],  [sg.Button('Ok', key='-BPMBTN-', visible=False)]], pad=(0,0), key='-COL4-', background_color = 'Yellow'), shrink=True, expand_x = True, expand_y = True,)],
+        #          [[sg.pin(sg.Column([[sg.Text(f"Let's map MiDi controls to hand positions.", key='-TOPMESSAGE00-', size=(100,2), visible=True)]], key='-TOPMESSAGE00COL-', background_color = 'Green'), shrink=True, expand_x = True, expand_y = True)],
+        #           [sg.pin(sg.Column([[sg.Text(f"First choose a MiDi port to send commands to:", key='-TOPMESSAGE01-', size=(100,2), visible=True)]], key='-MIDIPORTOUTCOL-', background_color = 'Blue'), shrink=True, expand_x = True, expand_y = True)]],
+        #           [sg.pin(sg.Column([[sg.Listbox(midiOutList, size=(50, 8), key="-MIDIPORTOUT-", expand_y=True, expand_x=True, enable_events=True, visible=True)], [sg.Button('Refresh', key='-MIDIOUTLISTRFH-', visible=True)], [sg.Button('Connect', key='-MIDIOUTCNTBTN-', visible=True)]], size=(250,220), expand_x = True, expand_y = True, pad=(0,0), key='-BPMCOL-', background_color = 'Red'), expand_x = True, expand_y = True, shrink=True)],
+        #           [sg.pin(sg.Column([[sg.Text(f"BPM", key='-BPMLABEL-', size=(15,2), visible=False)], [sg.Slider(range=(30, 300), default_value=120, expand_x=True,orientation='horizontal', key='-BPMSLIDE-', visible=False)],  [sg.Button('Ok', key='-BPMBTN-', visible=False)]], pad=(0,0), key='-CTRLLISTCOL-', background_color = 'Yellow'), shrink=True, expand_x = True, expand_y = True,)],
                   
                   
-        #           #[sg.pin(sg.Column([[sg.Text(f"BPM", key='-BPMLABEL-', size=(15,2), visible=False)], [sg.Slider(range=(30, 300), default_value=120, expand_x=True,orientation='horizontal', key='-BPMSLIDE-', visible=False)],  [sg.Button('Ok', key='-BPMBTN-', visible=True)]], pad=(0,0), visible=False, key='-COL3-'), shrink=True)],
+        #           #[sg.pin(sg.Column([[sg.Text(f"BPM", key='-BPMLABEL-', size=(15,2), visible=False)], [sg.Slider(range=(30, 300), default_value=120, expand_x=True,orientation='horizontal', key='-BPMSLIDE-', visible=False)],  [sg.Button('Ok', key='-BPMBTN-', visible=True)]], pad=(0,0), visible=False, key='-BPMCOL-'), shrink=True)],
                   
                   
         #           [sg.pin(sg.Column([[sg.Text(f"Waveform", key='-WAVELABEL-', size=(15,2), visible=False)], [sg.Listbox(waveList, size=(50, 15), key="-WAVELIST-", expand_y=True, enable_events=True, visible=False)]], pad=(0,0)), shrink=True)],
@@ -323,8 +333,11 @@ class UX:
         print()
         print('uxLoop Start')
         newIP = "192.168.4.1"
-        newSSID = "TheCOnductor"
+        newSSID = "TheConductor"
         newPSWD = "NoneShallPass"
+        newControl = [] #Holds data from a new control until it is appended to the list
+        usedPositions = [] #indexes of the positions in self.dataStream.
+
         stopPredict = 0
        
         ##Methods to collect run time data required for the GUI
@@ -718,11 +731,12 @@ class UX:
 
                 # print(f'self.writer.available_MiDiPortsOut: {self.writer.available_MiDiPortsOut}')
                 # print(f'self.writer.available_MiDiPortsOut[0]: {self.writer.available_MiDiPortsOut[0]}')
-                
+
                 if event == sg.WIN_CLOSED or event == 'Exit':
                     window2.hide()
                     window1 =self.makeWindow1()   
 
+                #Set up MiDi port
                 if event == '-MIDIOUTLISTRFH-':
                     print()
                     print(f'Window 2 -MIDIOUTLISTRFH-')
@@ -737,6 +751,7 @@ class UX:
                     window['-MIDIPORTOUT-'].update(midiOutList)
                     window.refresh()
 
+                #Set BPM
                 if event == '-MIDIOUTCNTBTN-': 
                     print()
                     print(f'Window 2 -MIDIOUTCNTBTN-')
@@ -767,9 +782,9 @@ class UX:
                         window['-MIDIOUTCNTBTN-'].update(visible=False)
                         window['-MIDIOUTCNTBTN-'].set_size(size=(0,0))
 
-                        window['-COL2-'].set_size(size=(0,0))
-                        window['-COL2-'].update(visible=False)
-                        window['-COL3-'].update(visible=True)
+                        window['-MIDIPORTOUTCOL-'].set_size(size=(0,0))
+                        window['-MIDIPORTOUTCOL-'].update(visible=False)
+                        window['-BPMCOL-'].update(visible=True)
                         window['-TOPMESSAGE00-'].update("Set the Beats per minute")
                         window['-TOPMESSAGE01-'].update(visible=False)
                         window['-TOPMESSAGE01-'].set_size(size=(0,0))
@@ -790,7 +805,7 @@ class UX:
                         window['-MIDIOUTCNTBTN-'].update(visible=True)
                         window.write_event_value("-MIDIOUTLISTRFH-", '')
 
-
+                #Set Control Name
                 if event == '-BPMBTN-':
                     print()
                     print(f'Window 2 -BPMBTM-')
@@ -798,9 +813,106 @@ class UX:
                     
                     self.writer.bpm = values["-BPMSLIDE-"]
                     print(f'self.writer.bpm: {self.writer.bpm}')
-                    window['-COL3-'].set_size(size=(0,0))
-                    window['-COL3-'].update(visible=False)
-                    window['-COL4-'].update(visible=True)
+
+                    window['-BPMCOL-'].set_size(size=(0,0))
+                    window['-BPMCOL-'].update(visible=False)
+                    window['-CTRLLISTCOL-'].update(visible=True)
+                    window['-CTRLNAME-'].update(visible=True)
+                    window['-CTRLNAMEBTN-'].update(visible=True)
+                    window.refresh()
+
+                #Set Conditions
+                if event == '-CTRLNAMEBTN-':
+                    print()
+                    print(f'Window 2 -CTRLNAMEBTN-')
+                    print(f'values["-CTRLNAME-"]: {values["-CTRLNAME-"]}')
+                    newControl.append(values['-CTRLNAME-'])
+
+                    window['-CTRLLISTCOL-'].set_size(size=(0,0))
+                    window['-CTRLLISTCOL-'].update(visible=False)
+                    window['-CONDTYPECOL--'].update(visible=True)
+                    window['-CONDTYPE-'].update(visible=True)
+                    window.refresh()
+
+                
+                if event == '-CONDTYPE-':
+                    print()
+                    print(f'Window 2 -CONDTYPE-')
+                    print(f'values["-CONDTYPE-"]: {values["-CONDTYPE-"]}')
+                    
+                    window['--CONDTYPE-COL-'].set_size(size=(0,0))
+                    window['-CONDTYPECOL-'].update(visible=False)
+                    window['-CURRPOSLISTONCOL-'].update(visible=True)
+                    window['-CURRPOSLISTON-'].update(visible=True)
+                    window['-CURRPOSONLABEL-'].update(visible=True)
+                    window['-CURRPOSOFFON-'].update(visible=True)
+                    window['-CURRPOSLISTOFFCOL-'].update(visible=True)
+                    window['-CURRPOSLISTOFF-'].update(visible=True)
+                    window['-CURRPOSOFFLABEL-'].update(visible=True)
+                    window['-CURRPOSOFFSLIDE-'].update(visible=True)
+                    window['-CONDBTN-'].update(visible=True)
+                    if values["-CONDTYPE-"] == 'Transition':
+                        window['-CURRPOSONLABEL-'].update("Choose a position and threshold for the start position of the transition when turning the control on")
+                        window['-CURRPOSLISTTRANSONCOL-'].update(visible=True)
+                        window['-CURRPOSTRANSONSLIDE-'].update(visible=True)
+                        window['-CURRPOSLISTTRANSON-'].update(visible=True)
+                        window['-CURRPOSTRANSONLABEL-'].update(visible=True)
+                        window['-CURRPOSONLABEL-'].update("Choose a position and threshold for the start position of the transition when turning the control off")
+                        window['-CURRPOSLISTTRANSOFFCOL-'].update(visible=True)
+                        window['-CURRPOSOFFTRANSSLIDE-'].update(visible=True)
+                        window['-CURRPOSLISTTRANSOFF-'].update(visible=True)
+                        window['-CURRPOSOFFTRANSLABEL-'].update(visible=True)
+                        window['-CONDTRANSBTN-'].update(visible=True)
+                        window['-CONDBTN-'].update(visible=False)
+                    window.refresh()
+
+                #Set Control Type    
+                if event == 'CONDBTN' or event == '-CONDTRANSBTN-':    
+                    #Set Control Type
+                    window['-CURRPOSTRANSONSLIDE-'].update(visible=False)
+                    window['-CURRPOSLISTTRANSON-'].update(visible=False)
+                    window['-CURRPOSTRANSONLABEL-'].update(visible=False)
+                    window['-CURRPOSOFFTRANSSLIDE-'].update(visible=False)
+                    window['-CURRPOSLISTTRANSOFF-'].update(visible=False)
+                    window['-CURRPOSOFFTRANSLABEL-'].update(visible=False)
+                    window['-CONDTRANSBTN-'].update(visible=False)
+                    window['-CONDBTN-'].update(visible=False)
+                    window['-CURRPOSLISTONCOL-'].update(visible=False)
+                    window['-CURRPOSLISTON-'].update(visible=False)
+                    window['-CURRPOSONLABEL-'].update(visible=False)
+                    window['-CURRPOSOFFON-'].update(visible=False)
+                    window['-CURRPOSLISTOFFCOL-'].update(visible=False)
+                    window['-CURRPOSLISTOFF-'].update(visible=False)
+                    window['-CURRPOSOFFLABEL-'].update(visible=False)
+                    window['-CURRPOSOFFSLIDE-'].update(visible=False)
+                    window['-CURRPOSLISTONCOL-'].set_size(size=(0,0))
+                    window['-CURRPOSLISTONCOL-'].update(visible=False)
+                    window['-CURRPOSLISTOFFCOL-'].set_size(size=(0,0))
+                    window['-CURRPOSLISTOFFCOL-'].update(visible=False)
+                    window['-CURRPOSLISTTRANSONCOL-'].set_size(size=(0,0))
+                    window['-CURRPOSLISTTRANSONCOL-'].update(visible=False)
+                    window['-CURRPOSLISTTRANSOFFCOL-'].set_size(size=(0,0))
+                    window['-CURRPOSLISTTRANSOFFCOL-'].update(visible=False)
+                    window['-CURRPOSTRANSONSLIDE-'].update(visible=False)
+                    window['-CURRPOSLISTTRANSON-'].update(visible=False)
+                    window['-CURRPOSTRANSONLABEL-'].update(visible=False)
+                    window['-CURRPOSOFFTRANSSLIDE-'].update(visible=False)
+                    window['-CURRPOSLISTTRANSOFF-'].update(visible=False)
+                    window['-CURRPOSOFFTRANSLABEL-'].update(visible=False)
+                    window['-CONDTRANSBTN-'].update(visible=False)
+                    window['-CONDBTN-'].update(visible=False)
+                    window['-CURRPOSLISTONCOL-'].update(visible=False)
+                    window['-CURRPOSLISTON-'].update(visible=False)
+                    window['-CURRPOSONLABEL-'].update(visible=False)
+                    window['-CURRPOSOFFON-'].update(visible=False)
+                    window['-CURRPOSLISTOFFCOL-'].update(visible=False)
+                    window['-CURRPOSLISTOFF-'].update(visible=False)
+                    window['-CURRPOSOFFLABEL-'].update(visible=False)
+                    window['-CURRPOSOFFSLIDE-'].update(visible=False)
+
+
+
+                    window['-CTRLLISTCOL-'].update(visible=True)
 
                     window['-TOPMESSAGE00-'].update("Choose a Control Type.")
                     window['-CTRLLIST-'].update(visible=True)
@@ -808,7 +920,7 @@ class UX:
                     window['-BPMBTN-'].update(visible=False)
                     window['-BPMSLIDE-'].update(visible=False)
                     window['-BPMLABEL-'].update(visible=False)
-                    #window['-COL4-'].hide_row()
+                    #window['-CTRLLISTCOL-'].hide_row()
                     window.refresh()
 
                 # if event == '-BPMSLIDE-':
@@ -830,18 +942,25 @@ class UX:
                     print()
                     print(f'Window 2 -SELCNTRLTYPEBTN-')
                     #print(f'')
+                    miDIMappath = self.dataStream.pathPreface + '\MiDIMap.csv'
+
+                    if os.path(miDIMappath):
+                        print('midiMap exists')
+                    
+                    else:
+                        print('No miDiMap')
 
                     #TODO set up windows to grab the data that we need
                         #Set conditions and then add values...
                     if values['-CTRLLIST-'][0] == 'Modulate':
                         print(f'Modulate')
                         newControlType = 0
-                        window['-COL4-'].set_size(size=(0,0))
-                        window['-COL4-'].update(visible=False)
-                        window['-COL5-'].update(visible=True)
-                        window['-COL6-'].update(visible=True)
-                        window['-COL7-'].update(visible=True)
-                        window['-COL8-'].update(visible=True)
+                        window['-CTRLLISTCOL-'].set_size(size=(0,0))
+                        window['-CTRLLISTCOL-'].update(visible=False)
+                        window['-RATECOL-'].update(visible=True)
+                        window['-WAVECOL-'].update(visible=True)
+                        window['-MINCOL-'].update(visible=True)
+                        window['-MAXCOL-'].update(visible=True)
                         window['-TOPMESSAGE00-'].update("Enter modulation values.")
                         window['-CTRLLIST-'].update(visible=False)
                         window['-SELCNTRLTYPEBTN-'].update(visible=False)
