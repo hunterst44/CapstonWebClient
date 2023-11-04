@@ -156,6 +156,7 @@ class MiDiWriter:
              ## 0 - gestureThreshold(gesture, threshold) 
             #       checks for a gesture (conditionData[x][0]) 
             #       held for a threshold (conditionData[x][1])
+            ## 1 
             self.conditionType = conditionType 
             self.conditionData = conditionData   ##
             self.value = value

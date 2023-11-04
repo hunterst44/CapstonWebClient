@@ -247,9 +247,9 @@ class GetData:
             #XAcc = float(int(binaryData[0 + (sensorIndex * 3 * self.numSensors)]),0)
             print(f'XAcc Raw: {XAcc}')
             if self.getTraining is False:
-                self.packetData[0, (3 * sensorIndex)] = XAcc / 127
+                self.packetData[0, (3 * sensorIndex)] = XAcc / 127   #Scale to 0-127 for prediction
             else:
-                self.packetData[0, (3 * sensorIndex)] = XAcc
+                self.packetData[0, (3 * sensorIndex)] = XAcc         #Will scale values while compiling data for training
 
             #Y Axis
             YAccTuple = struct.unpack("=b", binaryData[1 + (sensorIndex * 3)])
