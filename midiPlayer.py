@@ -47,48 +47,48 @@ class MidiPlayer:
 
 
 
-midiOut = rtmidi.MidiOut()
-available_ports = midiOut.get_ports()
+# midiOut = rtmidi.MidiOut()
+# available_ports = midiOut.get_ports()
 
-if available_ports:
-    print(f'Available ports: {available_ports}')
-    port_index = 1  # Choosing the first available port by default
-    if midiOut.is_port_open():
-        print(f"The port {available_ports[port_index]} is already open.")
-    else:
-        midiOut.open_port(port_index)
-        print(f"The port {available_ports[port_index]} has been opened.")
-else:
-    print(f"No available MIDI ports found. Please check your MIDI setup.")
+# if available_ports:
+#     print(f'Available ports: {available_ports}')
+#     port_index = 1  # Choosing the first available port by default
+#     if midiOut.is_port_open():
+#         print(f"The port {available_ports[port_index]} is already open.")
+#     else:
+#         midiOut.open_port(port_index)
+#         print(f"The port {available_ports[port_index]} has been opened.")
+# else:
+#     print(f"No available MIDI ports found. Please check your MIDI setup.")
 
 
-builder1 = buildMidi.MidiBuilder(dataType=0, midiMessage=[60], ch=0, velocity=64, rate='q')
-result1 = builder1.build_midi()
+# builder1 = buildMidi.MidiBuilder(dataType=0, midiMessage=[60], ch=0, velocity=64, rate='q')
+# result1 = builder1.build_midi()
 
-builder2 = buildMidi.MidiBuilder(dataType=1, shape=1, signal_invert=0, ch=2, min_val=0, rate='h', midiCCNum=2)
-result2 = builder2.build_midi()
+# builder2 = buildMidi.MidiBuilder(dataType=1, shape=1, signal_invert=0, ch=2, min_val=0, rate='h', midiCCNum=2)
+# result2 = builder2.build_midi()
 
-builder3 = buildMidi.MidiBuilder(dataType=2, ch=1, oldTof=60, newTof=80, rate='w', midiCCNum=2)
-result3 = builder3.build_midi()
+# builder3 = buildMidi.MidiBuilder(dataType=2, ch=1, oldTof=60, newTof=80, rate='w', midiCCNum=2)
+# result3 = builder3.build_midi()
 
-metronome = Metronome(bpm=60)
-midi_data_list = [result1, result2, result3]
-midi_players = [MidiPlayer(midiOut, metronome.getTimeTick(midi_data), midi_data) for midi_data in midi_data_list]
+# metronome = Metronome(bpm=60)
+# midi_data_list = [result1, result2, result3]
+# midi_players = [MidiPlayer(midiOut, metronome.getTimeTick(midi_data), midi_data) for midi_data in midi_data_list]
 
-metronome.startMetro(True)
+# metronome.startMetro(True)
 
-while metronome.startFlag == True:
+# while metronome.startFlag == True:
     
-    # if(metronome.doneFlag == 1):
-        threads = []
-        for midi_player, midi_data in zip(midi_players, midi_data_list):
-            threads.append(threading.Thread(target=midi_player.playBeat, args=(midi_data,)))
+#     # if(metronome.doneFlag == 1):
+#         threads = []
+#         for midi_player, midi_data in zip(midi_players, midi_data_list):
+#             threads.append(threading.Thread(target=midi_player.playBeat, args=(midi_data,)))
 
-        for thread in threads:
-            thread.start()
+#         for thread in threads:
+#             thread.start()
 
     
-        for thread in threads:
-            thread.join()
+#         for thread in threads:
+#             thread.join()
 
        

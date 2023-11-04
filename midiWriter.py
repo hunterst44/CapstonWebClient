@@ -13,6 +13,9 @@ from xml.sax.xmlreader import InputSource
 import rtmidi
 from rtmidi.midiconstants import CONTROL_CHANGE
 from scipy import signal
+from metronome import Metronome
+import buildMidi
+from midiPlayer import MidiPlayer
 # import sys
 
 """ 
@@ -31,7 +34,7 @@ from scipy import signal
 
 class MiDiWriter:
 
-    def __init__(self, *, predictions=[], port_name=1, channel=0, cc_num=75, bpm=240, rate='s', ToFByte=-1):
+    def __init__(self, *, predictions=[], port_name=1, channel=0, cc_num=75, bpm=240, rate='w', ToFByte=-1):
         self.midiOut = rtmidi.MidiOut()
         self.port_name = port_name
         self.bpm = bpm
@@ -45,6 +48,17 @@ class MiDiWriter:
         self.controlList = []
         self.loadChannels() #Load the Channels above - must be defined in loadChannels
         available_ports = self.midiOut.get_ports()
+        self.metro = Metronome(bpm = self.bpm)
+        
+        # self.midiBuilder = buildMidi.MidiBuilder()
+        # # self.midi_player = MidiPlayer()
+
+        # metro = Metronome(bpm = self.bpm)
+        # builder1 = buildMidi.MidiBuilder(dataType=self.control00.controllerType, midiMessage=[60], ch=self.control00.channel, velocity=64, rate='w')
+        # result1 = builder1.build_midi()
+        # midi_data_list = [result1]
+        
+        
         
         if len(available_ports) > 1:
             print(f'available_ports: {available_ports}')
@@ -53,6 +67,8 @@ class MiDiWriter:
         else:
             print(f"Could not find {port_name} in available ports. Opening the first port.")
             #self.midiOut.open_port(1)
+
+        
 
     def loadChannels(self):
         #1. Define Channels
@@ -66,8 +82,12 @@ class MiDiWriter:
         # threshold -> conditionData[x][1])
 
         self.control00 = self.MidiControl(controlLabel="Channel0", midiOut=self.midiOut, channel=0, predictions=self.predictions, conditionType=0, conditionData=[[0,3],[1,3]], bpm = self.bpm, controlNum=0, controllerType=0)
+        self.control01 = self.MidiControl(controlLabel="Channel1", midiOut=self.midiOut, channel=1, predictions=self.predictions, conditionType=1, conditionData=[[1,3],[2,3]], bpm = self.bpm, controlNum=1, controllerType=0)
+        self.control02 = self.MidiControl(controlLabel="Channel2", midiOut=self.midiOut, channel=2, predictions=self.predictions, conditionType=2, conditionData=[[2,3],[3,3]], bpm = self.bpm, controlNum=2, controllerType=0)
+        self.controlList = [self.control00, self.control01, self.control02]
         
-        self.controlList = [self.control00]
+        
+        
                   
     def garbageMan(self):
         length = len(self.predictions)
@@ -91,6 +111,20 @@ class MiDiWriter:
     def conductor(self):
         print()
         print('conductor()')
+        self.control00.midiBuilder.midiMessage = [70]
+        self.control01.midiBuilder.midiMessage= [65]
+        self.control02.midiBuilder.midiMessage= [55]
+        # self.control00.note=65
+        # self.control01.note=65
+        self.control00.midiResults = self.control00.midiBuilder.build_midi()
+        self.control01.midiResults = self.control01.midiBuilder.build_midi()
+        self.control02.midiResults = self.control02.midiBuilder.build_midi()
+        
+      
+       
+        
+        
+        
         ##Conducts the process of gathering and sending data
         #Called once per prediction loop
         #Add as many controles as you need to get the effects you want
@@ -99,6 +133,9 @@ class MiDiWriter:
         self.ToFEnable = 0
         #print(f'control List: {self.controlList}')
         for control in self.controlList:
+            # control.startFlag = True
+            midi_player = MidiPlayer(self.midiOut, time_slice=self.metro.getTimeTick(control.midiResults), midi_data = control.midiResults)
+            
             #2 Check conditions
             print(f'threadToggle: {control.threadToggle}')
             control.checkConditions()
@@ -112,21 +149,25 @@ class MiDiWriter:
                     print(f'ToFByte: {self.ToFByte}')
                     if self.ToFByte > 0 and self.ToFByte < 128:   #Make sure we have a valid ToF value
                         control.controlValue = self.ToFByte    #ToF supplies the control value 
+            
                 #control.buildMidi()
                 control.changeRate()
 
         #4 Start controlThread if it's not going already
             #WriterThread = Thread(target=control00.sendBeat)
                 if control.thread == None:
-                    control.thread = threading.Thread(name=control.controlLabel, target=control.sendBeat, args=(self.midiOut,))
-                    control.thread =  threading.Thread(name=control.controlLabel, target=control.play_modulation_loop, args=( control.period, control.max_duration, control.invert))
+                    control.thread = threading.Thread(name=control.controlLabel, target=control.playBeat, args=(control.midiResults, midi_player.timeSlice, self.midiOut))
+                    # control.thread =  threading.Thread(name=control.controlLabel, target=control.play_modulation_loop, args=( control.period, control.max_duration, control.invert))
                     control.thread.start()
                     print(f'control name {control.thread.getName()}')
                     print(f'control is alive {control.thread.is_alive()}')
                     print(f'Threads (In writer): {threading.enumerate()}')
                 else:
                     print(f'control is alive? {control.thread.is_alive()}')
-                #control.thread.start()
+                    
+            # control.startFlag=False
+                
+                    #control.thread.start()
         
         # while threading.active_count() > 1:    #wait for the last threads to finish processing
         #     #print(f'threading.active_count(): {threading.active_count()}')
@@ -137,7 +178,7 @@ class MiDiWriter:
     # ###           MidiControl
     # ############################################################################################################    
     class MidiControl:
-        def __init__(self, *, controlLabel='', midiOut=None, ToFEnable=0, updateFlag=0, predictions=[], conditionType=0, conditionData=[[0,3], [1,3]], value=-1, channel=None, controlNum=None, midiLoopCount = 0, bpm=0, controllerType=0):
+        def __init__(self, *, controlLabel='', midiOut=None, ToFEnable=0, updateFlag=0, predictions=[], conditionType=0, conditionData=[[0,3], [1,3]], value=-1, channel=None, controlNum=None, midiLoopCount = 0, bpm=0, controllerType=0, startFlag = 0, midiMessage = [60]):
             self.midiLoopCount = midiLoopCount #Precious value fed in each time the loop runs
             self.controlLabel = controlLabel
             self.midiOut = midiOut
@@ -162,7 +203,7 @@ class MiDiWriter:
             self.controlValue = 0 #default to zero so we can tell if there is a change
             self.note = 60 # default to middle C
             self.onNotOff = 0 #off by default
-            self.midiMessage = ([0x80, 70, 20])
+            self.midiMessage = midiMessage
             self.invert = 1 #1 or -1 only!
             self.shape = 0 # 0 = sin; 1 = saw; 2 = square
             self.modLenS = 16 #The modulation duration in seconds
@@ -173,8 +214,30 @@ class MiDiWriter:
             self.controllerType = controllerType
             self.threadToggle = 0 #toggle this within the thread to see what it is doing
             #self.max_duration = max_duration
+            self.midiBuilder = buildMidi.MidiBuilder(dataType=self.controllerType, midiMessage=self.midiMessage, ch=self.channel, velocity=self.velocity, rate=self.beatLenStr)
+            self.midiResults = self.midiBuilder.build_midi()
+            self.startFlag = startFlag
 
-            #self.midiMessage = ([CONTROL_CHANGE | self.channel, self.controlNum, self.controlValue])
+      
+        
+
+        def playBeat(self, midi_data, timeSlice, midiOut):
+            while True:
+                startFlag = self.startFlag
+                while (self.startFlag == True):
+                    for msg in midi_data:
+                        # msg = midi_data
+                        print(f"Playing MIDI from control: {msg}")
+                        print(self.midiOut.is_port_open)
+                        midiOut.send_message(msg)
+                        time.sleep(timeSlice / 1000)
+                        time.sleep(0.002)
+                    
+     
+                    #self.midiMessage = ([CONTROL_CHANGE | self.channel, self.controlNum, self.controlValue])
+        
+
+
         def play_modulation_loop(self, period, max_duration, signal):
             if self.getBeatMillis():
                 modulation = self.modulation_shape(self.shape, self.period, 1, self.invert)
@@ -232,6 +295,10 @@ class MiDiWriter:
                 # else:
                 #    self.threadToggle = 1 
                 
+                
+
+                
+                
         def getBeatMillis(self):
         #beatMillis is 1000 * (noteFactor * bps) 
         # bps = 60 / self.bpm  
@@ -273,20 +340,83 @@ class MiDiWriter:
                         #       held for a threshold (conditionData[1])
                         #       writes conditionData[3] to self.value
                     if self.onNotOff == 1: #if on check if we need to turn it off
+                        self.startFlag = 1
+                        
+                        #When Control is ON it uses the second list in conditionData to set gesture and threshold
+                        #Set 
+                        if self.gestureThreshold(self.conditionData[1][0], self.conditionData[1][1], 0) == 0:
+                        #self.controlValue = self.conditionData[2]
+                            self.updateFlag = 1
+                            self.startFlag = 1
+                        else:
+                            self.updateFlag = 0
+                            self.startFlag = 0
+                    else: #When control is not activated...
+                        self.startFlag = 0
+                         #When Control is OFF it uses the first list in conditionData to set gesture and threshold
+                        if self.gestureThreshold(self.conditionData[0][0], self.conditionData[0][1], 0) == 0:
+                        #self.controlValue = self.conditionData[2]
+                            self.updateFlag = 1
+                            self.startFlag = 1
+                        else:
+                            self.updateFlag = 0
+                            self.startFlag = 0
+                            
+                case 1:
+                     ## ConditionType 0: Threshold
+                        # gestureThreshold(gesture, threshold) 
+                        #       checks for a gesture (conditionData[0]) 
+                        #       held for a threshold (conditionData[1])
+                        #       writes conditionData[3] to self.value
+                    if self.onNotOff == 1: #if on check if we need to turn it off
+                        self.startFlag = 1
                         
                         #When Control is ON it uses the second list in conditionData to set gesture and threshold
                         if self.gestureThreshold(self.conditionData[1][0], self.conditionData[1][1], 0) == 0:
                         #self.controlValue = self.conditionData[2]
                             self.updateFlag = 1
+                            self.startFlag = 1
                         else:
                             self.updateFlag = 0
+                            self.startFlag = 0
                     else:
+                        self.startFlag = 0
                          #When Control is OFF it uses the first list in conditionData to set gesture and threshold
                         if self.gestureThreshold(self.conditionData[0][0], self.conditionData[0][1], 0) == 0:
                         #self.controlValue = self.conditionData[2]
                             self.updateFlag = 1
+                            self.startFlag = 1
                         else:
                             self.updateFlag = 0
+                            self.startFlag = 0
+                            
+                case 2:
+                    ## ConditionType 0: Threshold
+                    # gestureThreshold(gesture, threshold) 
+                    #       checks for a gesture (conditionData[0]) 
+                    #       held for a threshold (conditionData[1])
+                    #       writes conditionData[3] to self.value
+                    if self.onNotOff == 1: #if on check if we need to turn it off
+                        self.startFlag = 1
+                        
+                        #When Control is ON it uses the second list in conditionData to set gesture and threshold
+                        if self.gestureThreshold(self.conditionData[1][0], self.conditionData[1][1], 0) == 0:
+                        #self.controlValue = self.conditionData[2]
+                            self.updateFlag = 1
+                            self.startFlag = 1
+                        else:
+                            self.updateFlag = 0
+                            self.startFlag = 0
+                    else:
+                        self.startFlag = 0
+                            #When Control is OFF it uses the first list in conditionData to set gesture and threshold
+                        if self.gestureThreshold(self.conditionData[0][0], self.conditionData[0][1], 0) == 0:
+                        #self.controlValue = self.conditionData[2]
+                            self.updateFlag = 1
+                            self.startFlag = 1
+                        else:
+                            self.updateFlag = 0
+                            self.startFlag = 0
 
         def buildMidi(self):
             match self.controlNumType:

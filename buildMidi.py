@@ -5,7 +5,7 @@ from rtmidi.midiconstants import CONTROL_CHANGE
 class MidiBuilder:
     def __init__(self, dataType=0, midiMessage=[], ch=0, note=0, velocity=0, shape=0, signal_invert=0, midiCC_ch=0, min_val=0, max_val=127, deltaToF=0, oldTof=0, newTof=0, rate='w', midiCCNum=175):
         self.dataType = dataType
-        self.midiMessages = midiMessage
+        self.midiMessage = midiMessage
         self.ch = ch
         self.note = note
         self.velocity = velocity
@@ -72,7 +72,7 @@ class MidiBuilder:
         midi_array = []
         if self.dataType == 0:  # for MIDI note data
             for _ in range(self.multiply_rate()):
-                for note in self.midiMessages:
+                for note in self.midiMessage:
                     midiNote = self.MIDINoteMessage(ch=self.ch, note=note, velocity=self.velocity)
                     midi_array.append(midiNote.get_midi())
             return midi_array
