@@ -122,15 +122,15 @@ class MiDiWriter:
 
         #4 Start controlThread if it's not going already
             #WriterThread = Thread(target=control00.sendBeat)
-                if control.thread == None:
-                    control.thread = threading.Thread(name=control.controlLabel, target=control.sendBeat, args=(self.midiOut,))
-                    control.thread =  threading.Thread(name=control.controlLabel, target=control.play_modulation_loop, args=( control.period, control.max_duration, control.invert))
-                    control.thread.start()
-                    print(f'control name {control.thread.getName()}')
-                    print(f'control is alive {control.thread.is_alive()}')
-                    print(f'Threads (In writer): {threading.enumerate()}')
-                else:
-                    print(f'control is alive? {control.thread.is_alive()}')
+                # if control.thread == None:
+                #     #control.thread = threading.Thread(name=control.controlLabel, target=control.sendBeat, args=(self.midiOut,))
+                #     #control.thread =  threading.Thread(name=control.controlLabel, target=control.play_modulation_loop, args=( control.period, control.max_duration, control.invert))
+                #     #control.thread.start()
+                #     print(f'control name {control.thread.getName()}')
+                #     print(f'control is alive {control.thread.is_alive()}')
+                #     print(f'Threads (In writer): {threading.enumerate()}')
+                # else:
+                #     print(f'control is alive? {control.thread.is_alive()}')
                 #control.thread.start()
         
         # while threading.active_count() > 1:    #wait for the last threads to finish processing
@@ -211,19 +211,19 @@ class MiDiWriter:
                 # while beatNow < beatStop:
                 time.sleep((self.getBeatMillis()/1000)/10)
         def sendBeat(self, midiOut):
-            print("sendBeat")
+            #print("sendBeat")
             self.getBeatMillis()
             while True:
                 beatStart = int(time.time() * 1000)
                 #print(f'beatStart: {beatStart}')
                 beatStop = beatStart + self.beatMillis
-                print(self.getBeatMillis)
+                #print(self.getBeatMillis)
                 # print(f'beatStop: {beatStart}')
                 #Add other commands here...
                 if self.updateFlag:
                     try:
                         midiOut.send_message(self.midiMessage)   
-                        print(f'midiOut sent: {self.midiMessage}')
+                        #print(f'midiOut sent: {self.midiMessage}')
                     except:
                         print('midiOut failure') 
                 beatNow = int(time.time() * 1000)

@@ -359,12 +359,12 @@ class UX:
         newPositionLabelList = []
 
         # Set all windows to Noe except window 1 to start
-        #window0 = self.makeWindow0(self.dataStream.sockConnection)
-        window0 = None #self.makeWindow0(self.dataStream.sockConnection)
+        window0 = self.makeWindow0(self.dataStream.sockConnection)
+        #window0 = None #self.makeWindow0(self.dataStream.sockConnection)
         #window1 = self.makeWindow1(modelMessage)
         window1 = None
-        window2 = self.makeWindow2()
-        #window2=None
+        #window2 = self.makeWindow2()
+        window2=None
         window2_1 = None
         window3 = None
         window3_1 = None
@@ -1278,8 +1278,8 @@ class UX:
                 #set up dataStream
                 self.dataStream.packetSize = 1
                 self.dataStream.getTraining = False
-                self.dataStream.numSensors = self.numSensors
-                self.dataStream.pathPreface = self.pathPreface
+                #self.dataStream.numSensors = self.numSensors
+                #self.dataStream.pathPreface = self.pathPreface
 
                 if event == sg.WIN_CLOSED or event == 'Exit':
                     break
