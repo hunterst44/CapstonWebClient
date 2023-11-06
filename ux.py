@@ -5,10 +5,10 @@ import midiWriter
 import os.path
 import time
 import struct
-# import socket
-# import subprocess
-# import shutil
-#import sys
+import socket
+import subprocess
+import shutil
+import sys
 
 
 class UX:
@@ -17,10 +17,10 @@ class UX:
         self.theme = theme
         self.writer = midiWriter.MiDiWriter()
         self.packetLimit = 30
-        #self.packetSize = 1
-        #self.numSensors = 4
+        self.packetSize = 1
+        self.numSensors = 4
         self.numGestures = 3   #How many gestures trained by the model
-        #self.pathPreface = "data/test/"
+        self.pathPreface = "data/test/"
         #self.dataTx = 0xFF
         self.trainCountDown = 0 # Counter for training countdown
         self.sampleCount = 0 #counter for the number of samples collected per gesture while training
@@ -30,7 +30,7 @@ class UX:
         self.windowSizeX = 800
         self.windowSizeY = 500
         self.stopPredict = 0
-        self.dataStream = socketClientUx.GetData() # default values: host="192.168.4.1", port=80, packetSize=1, numSensors=4, pathPreface='data/test', labelPath="Test", label=0, getTraining=True
+        self.dataStream = socketClientUx.GetData(packetSize=self.packetSize, numSensors=self.numSensors, pathPreface=self.pathPreface)
         self.IPAddress = ''
         self.SSIDList = []
 
@@ -38,6 +38,100 @@ class UX:
 ###############################################################################################
 ##############                  Control Methods                               #################
 ###############################################################################################
+
+    # class ConductorConnector:
+
+    #     def __init__(self):
+    #         self.ssid = "TheConductor"
+    #         self.HostIP = ""
+    #         self.PSWD = ""
+    #         self.newSSID = ""
+    #         self.newIP = ""
+    #         self.newPSWD = ""
+
+    
+
+        # def socketConnect(self, ip, ssid):
+        #     #Use socketClient.GetData.promptServer()
+        #     print()
+        #     print(f'UX.connnectDevice')
+        #     # dataTx = struct.pack("=B", 0xF0)
+        #     sock = socket.socket()
+        #     connection = 0
+        #     while connection == 0:
+        #         # sock = socket.socket()
+        #         # sock.connect((ip, 80))
+        #         print(f"Connected to server at {ip} at {ssid}")
+        #         connection = 1
+        #     #Test the connection
+            
+            
+        #     # try:
+        #     #     sock.send(dataTx)
+        #     #     #print("Sent Data")
+        #     # except:
+        #     #     sock.connect((ip, 80))
+        #     #     #print("Socket Reconnected")
+        #     #     sock.send(dataTx)
+        # #     #TODO Set ESP32 to respond with display when client connects to AP
+        # #     recvByte = sock.recv(1)
+
+        #     #     if recvByte == 0xFF:
+
+        #     #        return 1
+        #     #     else:
+        #     #         return -1
+        #     return 1
+
+        # def socketSendStr(self, message):
+        #     print()
+        #     print(f'socketSendStr()')
+        #     response0 = []
+
+        #     #Send the prompt to get ESP32 ready to receive text
+        #     self.dataTx = struct.pack("=B", 34)
+        #     #self.promptServer(self.dataTx, self.host, self.port)
+        #     print(f'self.dataTx (0x22): {self.dataTx}')
+        #     response0 = self.receiveBytes(self.dataTx, self.host, self.port)
+        #     print(f"Got response0: {response0}")
+        #     print(f'response0[0]: {response0[0]}')
+        #     print(f'response0[1]: {response0[1]}')
+
+        #     first = struct.unpack("=B", response0[0]) 
+        #     second = struct.unpack("=B", response0[1]) 
+        #     first = first[0]
+        #     second = second[0]
+
+        #     if first == 0xFF and second == 0x0F:
+        #         print(f'Server is ready sending message to server: {message}')
+        #         self.dataTx = message.encode()
+        #         print(f"Encoded message: {self.dataTx}")
+        #         if self.promptServer(self.dataTx, self.host, self.port, 0):
+        #             return 1
+        #         else:
+        #             return -1 
+        #     else:
+        #         return -1   
+
+        # def sendNetworkInfo(self, newSSID, pswd):
+        #     print()
+        #     print(f'sendNetworkInfo')
+        #     if newSSID != '' and pswd != '':
+        #         dataTx = newSSID + "__--__" + pswd + "__--__" 
+        #         dataLen = len(dataTx)
+        #         dataLen = 50 - dataLen
+
+        #         for i in range(dataLen):
+        #             dataTx = dataTx + '0'
+
+        #         if self.socketSendStr(dataTx) == 1:
+        #             self.logNetwork()
+        #             return 1
+        #         else:
+        #             return -1
+
+        #Things to log - Network connections
+            # model parameters: numSensors, numGestures, pathPreface, pathList
 
     def trainModel(self):
         #iterate through all the gestures and collect packetLimit samples of each
@@ -126,11 +220,10 @@ class UX:
                 # ],
         layout = [[sg.Text('The Conductor: Window 0: Connect to The Conductor.'), sg.Text(size=(2,1), key='-OUTPUT-')],
                 [sg.pin(sg.Column([[sg.Text(topMessage, key='-TOPMESSAGE-', size=(100,2))]]))],
-                [sg.pin(sg.Column([[sg.Text(f"To use this network click 'Continue.' To connect to another network enter the network info below and click 'Reconnect'. Click 'Don't Connect' to continue without connecting", key='-TOPMESSAGE01-', size=(100,2), visible=connectVis)]]), shrink=True)],
+                [sg.pin(sg.Column([[sg.Text(f'To use this network click continue. To connect to another network enter the network info below and click Reconnect', key='-TOPMESSAGE01-', size=(100,2), visible=connectVis)]]), shrink=True)],
                 [sg.pin(sg.Column([[sg.Input('192.168.XX.XX', key="-IPIN-", visible=disconnectVis)], [sg.Button('Connect', key='-APCNTEBTN-', visible=disconnectVis)]], pad=(0,0)), shrink=True)],
                 [sg.pin(sg.Column([[sg.Input('192.168.XX.XX', key="-IPNEW-", visible=False)]]), shrink=True)],
                 [sg.pin(sg.Column([[sg.Button('Connect', key='-STNCNTEBTN-', visible=False)]], pad=(0,0)), shrink=True)],
-                [sg.pin(sg.Column([[sg.Button("Don't Connect", key='-NOCNTBTN-', visible=disconnectVis)]], pad=(0,0)), shrink=True)],
                 # [sg.pin(sg.Column([[sg.Listbox(self.SSIDList, size=(15, 4), key="-SSIDIN-", expand_y=True, enable_events=True, visible=False)]]), shrink=True)],
                 [sg.pin(sg.Column([[sg.Button('Continue', key='-CONTBTN-', visible=connectVis)]], pad=(0,0)), shrink=True)],
                 [sg.pin(sg.Column([[sg.Listbox(self.SSIDList, size=(15, 8), key="-SSIDIN-", expand_y=True, enable_events=True, visible=connectVis)], [sg.Button('Refresh', key='-SSIDLISTRFH-', visible=connectVis)]], pad=(0,0)), shrink=True)],
@@ -204,7 +297,7 @@ class UX:
         stopPredict = 0
        
         ##Methods to collect run time data required for the GUI
-        modelPath = self.dataStream.pathPreface + 'model.model'
+        modelPath = self.pathPreface + 'model.model'
         print(f'modelPath: {modelPath}')
         modelMessage = self.makeModelFileMessage(modelPath)
 
@@ -372,16 +465,13 @@ class UX:
                         window['-MESSAGE-'].update(f"The Conductor remembers your password for {values['-IPIN-']}. Just hit Reconnect")
                         window['-PSWDIN-'].update(f"**********")
  
+
+                
                 if event == '-CONTBTN-':
                     #Continue button - for accepting current connection and moving to window01 - model
                     print()
                     print(f'Window 0 -CONTBTN-')
 
-                    window0.hide()
-                    window1 = self.makeWindow1(modelMessage)
-
-                if event == '-NOCNTBTN-':
-                    self.dataStream.sock.close()
                     window0.hide()
                     window1 = self.makeWindow1(modelMessage)
            
@@ -405,7 +495,7 @@ class UX:
                     #     window['-MESSAGE-'].update('')
 
                     # else:
-                    #     modelPath = self.dataStream.pathPreface + 'model.model'
+                    #     modelPath = self.pathPreface + 'model.model'
 
                     #     #Save model to pathPreface
                     #     shutil.copy(values[0], modelPath)
@@ -490,8 +580,11 @@ class UX:
 
                     #Setup dataStream
                     self.dataStream.label = self.gestureCount
+                    self.dataStream.packetSize = self.packetSize
                     self.dataStream.labelPath = pathList[self.gestureCount] 
                     self.dataStream.getTraining = True
+                    self.dataStream.numSensors = self.numSensors
+                    self.dataStream.pathPreface = self.pathPreface
 
                     window['GO!'].hide_row() 
                     window['-GESTURE-'].update(f'Get ready to train Gesture {self.gestureCount} in .....3')
@@ -593,6 +686,8 @@ class UX:
                         window['-GOBTN-'].update(visible=True)
                         window.refresh()
                         self.stopPredict = 0
+                        
+                self.writer.writerON = 1
 
                 if event == "-STOPBTN-":
                     print()
@@ -603,6 +698,8 @@ class UX:
                     window.refresh()
                     #window.write_event_value("-STOPBTN-", '')
                     self.stopPredict = 1
+                    self.writer.writerON = 0
+                    self.writer.play_loop_started = False
 
         window.close()
 

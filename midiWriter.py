@@ -51,6 +51,7 @@ class MiDiWriter:
         self.metro = Metronome(bpm = self.bpm)
         self.play_loop_started = False
         self.playControl = playControl
+        self.writerON = 0
         
         # self.midiBuilder = buildMidi.MidiBuilder()
         # # self.midi_player = MidiPlayer()
@@ -72,31 +73,52 @@ class MiDiWriter:
 
         
     def play_loop(self, midi_players, midi_data_list):
-        
+        non_zero_indices = 0
         while self.metro.startFlag == True:
-            playIndex = 0
-            if self.metro.doneFlag == 1:
-                threads = []
-                for midi_player, midi_data in zip(midi_players, midi_data_list):
-                    # midi_player.onFlag = onFlag
-                    threads.append(threading.Thread(target=midi_player.playBeat, args=(midi_data, self.playControl[playIndex])))
-                    playIndex += 1
+            if self.writerON == True:
+                playIndex = 0
+            
+                if self.metro.doneFlag == 1:
+                    threads = []
+                    for midi_player, midi_data in zip(midi_players, midi_data_list):
+                        # midi_player.onFlag = onFlag
+                        threads.append(threading.Thread(target=midi_player.playBeat, args=(midi_data, self.playControl[playIndex])))
+                        playIndex += 1
 
-                for thread in threads:
-                    thread.start()
+                    for thread in threads:
+                        thread.start()
 
-                for thread in threads:
-                    thread.join()
+                    for thread in threads:
+                        thread.join()
                     
-            print(self.control00.startFlag)
+                print(self.control00.startFlag)
             
-            print(self.control01.startFlag)
-            print(self.control02.startFlag)
-            self.playControl[0] = self.control00.startFlag
-            self.playControl[1] = self.control01.startFlag
-            self.playControl[2] = self.control02.startFlag
+                print(self.control01.startFlag)
+                print(self.control02.startFlag)
+                self.playControl[0] = self.control00.startFlag
+                self.playControl[1] = self.control01.startFlag
+                self.playControl[2] = self.control02.startFlag
+                if all(element == 0 for element in self.playControl):
+                    print("All elements in the array are 0.")
+                    self.playControl[non_zero_indices] = 1
+                else:
+                    print("Some elements in the array are not 0.")
             
-            print("")
+                print("")
+            
+                for i in range(len(self.playControl)):
+                    if self.playControl[i] != 0:
+                        non_zero_indices = i
+
+                print("Indices where elements are not zero:", non_zero_indices)
+                self.metro.startFlag = self.writerON
+        
+            
+    def refreshMidi(self):
+        for control in self.controlList:
+            control.midiResults = control.midiBuilder.build_midi()
+            
+            
         
     def loadChannels(self):
         #1. Define Channels
@@ -142,11 +164,9 @@ class MiDiWriter:
         self.control00.midiBuilder.midiMessage = [70]
         self.control01.midiBuilder.midiMessage= [65]
         self.control02.midiBuilder.midiMessage= [55]
-        # self.control00.note=65
-        # self.control01.note=65
-        self.control00.midiResults = self.control00.midiBuilder.build_midi()
-        self.control01.midiResults = self.control01.midiBuilder.build_midi()
-        self.control02.midiResults = self.control02.midiBuilder.build_midi()
+
+        self.refreshMidi()
+        
         
         
         midi_data_list = [self.control00.midiResults, self.control01.midiResults, self.control02.midiResults]
@@ -160,9 +180,11 @@ class MiDiWriter:
         self.metro.doneFlag = True
         
         if not self.play_loop_started:  # Check if the play_loop has not started yet
-            play_thread = threading.Thread(target=self.play_loop, args=(midi_players, midi_data_list))
-            play_thread.start()
-            self.play_loop_started = True  # Set the flag to True after starting play_loop
+            if self.writerON == True:
+                play_thread = threading.Thread(target=self.play_loop, args=(midi_players, midi_data_list))
+                play_thread.start()
+                self.play_loop_started = True  # Set the flag to True after starting play_loop
+            
         
        
         
