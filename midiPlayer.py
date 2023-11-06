@@ -6,44 +6,55 @@ import buildMidi
 
 
 class MidiPlayer:
-    def __init__(self, midi_out, time_slice=0, midi_data=[]):
+    def __init__(self, midi_out, time_slice=0, midi_data=[], onFlag=0):
         self.timeSlice = time_slice
         self.midiData = midi_data
         self.midiOut = midi_out
+        self.onFlag = onFlag
 
-    def playBeat(self, midi_data):
-        for msg in midi_data:
-            print(f"Playing MIDI from control: {msg}")
-            self.midiOut.send_message(msg)
-            time.sleep(self.timeSlice / 1000)
+    def playBeat(self, midi_data = [], onFlag = 0 ):
+        
+        # self.onFlag = 1
+        if onFlag:
+            if isinstance(midi_data[0], int):
+                self.midiOut.send_message(midi_data)
+                time.sleep(self.timeSlice / 1000)
+            else:    
+                for msg in midi_data:
+            
+                    
+                    print(f"Playing MIDI from control: {msg}")
+                    self.midiOut.send_message(msg)
+                    time.sleep(self.timeSlice / 1000)
            
 
     def playBeatThreaded(self):
         threads = []
         for i, control in enumerate(self.midiData):
-            thread = threading.Thread(target=self.playBeat, args=())
-            threads.append(thread)
-            thread.start()
-            print(f"Thread {i + 1} started.")
+            
+                thread = threading.Thread(target=self.playBeat, args=())
+                threads.append(thread)
+                thread.start()
+                print(f"Thread {i + 1} started.")
 
         for thread in threads:
             thread.join()
         print("All threads finished.")
         
-    # class Metronome:
-    #     def __init__(self, bpm=60, start_flag=False, done_flag=0):
-    #         self.bpm = bpm
-    #         self.startFlag = start_flag
-    #         self.doneFlag = done_flag
+    class Metronome:
+        def __init__(self, bpm=60, start_flag=False, done_flag=0):
+            self.bpm = bpm
+            self.startFlag = start_flag
+            self.doneFlag = done_flag
 
-    #     def startMetro(self, off_on_state):
-    #         self.startFlag = off_on_state
+        def startMetro(self, off_on_state):
+            self.startFlag = off_on_state
 
-    #     def getTimeTick(self, midi_array):
-    #         midi_count = len(midi_array)
-    #         bpm_millis = (60 / self.bpm) * 1000
-    #         time_slice = bpm_millis / midi_count
-    #         return time_slice
+        def getTimeTick(self, midi_array):
+            midi_count = len(midi_array)
+            bpm_millis = (60 / self.bpm) * 1000
+            time_slice = bpm_millis / midi_count
+            return time_slice
 
 
 
@@ -74,12 +85,13 @@ class MidiPlayer:
 # metronome = Metronome(bpm=60)
 # midi_data_list = [result1, result2, result3]
 # midi_players = [MidiPlayer(midiOut, metronome.getTimeTick(midi_data), midi_data) for midi_data in midi_data_list]
+# midi_players[1].onFlag = 1
 
 # metronome.startMetro(True)
 
 # while metronome.startFlag == True:
     
-#     # if(metronome.doneFlag == 1):
+#     if(metronome.doneFlag == 1):
 #         threads = []
 #         for midi_player, midi_data in zip(midi_players, midi_data_list):
 #             threads.append(threading.Thread(target=midi_player.playBeat, args=(midi_data,)))

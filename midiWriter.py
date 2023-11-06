@@ -34,7 +34,7 @@ from midiPlayer import MidiPlayer
 
 class MiDiWriter:
 
-    def __init__(self, *, predictions=[], port_name=1, channel=0, cc_num=75, bpm=240, rate='w', ToFByte=-1):
+    def __init__(self, *, predictions=[], port_name=1, channel=0, cc_num=75, bpm=240, rate='w', ToFByte=-1, playControl = [0,0,0]):
         self.midiOut = rtmidi.MidiOut()
         self.port_name = port_name
         self.bpm = bpm
@@ -49,6 +49,8 @@ class MiDiWriter:
         self.loadChannels() #Load the Channels above - must be defined in loadChannels
         available_ports = self.midiOut.get_ports()
         self.metro = Metronome(bpm = self.bpm)
+        self.play_loop_started = False
+        self.playControl = playControl
         
         # self.midiBuilder = buildMidi.MidiBuilder()
         # # self.midi_player = MidiPlayer()
@@ -69,7 +71,33 @@ class MiDiWriter:
             #self.midiOut.open_port(1)
 
         
+    def play_loop(self, midi_players, midi_data_list):
+        
+        while self.metro.startFlag == True:
+            playIndex = 0
+            if self.metro.doneFlag == 1:
+                threads = []
+                for midi_player, midi_data in zip(midi_players, midi_data_list):
+                    # midi_player.onFlag = onFlag
+                    threads.append(threading.Thread(target=midi_player.playBeat, args=(midi_data, self.playControl[playIndex])))
+                    playIndex += 1
 
+                for thread in threads:
+                    thread.start()
+
+                for thread in threads:
+                    thread.join()
+                    
+            print(self.control00.startFlag)
+            
+            print(self.control01.startFlag)
+            print(self.control02.startFlag)
+            self.playControl[0] = self.control00.startFlag
+            self.playControl[1] = self.control01.startFlag
+            self.playControl[2] = self.control02.startFlag
+            
+            print("")
+        
     def loadChannels(self):
         #1. Define Channels
         #Channel 0
@@ -120,7 +148,22 @@ class MiDiWriter:
         self.control01.midiResults = self.control01.midiBuilder.build_midi()
         self.control02.midiResults = self.control02.midiBuilder.build_midi()
         
-      
+        
+        midi_data_list = [self.control00.midiResults, self.control01.midiResults, self.control02.midiResults]
+        # midi_players = [MidiPlayer(self.midiOut, self.metro.getTimeTick(midi_data), midi_data, onFlag="startFlag") for midi_data in midi_data_list]
+        
+        midi_players = [MidiPlayer(self.midiOut, self.metro.getTimeTick(midi_data), midi_data) for control, midi_data in zip(self.controlList, midi_data_list)]
+
+        
+        
+        self.metro.startFlag = True
+        self.metro.doneFlag = True
+        
+        if not self.play_loop_started:  # Check if the play_loop has not started yet
+            play_thread = threading.Thread(target=self.play_loop, args=(midi_players, midi_data_list))
+            play_thread.start()
+            self.play_loop_started = True  # Set the flag to True after starting play_loop
+        
        
         
         
@@ -134,14 +177,18 @@ class MiDiWriter:
         #print(f'control List: {self.controlList}')
         for control in self.controlList:
             # control.startFlag = True
-            midi_player = MidiPlayer(self.midiOut, time_slice=self.metro.getTimeTick(control.midiResults), midi_data = control.midiResults)
+            # midi_player = MidiPlayer(self.midiOut, time_slice=self.metro.getTimeTick(control.midiResults), midi_data = control.midiResults)
             
             #2 Check conditions
             print(f'threadToggle: {control.threadToggle}')
             control.checkConditions()
+            
             print(f'control enabled?: {control.updateFlag}')
             if control.updateFlag:
-            #control.controlCounters[control.channel]  += 1 #Check the conditions then update the loop
+                
+            
+                
+            # control.controlCounters[control.channel]  += 1 #Check the conditions then update the loop
             
                 #3 Toggle ToFEnable / get ToFByte
                 self.ToFEnable = control.ToFEnable
@@ -153,17 +200,17 @@ class MiDiWriter:
                 #control.buildMidi()
                 control.changeRate()
 
-        #4 Start controlThread if it's not going already
-            #WriterThread = Thread(target=control00.sendBeat)
-                if control.thread == None:
-                    control.thread = threading.Thread(name=control.controlLabel, target=control.playBeat, args=(control.midiResults, midi_player.timeSlice, self.midiOut))
-                    # control.thread =  threading.Thread(name=control.controlLabel, target=control.play_modulation_loop, args=( control.period, control.max_duration, control.invert))
-                    control.thread.start()
-                    print(f'control name {control.thread.getName()}')
-                    print(f'control is alive {control.thread.is_alive()}')
-                    print(f'Threads (In writer): {threading.enumerate()}')
-                else:
-                    print(f'control is alive? {control.thread.is_alive()}')
+        # 4 Start controlThread if it's not going already
+            # WriterThread = Thread(target=control00.sendBeat)
+                # if control.thread == None:
+                #     control.thread = threading.Thread(name=control.controlLabel, target=control.playBeat, args=(control.midiResults, midi_player.timeSlice, self.midiOut))
+                #     # control.thread =  threading.Thread(name=control.controlLabel, target=control.play_modulation_loop, args=( control.period, control.max_duration, control.invert))
+                #     control.thread.start()
+                #     print(f'control name {control.thread.getName()}')
+                #     print(f'control is alive {control.thread.is_alive()}')
+                #     print(f'Threads (In writer): {threading.enumerate()}')
+                # else:
+                #     print(f'control is alive? {control.thread.is_alive()}')
                     
             # control.startFlag=False
                 
@@ -224,6 +271,18 @@ class MiDiWriter:
         def playBeat(self, midi_data, timeSlice, midiOut):
             while True:
                 startFlag = self.startFlag
+                if self.startFlag != True:
+                    count = 0
+                    while(count < 3):
+                        for msg in midi_data:
+                        # msg = midi_data
+                            print(f"Playing MIDI from control: {msg}")
+                            print(self.midiOut.is_port_open)
+                            midiOut.send_message(msg)
+                            time.sleep(timeSlice / 1000)
+                            time.sleep(0.002)
+                    break
+                        
                 while (self.startFlag == True):
                     for msg in midi_data:
                         # msg = midi_data
