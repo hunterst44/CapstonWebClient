@@ -236,7 +236,7 @@ def main():
 
     i = 0
     sample100RxStartMS = int(time.time() * 1000)
-    while i < 100:
+    while i < 5:
         print()
         print(f'Sample: {i}')
         dataStream.receiveBytes(dataStream.dataTx, dataStream.host, dataStream.port)
@@ -249,7 +249,7 @@ def main():
         i += 1
     sample100RxStopMS = int(time.time() * 1000)
     sample100RxTimeMS = sample100RxStopMS - sample100RxStartMS
-    print(f'100 Sample receive time in ms: {sample100RxTimeMS}')
+    print(f'10 Sample receive time in ms: {sample100RxTimeMS}')
 
 
 if __name__ == "__main__": main()

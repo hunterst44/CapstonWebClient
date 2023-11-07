@@ -176,6 +176,8 @@ class GetData:
         # print(f'host {host}')
         # print(f'port: {port}')            
 
+        print(f'Socket peer name: {self.sock.getpeername()}')
+
         #Check socket connection and send prompt to the server        
         try:   
             self.sock.send(dataTx)    
