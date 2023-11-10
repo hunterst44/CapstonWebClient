@@ -236,7 +236,7 @@ def main():
 
     i = 0
     sample100RxStartMS = int(time.time() * 1000)
-    while i < 5:
+    while i < 75:
         print()
         print(f'Sample: {i}')
         dataStream.receiveBytes(dataStream.dataTx, dataStream.host, dataStream.port)
