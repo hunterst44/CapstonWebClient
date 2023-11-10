@@ -346,7 +346,7 @@ class GetData:
         self.dataTx = struct.pack("=B", 34)
         #self.promptServer(self.dataTx, self.host, self.port)
         print(f'self.dataTx (0x22): {self.dataTx}')
-        response0 = self.receiveBytes(self.dataTx, self.host, self.port)
+        response0 = self.receiveBytes()
         print(f"Got response0: {response0}")
         print(f'response0[0]: {response0[0]}')
         print(f'response0[1]: {response0[1]}')
