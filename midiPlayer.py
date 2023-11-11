@@ -26,6 +26,8 @@ class MidiPlayer:
                     print(f"Playing MIDI from control: {msg}")
                     self.midiOut.send_message(msg)
                     time.sleep(self.timeSlice / 1000)
+                    
+        
            
 
     def playBeatThreaded(self):

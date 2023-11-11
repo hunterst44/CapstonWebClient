@@ -1,9 +1,12 @@
 import numpy as np
 from scipy import signal
 from rtmidi.midiconstants import CONTROL_CHANGE
+import matplotlib.pylab as plt
+
+BPM = 30
 
 class MidiBuilder:
-    def __init__(self, dataType=0, midiMessage=[], ch=0, note=0, velocity=0, shape=0, signal_invert=0, midiCC_ch=0, min_val=0, max_val=127, deltaToF=0, oldTof=0, newTof=0, rate='w', midiCCNum=175):
+    def __init__(self, dataType=0, midiMessage=[], ch=0, note=0, velocity=0, shape=0, signal_invert=0, midiCC_ch=0, min_val=0, max_val=127, deltaToF=0, oldTof=0, newTof=0, rate='w', midiCCNum=75.):
         self.dataType = dataType
         self.midiMessage = midiMessage
         self.ch = ch
@@ -21,7 +24,9 @@ class MidiBuilder:
         self.midiCCnum = midiCCNum
 
     def modulation_shape(self):
+        print(self.rate)
         x = np.arange(0, 1, 0.01)
+        
         y = 1
         sig_invert = 1
 
@@ -29,13 +34,19 @@ class MidiBuilder:
             sig_invert = -1
 
         if self.shape == 0:  # 'sine'
-            y = sig_invert * np.sin(2 * np.pi * x)
+            y = sig_invert  * np.sin(2 * self.multiply_rate(self.rate)* np.pi * x)
         elif self.shape == 1:  # 'saw'
             y = sig_invert * signal.sawtooth(2 * np.pi * x)
         elif self.shape == 2:  # 'square'
             y = sig_invert * signal.square(2 * np.pi * x)
         else:
             print("That wave is not supported")
+            
+        # plt.plot(x, y)
+        # plt.xlabel('Angle [rad]')
+        # plt.ylabel('sin(x)')
+        # plt.axis('tight')
+        # plt.show()
 
         return y
 
@@ -52,18 +63,19 @@ class MidiBuilder:
 
         return list(range(start_num, end_num + 1))
     
-    def multiply_rate(self):
-        if self.rate == 'w':
+    def multiply_rate(self, rate):
+        print(rate)
+        if rate == 'w':
             return 1
-        elif self.rate == 'h':
+        elif rate == 'h':
             return 2
-        elif self.rate == 't':
+        elif rate == 't':
             return 3
-        elif self.rate == 'q':
+        elif rate == 'q':
             return 4
-        elif self.rate == 'e':
+        elif rate == 'e':
             return 8
-        elif self.rate == 's':
+        elif rate == 's':
             return 16
         else:
             return 1  # Default value for an unknown note value
@@ -77,10 +89,13 @@ class MidiBuilder:
                     midi_array.append(midiNote.get_midi())
             return midi_array
         elif self.dataType == 1:  # for MIDI control change data
+            # ##Take out
+            # self.rate = 'w'
+            # ##Take out
             waveform = self.modulation_shape()
             waveform = self.convert_range(waveform, -1.0, 1.0, 0, 127)
             waveform = self.convert_range(waveform, 0, 127, self.min_val, self.max_val)
-            for _ in range(self.multiply_rate()):
+            for _ in range(self.multiply_rate(self.rate)):
                 for value in waveform:
                     midiCC = self.MIDIControlChange(channel=self.ch, control_number=self.midiCCnum, control_value=value)
                     midi_array.append(midiCC.get_midi_cc())

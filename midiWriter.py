@@ -10,12 +10,15 @@ import time
 import threading
 from threading import Thread
 from xml.sax.xmlreader import InputSource
+from numpy.core.fromnumeric import shape
 import rtmidi
 from rtmidi.midiconstants import CONTROL_CHANGE
 from scipy import signal
 from metronome import Metronome
 import buildMidi
 from midiPlayer import MidiPlayer
+
+BPM = 60
 # import sys
 
 """ 
@@ -34,7 +37,7 @@ from midiPlayer import MidiPlayer
 
 class MiDiWriter:
 
-    def __init__(self, *, predictions=[], port_name=1, channel=0, cc_num=75, bpm=240, rate='w', ToFByte=-1, playControl = [0,0,0]):
+    def __init__(self, *, predictions=[], port_name=1, channel=0, cc_num=75, bpm=BPM, rate='w', ToFByte=-1, playControl = [0,0,0]):
         self.midiOut = rtmidi.MidiOut()
         self.port_name = port_name
         self.bpm = bpm
@@ -48,10 +51,11 @@ class MiDiWriter:
         self.controlList = []
         self.loadChannels() #Load the Channels above - must be defined in loadChannels
         available_ports = self.midiOut.get_ports()
-        self.metro = Metronome(bpm = self.bpm)
+        self.metro = Metronome(bpm = BPM)
         self.play_loop_started = False
         self.playControl = playControl
         self.writerON = 0
+        self.rate = rate
         
         # self.midiBuilder = buildMidi.MidiBuilder()
         # # self.midi_player = MidiPlayer()
@@ -75,13 +79,19 @@ class MiDiWriter:
     def play_loop(self, midi_players, midi_data_list):
         non_zero_indices = 0
         while self.metro.startFlag == True:
+            print("Indices where elements are not zero:", non_zero_indices)
+            self.metro.startFlag = self.writerON
             if self.writerON == True:
                 playIndex = 0
             
                 if self.metro.doneFlag == 1:
                     threads = []
                     for midi_player, midi_data in zip(midi_players, midi_data_list):
-                        # midi_player.onFlag = onFlag
+                        # self.changeRate()
+                        # self.metro.getTimeTick
+                        # midi_player.timeSlice = self.metro.getTimeTick(midi_data)
+                        
+                       
                         threads.append(threading.Thread(target=midi_player.playBeat, args=(midi_data, self.playControl[playIndex])))
                         playIndex += 1
 
@@ -110,14 +120,20 @@ class MiDiWriter:
                     if self.playControl[i] != 0:
                         non_zero_indices = i
 
-                print("Indices where elements are not zero:", non_zero_indices)
-                self.metro.startFlag = self.writerON
+                
         
             
     def refreshMidi(self):
         for control in self.controlList:
+            control.changeRate(self.rate)
+            control.midiBuilder.rate = control.beatLenStr
+            control.midiBuilder.rate = control.beatLenStr
+            # control.midiBuilder.rate = 'w'
+            print(control.midiBuilder.rate)
             control.midiResults = control.midiBuilder.build_midi()
             
+            
+       
             
         
     def loadChannels(self):
@@ -131,9 +147,9 @@ class MiDiWriter:
         # Gesture -> conditionData[x][0] 
         # threshold -> conditionData[x][1])
 
-        self.control00 = self.MidiControl(controlLabel="Channel0", midiOut=self.midiOut, channel=0, predictions=self.predictions, conditionType=0, conditionData=[[0,3],[1,3]], bpm = self.bpm, controlNum=0, controllerType=0)
-        self.control01 = self.MidiControl(controlLabel="Channel1", midiOut=self.midiOut, channel=1, predictions=self.predictions, conditionType=1, conditionData=[[1,3],[2,3]], bpm = self.bpm, controlNum=1, controllerType=0)
-        self.control02 = self.MidiControl(controlLabel="Channel2", midiOut=self.midiOut, channel=2, predictions=self.predictions, conditionType=2, conditionData=[[2,3],[3,3]], bpm = self.bpm, controlNum=2, controllerType=0)
+        self.control00 = self.MidiControl(controlLabel="Channel0", midiOut=self.midiOut, channel=0, predictions=self.predictions, conditionType=0, conditionData=[[0,3],[1,3]], bpm = self.bpm, controlNum=0, controllerType=1, shape=0)
+        self.control01 = self.MidiControl(controlLabel="Channel1", midiOut=self.midiOut, channel=1, predictions=self.predictions, conditionType=1, conditionData=[[1,3],[2,3]], bpm = self.bpm, controlNum=1, controllerType=1, shape=1)
+        self.control02 = self.MidiControl(controlLabel="Channel2", midiOut=self.midiOut, channel=2, predictions=self.predictions, conditionType=2, conditionData=[[2,3],[3,3]], bpm = self.bpm, controlNum=2, controllerType=1, shape=2)
         self.controlList = [self.control00, self.control01, self.control02]
         
         
@@ -176,11 +192,12 @@ class MiDiWriter:
 
         
         
-        self.metro.startFlag = True
-        self.metro.doneFlag = True
+       
         
         if not self.play_loop_started:  # Check if the play_loop has not started yet
             if self.writerON == True:
+                self.metro.startFlag = True
+                self.metro.doneFlag = True
                 play_thread = threading.Thread(target=self.play_loop, args=(midi_players, midi_data_list))
                 play_thread.start()
                 self.play_loop_started = True  # Set the flag to True after starting play_loop
@@ -220,7 +237,7 @@ class MiDiWriter:
                         control.controlValue = self.ToFByte    #ToF supplies the control value 
             
                 #control.buildMidi()
-                control.changeRate()
+                # control.changeRate()
 
         # 4 Start controlThread if it's not going already
             # WriterThread = Thread(target=control00.sendBeat)
@@ -247,11 +264,11 @@ class MiDiWriter:
     # ###           MidiControl
     # ############################################################################################################    
     class MidiControl:
-        def __init__(self, *, controlLabel='', midiOut=None, ToFEnable=0, updateFlag=0, predictions=[], conditionType=0, conditionData=[[0,3], [1,3]], value=-1, channel=None, controlNum=None, midiLoopCount = 0, bpm=0, controllerType=0, startFlag = 0, midiMessage = [60]):
+        def __init__(self, *, controlLabel='', midiOut=None, ToFEnable=0, updateFlag=0, predictions=[], conditionType=0, conditionData=[[0,3], [1,3]], value=-1, channel=None, controlNum=None, midiLoopCount = 0, bpm=BPM, controllerType=0, startFlag = 0, midiMessage = [60], shape = 0):
             self.midiLoopCount = midiLoopCount #Precious value fed in each time the loop runs
             self.controlLabel = controlLabel
             self.midiOut = midiOut
-            self.bpm = bpm
+            self.bpm = BPM
             self.channel = channel
             self.controlNum = controlNum
             self.updateFlag = updateFlag
@@ -288,7 +305,28 @@ class MiDiWriter:
             self.startFlag = startFlag
 
       
-        
+        def changeRate(self, rate):  
+            newRate = self.controlValue
+            if newRate == 0:
+                self.beatLenStr = rate
+                print(newRate)
+            elif(newRate < 5):
+                self.midiBuilder.rate = 's'
+                self.beatLenStr = 's'
+            elif( 5 < newRate and newRate < 10):
+                self.midiBuilder.rate = 'e'
+                self.beatLenStr = 'e'
+            elif( 10 < newRate and newRate < 15):
+                self.midiBuilder.rate = 'q'
+                self.beatLenStr = 'q'
+            elif( 15 < newRate and newRate < 20):
+                self.midiBuilder.rate = 'h'
+                self.beatLenStr = 'h'
+            elif(20 < newRate):
+                self.midiBuilder.rate = 'w'
+                self.beatLenStr = 'w'
+               
+            print(self.beatLenStr)
 
         def playBeat(self, midi_data, timeSlice, midiOut):
             while True:
@@ -508,21 +546,21 @@ class MiDiWriter:
 
                     self.midiMessage = ([CONTROL_CHANGE | int(self.channel), int(self.controlNum), int(self.controlValue)])
 
-        def changeRate(self):  
-                newRate = self.controlValue
-                print(newRate)
-                if(newRate < 10):
-                    self.beatLenStr = 's'
-                elif( 10 < newRate and newRate < 20):
-                    self.beatLenStr = 'e'
-                elif( 20 < newRate and newRate < 30):
-                    self.beatLenStr = 'q'
-                elif( 30 < newRate and newRate < 50):
-                    self.beatLenStr = 'h'
-                elif(50 < newRate):
-                    self.beatLenStr = 'w'
+        # def changeRate(self):  
+        #         newRate = self.controlValue
+        #         print(newRate)
+        #         if(newRate < 10):
+        #             self.beatLenStr = 's'
+        #         elif( 10 < newRate and newRate < 20):
+        #             self.beatLenStr = 'e'
+        #         elif( 20 < newRate and newRate < 30):
+        #             self.beatLenStr = 'q'
+        #         elif( 30 < newRate and newRate < 50):
+        #             self.beatLenStr = 'h'
+        #         elif(50 < newRate):
+        #             self.beatLenStr = 'w'
                
-                print(self.beatLenStr)
+        #         print(self.beatLenStr)
 
 #####################################################################################      
 #Condition checking methods - called in checkConditions() based on switch case result
@@ -655,6 +693,6 @@ class MiDiWriter:
 
 def main():
 
-    writer = MiDiWriter(predictions=[], port_name=0, channel=0, cc_num=75, bpm=120, rate='s', ToFByte=-1)
+    writer = MiDiWriter(predictions=[], port_name=0, channel=0, cc_num=75, bpm=120, rate='w', ToFByte=-1)
 
 if __name__ == "__main__": main()

@@ -37,7 +37,7 @@ class Metronome:
     def getTimeTick(self, midiArray = []):
         midiCount = len(midiArray)
         self.BPM_millis = (60 / self.bpm) * 1000
-        timeSlice = self.BPM_millis/midiCount-1
+        timeSlice = self.BPM_millis/((midiCount-1))*8
         return timeSlice
 
     @staticmethod
