@@ -56,6 +56,8 @@ class MiDiWriter:
         self.playControl = playControl
         self.writerON = 0
         self.rate = rate
+        self.midi_data_list = []
+        
         
         # self.midiBuilder = buildMidi.MidiBuilder()
         # # self.midi_player = MidiPlayer()
@@ -76,17 +78,19 @@ class MiDiWriter:
             #self.midiOut.open_port(1)
 
         
-    def play_loop(self, midi_players, midi_data_list):
+    def play_loop(self):
         non_zero_indices = 0
         while self.metro.startFlag == True:
             print("Indices where elements are not zero:", non_zero_indices)
             self.metro.startFlag = self.writerON
             if self.writerON == True:
+                self.refreshMidi()
                 playIndex = 0
             
                 if self.metro.doneFlag == 1:
                     threads = []
-                    for midi_player, midi_data in zip(midi_players, midi_data_list):
+                    for midi_player, midi_data in zip(self.midi_players, self.midi_data_list):
+                        
                         # self.changeRate()
                         # self.metro.getTimeTick
                         # midi_player.timeSlice = self.metro.getTimeTick(midi_data)
@@ -131,6 +135,8 @@ class MiDiWriter:
             # control.midiBuilder.rate = 'w'
             print(control.midiBuilder.rate)
             control.midiResults = control.midiBuilder.build_midi()
+            self.midi_data_list = [self.control00.midiResults, self.control01.midiResults, self.control02.midiResults]
+            self.midi_players = [MidiPlayer(self.midiOut, self.metro.getTimeTick(midi_data), midi_data) for control, midi_data in zip(self.controlList, self.midi_data_list)]
             
             
        
@@ -146,11 +152,14 @@ class MiDiWriter:
         #First list is for the ON state, second list is for OFF state
         # Gesture -> conditionData[x][0] 
         # threshold -> conditionData[x][1])
-
+        self.metro = Metronome(bpm = BPM)
         self.control00 = self.MidiControl(controlLabel="Channel0", midiOut=self.midiOut, channel=0, predictions=self.predictions, conditionType=0, conditionData=[[0,3],[1,3]], bpm = self.bpm, controlNum=0, controllerType=1, shape=0)
         self.control01 = self.MidiControl(controlLabel="Channel1", midiOut=self.midiOut, channel=1, predictions=self.predictions, conditionType=1, conditionData=[[1,3],[2,3]], bpm = self.bpm, controlNum=1, controllerType=1, shape=1)
         self.control02 = self.MidiControl(controlLabel="Channel2", midiOut=self.midiOut, channel=2, predictions=self.predictions, conditionType=2, conditionData=[[2,3],[3,3]], bpm = self.bpm, controlNum=2, controllerType=1, shape=2)
         self.controlList = [self.control00, self.control01, self.control02]
+        
+        self.midi_data_list = [self.control00.midiResults, self.control01.midiResults, self.control02.midiResults]
+        self.midi_players = [MidiPlayer(self.midiOut, self.metro.getTimeTick(midi_data), midi_data) for control, midi_data in zip(self.controlList, self.midi_data_list)]
         
         
         
@@ -185,10 +194,10 @@ class MiDiWriter:
         
         
         
-        midi_data_list = [self.control00.midiResults, self.control01.midiResults, self.control02.midiResults]
+        # midi_data_list = [self.control00.midiResults, self.control01.midiResults, self.control02.midiResults]
         # midi_players = [MidiPlayer(self.midiOut, self.metro.getTimeTick(midi_data), midi_data, onFlag="startFlag") for midi_data in midi_data_list]
         
-        midi_players = [MidiPlayer(self.midiOut, self.metro.getTimeTick(midi_data), midi_data) for control, midi_data in zip(self.controlList, midi_data_list)]
+        # midi_players = [MidiPlayer(self.midiOut, self.metro.getTimeTick(midi_data), midi_data) for control, midi_data in zip(self.controlList, midi_data_list)]
 
         
         
@@ -196,9 +205,10 @@ class MiDiWriter:
         
         if not self.play_loop_started:  # Check if the play_loop has not started yet
             if self.writerON == True:
+                self.refreshMidi()
                 self.metro.startFlag = True
                 self.metro.doneFlag = True
-                play_thread = threading.Thread(target=self.play_loop, args=(midi_players, midi_data_list))
+                play_thread = threading.Thread(target=self.play_loop, args=())
                 play_thread.start()
                 self.play_loop_started = True  # Set the flag to True after starting play_loop
             
@@ -310,19 +320,19 @@ class MiDiWriter:
             if newRate == 0:
                 self.beatLenStr = rate
                 print(newRate)
-            elif(newRate < 5):
+            elif(newRate < 10):
                 self.midiBuilder.rate = 's'
                 self.beatLenStr = 's'
-            elif( 5 < newRate and newRate < 10):
+            elif( 10 < newRate and newRate < 20):
                 self.midiBuilder.rate = 'e'
                 self.beatLenStr = 'e'
-            elif( 10 < newRate and newRate < 15):
+            elif( 20 < newRate and newRate < 30):
                 self.midiBuilder.rate = 'q'
                 self.beatLenStr = 'q'
-            elif( 15 < newRate and newRate < 20):
+            elif( 30 < newRate and newRate < 40):
                 self.midiBuilder.rate = 'h'
                 self.beatLenStr = 'h'
-            elif(20 < newRate):
+            elif(40 < newRate):
                 self.midiBuilder.rate = 'w'
                 self.beatLenStr = 'w'
                

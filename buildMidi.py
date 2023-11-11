@@ -25,7 +25,7 @@ class MidiBuilder:
 
     def modulation_shape(self):
         print(self.rate)
-        x = np.arange(0, 1, 0.01)
+        x = np.arange(0, 1/self.multiply_rate(self.rate), 0.01)
         
         y = 1
         sig_invert = 1
@@ -36,9 +36,9 @@ class MidiBuilder:
         if self.shape == 0:  # 'sine'
             y = sig_invert  * np.sin(2 * self.multiply_rate(self.rate)* np.pi * x)
         elif self.shape == 1:  # 'saw'
-            y = sig_invert * signal.sawtooth(2 * np.pi * x)
+            y = sig_invert * signal.sawtooth(2 * self.multiply_rate(self.rate) * np.pi * x)
         elif self.shape == 2:  # 'square'
-            y = sig_invert * signal.square(2 * np.pi * x)
+            y = sig_invert * signal.square(2 * self.multiply_rate(self.rate) * np.pi * x)
         else:
             print("That wave is not supported")
             
