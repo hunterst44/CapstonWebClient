@@ -16,6 +16,29 @@ import window
 
 # UX.py use this file for developing data bindings to the GUI. Window difinitions are defined in this file.
 
+#self.writer.controlList is a list of lists containing data for setting up controls in midiwriter.py
+# The format and content of the controls lists changes depending on the condition and control types:
+#  Some are common to all types
+# [0] Control Name {STR}
+# [1] Condition Type {INT} 0 = Hold, 1 = Tranisiton, 2 = Pattern
+#Condition Type = Hold
+#[2] conditions data: [[ON POSITION], [ON THRESHOLD], [OFF POSITION], [OFFTHRESHOLD]]
+
+#Condition Type = Transition
+# [2] conditions data: [[[BEGIN ON POSITION], [BEGIN ON THRESHOLD], [END ON POSITION], [END ON THRESHOLD]], [[BEGIN OFF POSITION], [BEGIN OFF THRESHOLD], [END OFF POSITION], [END OFF THRESHOLD]]]
+# [3] Control Type {INT} 0 = modulate, 1 = Arpegiate, 2 = note
+# [4] Channel
+# [5] Rate
+
+#Control Type Modulate
+# [6] WaveForm {STR}
+#Control Type Arpegiate
+# [6] Direction
+# [7] Minimum
+# [8] Maximum
+
+#Useful data:
+#controlTypeStr - text label of the control type
 
 
 class UX:
@@ -41,7 +64,8 @@ class UX:
         self.IPAddress = ''
         self.SSIDList = []
         self.positionPathList = ['pos1', 'pos2', 'pos3']
-        self.controlList = [] #a List of controls from GUI or log file
+        #self.controlList = [] #a List of controls from GUI or log file
+        self.controlInitData = []
         #define a graph to make the double slider for max / min values
         #self.rateGraph=sg.Graph(canvas_size=(127,10), graph_bottom_left=(0, 0), graph_top_right=(100,10), background_color='blue', enable_events=True, drag_submits=True, key='-RATEGRAPH-', visible=False)
 
@@ -266,13 +290,13 @@ class UX:
                         
                         sg.Column([[sg.Text(f"Position, threshold control OFF.", key='-CURRPOSOFFLABEL-', size=(15,2), visible=False)], [sg.Listbox(currentPositionList, size=(10, 3), key="-CURRPOSLISTOFF-", expand_y=True, enable_events=True, visible=False)], [sg.Slider(range=(1, 25), default_value=3, expand_x=True,orientation='horizontal', key='-CURRPOSOFFSLIDE-', visible=False)], [sg.Button('Ok', key='-CONDBTN-', visible=False)]], key='-CURRPOSLISTOFFCOL-', background_color = 'Red', vertical_alignment='t', pad=(0,0), visible=False),
                         sg.Column([[sg.Text(f"Position, threshold at END OFF.", key='-CURRPOSOFFTRANSLABEL-', size=(15,2), visible=False)], [sg.Listbox(currentPositionList, size=(10, 3), key="-CURRPOSLISTTRANSOFF-", expand_y=True, enable_events=True, visible=False)], [sg.Slider(range=(1, 25), default_value=3, expand_x=True,orientation='horizontal', key='-CURRPOSOFFTRANSSLIDE-', visible=False)], [sg.Button('Ok', key='-CONDTRANSBTN-', visible=False)]], key='-CURRPOSLISTTRANSOFFCOL-', background_color = 'Red', vertical_alignment='t', pad=(0,0), visible=False),
+                        sg.Column([[sg.Listbox(arpegDirList, size=(10, 3), key="-ARPEGDIR-", expand_y=True, enable_events=True, visible=False)], [sg.Button('Ok', key='-ARPEGBTN-', visible=False)]], key='-ARPEGDIRCOL-', background_color = 'Red', vertical_alignment='t', pad=(0,0), visible=False),
                         
                         sg.Column([[sg.Listbox(controlList, size=(10, 3), key="-CTRLLIST-", expand_y=True, enable_events=True, visible=False)], [sg.Button('Select', key='-SELCNTRLTYPEBTN-', visible=False)]], key='-CTRLLISTCOL-', background_color = 'Red', vertical_alignment='t', pad=(0,0)),
                         sg.Column([[sg.Text(f"Rate", key='-RATELABEL-', size=(15,2), visible=False)], [sg.Slider(range=(0, 127), default_value=30, expand_x=True,orientation='horizontal', key='-RATESLIDE-', visible=False)]], key='-RATECOL-', background_color = 'Red', vertical_alignment='t', pad=(0,0)),
                         sg.Column([[sg.Text(f"Waveform", key='-WAVELABEL-', size=(15,2), visible=False)], [sg.Listbox(waveList, size=(50, 3), key="-WAVELIST-", enable_events=True, visible=False)]], key='-WAVECOL-', background_color = 'Blue', vertical_alignment='t', pad=(0,0)),
                         sg.Column([[sg.Text(f"Minimum", key='-MINLABEL-', size=(15,2), visible=False)], [sg.Slider(range=(0, 127), default_value=30, expand_x=True,orientation='horizontal', key='-MINSLIDE-', visible=False)]], key='-MINCOL-', background_color = 'Pink', vertical_alignment='t', pad=(0,0)),
                         sg.Column([[sg.Text(f"Maximum", key='-MAXLABEL-', size=(15,2), visible=False)], [sg.Slider(range=(0, 127), default_value=30, expand_x=True,orientation='horizontal', key='-MAXSLIDE-', visible=False)], [sg.Button('Ok', key='-MODDATABTN-', visible=False)]], key='-MAXCOL-', background_color = 'Violet', vertical_alignment='t', pad=(0,0)),
-                        sg.Column([[sg.Listbox(arpegDirList, size=(10, 3), key="-ARPEGDIR-", expand_y=True, enable_events=True, visible=False)], [sg.Button('Ok', key='-ARPEGBTN-', visible=False)]], key='-ARPEGDIRCOL-', background_color = 'Red', vertical_alignment='t', pad=(0,0), visible=False),
                         sg.Column([[sg.Text(f"Click 'Another' to setup another control, or click 'Done' to continue.", key='-DONELABEL-', size=(15,2), visible=False)], [sg.Button('Another', key='-ANOTHERBTN-', visible=False)], [sg.Button('Done', key='-MAPPINGDONEBTN-', visible=False)] ], key='-DONECOL-', background_color = 'Green', vertical_alignment='t', pad=(0,0), visible=False),
                         #sg.Column([[sg.Text(f"Min / Max", key='-MINMAXLABEL-', size=(15,2), visible=False)], [sg.Listbox(waveList, size=(50, 15), key="-WAVELIST-", expand_y=True, enable_events=True, visible=False)]], key='-MINCOL-', background_color = 'Orange', vertical_alignment='t', pad=(0,0))
                     ]
@@ -359,12 +383,12 @@ class UX:
         newPositionLabelList = []
 
         # Set all windows to Noe except window 1 to start
-        window0 = self.makeWindow0(self.dataStream.sockConnection)
-        #window0 = None #self.makeWindow0(self.dataStream.sockConnection)
+        #window0 = self.makeWindow0(self.dataStream.sockConnection)
+        window0 = None #self.makeWindow0(self.dataStream.sockConnection)
         #window1 = self.makeWindow1(modelMessage)
         window1 = None
-        #window2 = self.makeWindow2()
-        window2=None
+        window2 = self.makeWindow2()
+        #window2=None
         window2_1 = None
         window3 = None
         window3_1 = None
@@ -847,8 +871,10 @@ class UX:
                     print()
                     print(f'Window 2 -CTRLNAMEBTN-')
                     print(f'values["-CTRLNAME-"]: {values["-CTRLNAME-"]}')
-                    newControl.append(values['-CTRLNAME-'])
+                    newControl.append(values['-CTRLNAME-'])    #newControl[0] Control name
                     
+                    window['-CTRLNAMECOL-'].set_size(size=(0,0))
+                    window['-CTRLNAMECOL-'].update(visible=False)
                     window['-CTRLLISTCOL-'].set_size(size=(0,0))
                     window['-CTRLLISTCOL-'].update(visible=False)
                     window['-CONDTYPECOL-'].update(visible=True)
@@ -859,7 +885,10 @@ class UX:
                     print()
                     print(f'Window 2 -CONDTYPE-')
                     print(f'values["-CONDTYPE-"]: {values["-CONDTYPE-"]}')
-                    newControl.append(values['-CONDTYPE-'][0])
+                    if values['-CONDTYPE-'][0] == 'Hold':
+                       newControl.append(0)   #newControl[1] condition type
+                    elif values['-CONDTYPE-'][0] == 'Transition':
+                        newControl.append(1)   #newControl[1] condition type
                     print(f'newControl: {newControl}')
 
                     posNum = len(self.positionPathList)
@@ -934,7 +963,7 @@ class UX:
                        #    [Off Position End, Off Threshold End]
                        # ]
                        #]
-                       newControl.append([
+                       newControl.append([     #newControl[2] condition data
                            [
                             [values['-CURRPOSLISTON-'][0], int(values['-CURRPOSONSLIDE-'])], 
                             [values['-CURRPOSLISTTRANSON-'][0], int(values['-CURRPOSTRANSONSLIDE-'])]
@@ -1030,9 +1059,9 @@ class UX:
                         #Set conditions and then add values...
                     if values['-CTRLLIST-'][0] == 'Modulate':
                         print(f'Modulate')
-                        newControl.append(0)
+                        newControl.append(0)   # newControl[3]
                         if (usedChannels['m'] < 17):
-                            newControl.append(usedChannels['m'])
+                            newControl.append(usedChannels['m']) #newControl[3]
                             usedChannels['m'] += 1
                         else:
                             print('Used up all channels')
@@ -1073,10 +1102,10 @@ class UX:
                         window['-ARPEGDIRCOL-'].update(visible=True)
                         window['-ARPEGDIR-'].update(visible=True)
                         window['-ARPEGBTN-'].update(visible=True)       
-
+                        
                     elif values['-CTRLLIST-'][0] == 'Play Note':
                         print(f'Play Note')
-                        newControl.append(2)
+                        #newControl.append(2)
 
                 if event == '-MODDATABTN-':
                     print()
@@ -1099,24 +1128,31 @@ class UX:
 
                     #TODO do a bunch of error checking here...
                     #Ensure min < max
-                    
+                    controlTypeStr = 'Modulator'
                     newControl.append(newRate)
                     newControl.append(newWaveForm)
                     newControl.append(newMin)
                     newControl.append(newMax)
                     print(f'newControl: {newControl}')
 
-                    if newControl[1] == 'Hold':
+                    if newControl[1] == 0:
                         positionMessage = "On Position: " + str(newControl[2][0][0]) + ", Threshold: " + str(newControl[2][0][1]) + "/n"
                         positionMessage = positionMessage + "Off Position: " + str(newControl[2][1][0]) + ", Threshold: " + str(newControl[2][1][1])
-                    elif newControl[2] == 'Transition':
+                    elif newControl[2] == 1:
                         positionMessage = "Start /n On Position: " + str(newControl[2][0][0][0]) + ", Threshold: " + str(newControl[2][0][0][1]) + "/n"
                         positionMessage = positionMessage + "End /n On Position: " + str(newControl[2][0][1][0]) + ", Threshold: " + str(newControl[2][0][1][1]) + "/n"
                         positionMessage = positionMessage + "Start /n off Position: " + str(newControl[2][1][0][0]) + ", Threshold: " + str(newControl[2][1][0][1]) + "/n"
                         positionMessage = positionMessage + "End /n Off Position: " + str(newControl[2][1][1][0]) + ", Threshold: " + str(newControl[2][1][1][1]) + "/n"
+                    else:
+                       positionMessage = "[[XX,XX],[XX,XX]]"
 
-                    controlTypeStr = 'Modulator'
+                    self.controlInitData.append(newControl)
+                    print(f'newControl: {newControl}')
+                
+                    print(f'self.controlInitData: {self.controlInitData}')
+
                     window['-TOPMESSAGE01-'].update(f'Control Created! /n Name:{newControl[0]} /n Condition Type:{newControl[1]} /n {positionMessage} Control Type: {controlTypeStr} /n Rate: {newControl[5]} /n Waveform: {newControl[6]} /n Minimum: {newControl[7]} Maximum: {newControl[8]}')
+                    window['-TOPMESSAGE01-'].update(visible=True)
                     window['-DONELABEL-'].update(visible=True)
                     window['-ANOTHERBTN-'].update(visible=True)
                     window['-MAPPINGDONEBTN-'].update(visible=True)
@@ -1143,11 +1179,17 @@ class UX:
                     positionMessage = positionMessage + "End /n On Position: " + str(newControl[2][0][1][0]) + ", Threshold: " + str(newControl[2][0][1][1]) + "/n"
                     positionMessage = positionMessage + "Start /n off Position: " + str(newControl[2][1][0][0]) + ", Threshold: " + str(newControl[2][1][0][1]) + "/n"
                     positionMessage = positionMessage + "End /n Off Position: " + str(newControl[2][1][1][0]) + ", Threshold: " + str(newControl[2][1][1][1]) + "/n"
+                else:
+                       positionMessage = "[[XX,XX],[XX,XX]]"
 
-                self.writer.controlList.append(newControl)
+                self.controlInitData.append(newControl)
+                print(f'newControl: {newControl}')
+                
+                print(f'self.controlInitData: {self.controlInitData}')
                 
                 controlTypeStr = 'Arpegiator'
                 window['-TOPMESSAGE01-'].update(f'Control Created! /n Name:{newControl[0]} /n Condition Type:{newControl[1]} /n {positionMessage} Control Type: {controlTypeStr} /n Rate: {newControl[5]} /n Direction: {newControl[6]} /n')
+                window['-TOPMESSAGE01-'].update(visible=True)
                 window['-DONELABEL-'].update(visible=True)
                 window['-ANOTHERBTN-'].update(visible=True)
                 window['-MAPPINGDONEBTN-'].update(visible=True)
@@ -1157,12 +1199,37 @@ class UX:
                         
             if event == '-MAPPINGDONEBTN-':
                 #TODO log controlList
-                window2.hide()
-                window2_1 =self.makeWindow2_1() 
+                print(f'Controls: {self.controlInitData}')
+                controlListStr = "Controls\n"
+                controlListStr = controlListStr + "BPM:" + str(self.writer.bpm) + "\n" 
+                controlListStr = controlListStr + "MiDi Port:" + str(self.writer.midiPortOut) + "\n" 
+
+                print(f'controlListStr: {controlListStr}')
+                print(f'self.controlInitData: {self.controlInitData}')
+                print(f'type(self.controlInitData): {type(self.controlInitData)}')
+                for i in range(len(self.controlInitData)):
+                    controlListStr = controlListStr + "Control Name: " + self.controlInitData[i][0] + "\n"
+                    if self.controlInitData[i][3] == 0:    #Control is MOdulate
+                        controlListStr = controlListStr + "Condition Type: Hold\n" 
+
+                        self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][4], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], conditionData=self.controlInitData[i][2], bpm = self.writer.bpm, controlNum=i))
+                        #self.writer.controlList.append(newControl)   
+                        print(f'self.writer.controlList: {self.writer.controlList}')
+                        print(f'self.writer.controlList[i+1].controlLabel: {self.writer.controlList[i].controlLabel}')
+                        print(f'self.writer.controlList[0].controlLabel: {self.writer.controlList[0].controlLabel}')
+                        print(f'self.writer.controlList[1].controlLabel: {self.writer.controlList[1].controlLabel}')
+
+                #TODO Write the Mapping for the arpegio one 
+                # # add the proper values to map to them
+                #Log the data from the control class handles
 
             if event == '-ANOTHERBTN-':
                 newControl = []
+                window2.hide()
+                window2_1 =self.makeWindow2_1() 
+
                 window.write_event_value("-MORECTRLS-", '') 
+
                     
 
 ##############     Window2_1          #################

@@ -55,6 +55,9 @@ class GetData:
         connectTries = 0
         #Try the last connection
         cntList = self.getloggedCSV("networks.csv")
+
+
+########UNcomment below for live wifi connection...
     
         if cntList[0][0] != '-1':
             cntListLen = len(cntList)
