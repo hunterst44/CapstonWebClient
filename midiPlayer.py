@@ -3,6 +3,7 @@ import rtmidi
 from metronome import Metronome
 import threading
 import buildMidi
+import numpy as np
 
 
 class MidiPlayer:
@@ -13,19 +14,22 @@ class MidiPlayer:
         self.onFlag = onFlag
 
     def playBeat(self, midi_data = [], onFlag = 0 ):
-        
+        a = np.asarray(midi_data)
         # self.onFlag = 1
-        if onFlag:
-            if isinstance(midi_data[0], int):
-                self.midiOut.send_message(midi_data)
-                time.sleep(self.timeSlice / 1000)
-            else:    
-                for msg in midi_data:
+        if a.size == 0:
+            print("Midi array is empty")
+        else:
+            if onFlag:
+                if isinstance(midi_data[0], int):
+                    self.midiOut.send_message(midi_data)
+                    time.sleep(self.timeSlice / 1000)
+                else:    
+                    for msg in midi_data:
             
                     
-                    print(f"Playing MIDI from control: {msg}")
-                    self.midiOut.send_message(msg)
-                    time.sleep(self.timeSlice / 1000)
+                        print(f"Playing MIDI from control: {msg}")
+                        self.midiOut.send_message(msg)
+                        time.sleep(self.timeSlice / 1000)
                     
         
            

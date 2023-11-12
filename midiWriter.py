@@ -18,7 +18,7 @@ from metronome import Metronome
 import buildMidi
 from midiPlayer import MidiPlayer
 
-BPM = 60
+BPM = 30
 # import sys
 
 """ 
@@ -132,6 +132,8 @@ class MiDiWriter:
             control.changeRate(self.rate)
             control.midiBuilder.rate = control.beatLenStr
             control.midiBuilder.rate = control.beatLenStr
+            control.midiBuilder.shape = control.shape
+            control.midiBuilder.newTof = control.controlValue
             # control.midiBuilder.rate = 'w'
             print(control.midiBuilder.rate)
             control.midiResults = control.midiBuilder.build_midi()
@@ -153,12 +155,16 @@ class MiDiWriter:
         # Gesture -> conditionData[x][0] 
         # threshold -> conditionData[x][1])
         self.metro = Metronome(bpm = BPM)
-        self.control00 = self.MidiControl(controlLabel="Channel0", midiOut=self.midiOut, channel=0, predictions=self.predictions, conditionType=0, conditionData=[[0,3],[1,3]], bpm = self.bpm, controlNum=0, controllerType=1, shape=0)
-        self.control01 = self.MidiControl(controlLabel="Channel1", midiOut=self.midiOut, channel=1, predictions=self.predictions, conditionType=1, conditionData=[[1,3],[2,3]], bpm = self.bpm, controlNum=1, controllerType=1, shape=1)
-        self.control02 = self.MidiControl(controlLabel="Channel2", midiOut=self.midiOut, channel=2, predictions=self.predictions, conditionType=2, conditionData=[[2,3],[3,3]], bpm = self.bpm, controlNum=2, controllerType=1, shape=2)
+        self.control00 = self.MidiControl(controlLabel="Channel0", midiOut=self.midiOut, channel=0, predictions=self.predictions, conditionType=0, conditionData=[[0,3],[1,3]], bpm = self.bpm, controlNum=0, controllerType=2, shape=2)
+        self.control01 = self.MidiControl(controlLabel="Channel1", midiOut=self.midiOut, channel=1, predictions=self.predictions, conditionType=1, conditionData=[[1,3],[2,3]], bpm = self.bpm, controlNum=1, controllerType=2, shape=2)
+        self.control02 = self.MidiControl(controlLabel="Channel2", midiOut=self.midiOut, channel=2, predictions=self.predictions, conditionType=2, conditionData=[[2,3],[3,3]], bpm = self.bpm, controlNum=2, controllerType=2, shape=2)
         self.controlList = [self.control00, self.control01, self.control02]
-        
+                
+        self.controlList[0].shape = 0
+        self.controlList[1].shape = 1
+        self.controlList[2].shape = 2
         self.midi_data_list = [self.control00.midiResults, self.control01.midiResults, self.control02.midiResults]
+   
         self.midi_players = [MidiPlayer(self.midiOut, self.metro.getTimeTick(midi_data), midi_data) for control, midi_data in zip(self.controlList, self.midi_data_list)]
         
         
@@ -190,7 +196,7 @@ class MiDiWriter:
         self.control01.midiBuilder.midiMessage= [65]
         self.control02.midiBuilder.midiMessage= [55]
 
-        self.refreshMidi()
+        # self.refreshMidi()
         
         
         
@@ -245,6 +251,7 @@ class MiDiWriter:
                     print(f'ToFByte: {self.ToFByte}')
                     if self.ToFByte > 0 and self.ToFByte < 128:   #Make sure we have a valid ToF value
                         control.controlValue = self.ToFByte    #ToF supplies the control value 
+                        # control.midiBuilder.newTof = control.controlValue
             
                 #control.buildMidi()
                 # control.changeRate()

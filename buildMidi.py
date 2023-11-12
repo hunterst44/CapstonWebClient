@@ -57,11 +57,26 @@ class MidiBuilder:
         scaled_value = out_min + (scaled_value * r_span)
         return np.round(scaled_value)
 
-    def generate_deltaTof_array(self, start_num, end_num):
-        if start_num > end_num:
-            return []
+    def generate_deltaTof_array(self):
+        print(self.newTof)
+        deltaArray = []
+    
+        if self.newTof > self.oldTof:
+            deltaArray = list(range(self.oldTof, self.newTof + 1))
+            print(deltaArray)
+        elif self.newTof < self.oldTof:
+            deltaArray = list(range(self.oldTof, self.newTof - 1, -1))
+            print(deltaArray)
+        else:
+            deltaArray = []
+    
+        self.oldTof = self.newTof
+        print(deltaArray)
+        return deltaArray
 
-        return list(range(start_num, end_num + 1))
+        
+
+        
     
     def multiply_rate(self, rate):
         print(rate)
@@ -101,7 +116,7 @@ class MidiBuilder:
                     midi_array.append(midiCC.get_midi_cc())
             return midi_array
         elif self.dataType == 2:  # for MIDI control Tof data
-            tof_delta_array = self.generate_deltaTof_array(self.oldTof, self.newTof)
+            tof_delta_array = self.generate_deltaTof_array()
             for value in tof_delta_array:
                 midiCC = self.MIDIControlChange(control_number=self.midiCCnum, channel=self.ch, control_value=value)
                 midi_array.append(midiCC.get_midi_cc())
