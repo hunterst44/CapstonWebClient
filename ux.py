@@ -12,6 +12,7 @@ import NeuralNetwork
 # import shutil
 #import sys
 import window
+import dill
 
 
 # UX.py use this file for developing data bindings to the GUI. Window difinitions are defined in this file.
@@ -272,7 +273,8 @@ class UX:
                     ],
                     [
                         sg.Column([[sg.Text(f"Let's map MiDi controls to hand positions.", key='-TOPMESSAGE00-', size=(50,1), visible=True)], 
-                                   [sg.Text(f"First choose a MiDi port to send commands to:", key='-TOPMESSAGE01-', size=(50,1), visible=True)]
+                                   [sg.Text(f"First choose a MiDi port to send commands to:", key='-TOPMESSAGE01-', size=(50,1), visible=True)],
+                                   [sg.Button('Ok', key='-USELOGBTN-', visible=False)]
                                    ], 
                                    key='-TOPMESSAGE00COL-', element_justification='left', background_color='Blue', expand_x = True, vertical_alignment='t', pad=(0,0)), 
                         sg.Column([[sg.Listbox(midiOutList, size=(50, 8), key="-MIDIPORTOUT-", expand_x=True, expand_y=True,enable_events=True, visible=True)], 
@@ -365,6 +367,7 @@ class UX:
         newControl = [] #Holds data from a new control until it is appended to the list
         usedPositions = [] #indexes of the positions in self.dataStream.
         usedChannels = {'m': 0, 'a':0, 'n': 0}
+        controlPath = self.dataStream.pathPreface + "control.csv"  
         #self.positonPathList = ['pos1', 'pos2', 'pos3']
 
         stopPredict = 0
@@ -754,12 +757,33 @@ class UX:
                 print()
                 print()
                 print("Window 2")
+                if os.path.exists(controlPath):
+                    with open(controlPath, 'r') as csvfile:
+                        newControlData = list(csv.reader(csvfile, delimiter=","))
+                        print(f'newControlData: {newControlData}')
+                        
+                    # controlFile = open(controlPath, "rb")
+                    # newControlList = dill.load(controlFile)
+                    # controlFile.close()
+                    window['-TOPMESSAGE00COL-'].update("Previous Controls Found. Use these controls?")
+                    window['-USELOGBTN-'].update(visible=True)
+                    #TODO display the controls in the log file
+
+                    #self.writer.controlList
 
                 # self.writer.available_MiDiPortsOut = self.writer.midiOut.get_ports()
                 # self.writer.available_MiDiPortsIn = self.writer.midiIn.get_ports()
 
                 # print(f'self.writer.available_MiDiPortsOut: {self.writer.available_MiDiPortsOut}')
                 # print(f'self.writer.available_MiDiPortsOut[0]: {self.writer.available_MiDiPortsOut[0]}')
+
+                if event == '-USELOGBTN-':
+                    print()
+                    print(f'Window 2 -USELOGBTN-')
+                    #TODO parse out the file
+                    self.controlInitData  = newControlData
+                    window.write_event_value(" -MAPPINGDONEBTN-", '')
+
 
                 if event == sg.WIN_CLOSED or event == 'Exit':
                     window2.hide()
@@ -816,8 +840,8 @@ class UX:
                         window['-BPMCOL-'].update(visible=True)
                         window['-TOPMESSAGE00-'].update("Set the Beats per minute")
                         window['-TOPMESSAGE01-'].update(visible=False)
-                        window['-TOPMESSAGE01-'].set_size(size=(0,0))
-                        window['-TOPMESSAGE01-'].hide_row()
+                        #window['-TOPMESSAGE01-'].set_size(size=(0,0))
+                        #window['-TOPMESSAGE01-'].hide_row()
                         # window['-MIDIOUTLISTRFH-'].update(visible=False)
                         # window['-MIDIOUTCNTBTN-'].update(visible=False)
                         #window['-MIDIOUTCOL-'].hide_row()
@@ -841,6 +865,10 @@ class UX:
                     print(f'values["-BPMSLIDE-"][0]: {values["-BPMSLIDE-"]}')
                     
                     self.writer.bpm = values["-BPMSLIDE-"]
+                    if os.path.exists(controlPath):
+                        self.dataStream.logCSVRow('controls.csv', [self.writer.midiPortOut, self.writer.bpm], append=True)
+                    else:
+                        self.dataStream.logCSVRow('controls.csv', [self.writer.midiPortOut, self.writer.bpm], append=False)
                     print(f'self.writer.bpm: {self.writer.bpm}')
 
                     window['-BPMLABEL-'].update(visible=False)
@@ -856,7 +884,12 @@ class UX:
 
                 if event == '-MORECTRLS-':
                    print()
-                   print(f'Window 2 -BPMBTM-') 
+                   print(f'Window 2 -MORECTRLS-')
+                #    if os.path.exists(controlPath):
+                #         self.dataStream.logCSVRow('/controls.csv', [self.writer.midiPortOut, self.writer.bpm], append=True)
+                #    else:
+                #         self.dataStream.logCSVRow('/controls.csv', [self.writer.midiPortOut, self.writer.bpm], append=False)
+
                    window['-BPMBTN-'].update(visible=False)
                    window['-TOPMESSAGE00-'].update("Choose a name for the control")
                    window['-BPMCOL-'].set_size(size=(0,0))
@@ -1207,14 +1240,21 @@ class UX:
                 print(f'controlListStr: {controlListStr}')
                 print(f'self.controlInitData: {self.controlInitData}')
                 print(f'type(self.controlInitData): {type(self.controlInitData)}')
-                #ConditionType
-                if self.controlInitData[i][1] == 0:  #Condition type = Hold
-                    controlListStr = controlListStr + "Condition Type:  Hold\n" 
-                elif self.controlInitData[i][1] == 1:  #Condition type = Transition
-                    controlListStr = controlListStr + "Condition Type:  Transition\n"
-
+                
+                
                 for i in range(len(self.controlInitData)):
-                    controlListStr = controlListStr + "Control Name: " + self.controlInitData[i][0] + "\n"
+                    if os.path.exists(controlPath):
+                        self.dataStream.logCSVRow('controls.csv', self.controlInitData[i], append=True)
+                    else:
+                        self.dataStream.logCSVRow('controls.csv', self.controlInitData[i], append=False)
+
+                    controlListStr = controlListStr + "Control Name: " + self.controlInitData[i][0] + "/n"
+                    #ConditionType
+                    if self.controlInitData[i][1] == 0:  #Condition type = Hold
+                        controlListStr = controlListStr + "Condition Type:  Hold/n" 
+                    elif self.controlInitData[i][1] == 1:  #Condition type = Transition
+                        controlListStr = controlListStr + "Condition Type:  Transition/n"
+                    
                     if self.controlInitData[i][3] == 0:    #Control is Modulate
 
                         self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][4], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], conditionData=self.controlInitData[i][2], bpm = self.writer.bpm, controlNum=i, rate=self.controlInitData[i][5], waveform=self.controlInitData[i][6], minimum=self.controlInitData[i][7], maximum=self.controlInitData[i][8]))
@@ -1230,18 +1270,16 @@ class UX:
                          print(f'self.writer.controlList[i+1].controlLabel: {self.writer.controlList[i].controlLabel}')
                          print(f'self.writer.controlList[0].controlLabel: {self.writer.controlList[0].controlLabel}')
                          print(f'self.writer.controlList[1].controlLabel: {self.writer.controlList[1].controlLabel}')
-                    
-
-
-
-                #TODO Log the data from the control class handles
 
             if event == '-ANOTHERBTN-':
                 newControl = []
-                window2.hide()
-                window2_1 =self.makeWindow2_1() 
+                
 
                 window.write_event_value("-MORECTRLS-", '') 
+
+            if event == '-FINISHED-':
+                print()
+                print('Finished')
 
                     
 
