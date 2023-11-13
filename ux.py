@@ -185,6 +185,84 @@ class UX:
                 
         return newControlData
     
+    def getControlListStr(self, controlLogData):
+        #Parses the logged controls into human readable format for the GUI
+        #Also returns the height in lines of text
+        print('getControlListStr(self, controlLogData)')
+        controlListStr = "Logged Controls Found: \n MiDi Port: " + str(self.writer.midiPortOut) + " BPM: " + str(self.writer.bpm) + "\n"
+        textHeight = 1
+
+        for i in range(len(controlLogData)):
+            print(f'i: {i}')
+            print(f'controlLogData: {controlLogData}')            
+            self.controlInitData.append(controlLogData[i])
+
+            controlListStr = controlListStr + "\nControl Name: " + controlLogData[i][0] + "\n"
+            #ConditionType
+            textHeight = textHeight + 4 
+            if controlLogData[i][1] == '0' or controlLogData[i][1] == 0:  #Condition type = Hold
+                controlListStr = controlListStr + "Condition Type:  Hold\n"
+                #print(f'position: {type(int(controlLogData[i][2][2]))}')
+                controlListStr = controlListStr + "On Position: " + str(controlLogData[i][2]) + "\n"
+                controlListStr = controlListStr + "On Threshold: " + str(controlLogData[i][3]) + "\n"
+                controlListStr = controlListStr + "Off Position: " + str(controlLogData[i][4]) + "\n"
+                controlListStr = controlListStr + "Off Threshold: " + str(controlLogData[i][5]) + "\n"
+                textHeight = textHeight + 5 
+
+                if controlLogData[i][6] == '0' or controlLogData[i][6] == 0:    #Control is Modulate
+                    #self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][4], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], conditionData=self.controlInitData[i][2], bpm = self.writer.bpm, controlNum=i, rate=self.controlInitData[i][5], waveform=self.controlInitData[i][6], minimum=self.controlInitData[i][7], maximum=self.controlInitData[i][8]))
+                    #self.writer.controlList.append(newControl)
+                    controlListStr = controlListStr + "Control Type:  Modulate\n" 
+                    controlListStr = controlListStr + "Channel:  " + str(controlLogData[i][7]) + "\n"
+                    controlListStr = controlListStr + "Rate:  " + str(controlLogData[i][8]) + "\n"
+                    controlListStr = controlListStr + "Waveform:  " + controlLogData[i][9] + "\n"
+                    controlListStr = controlListStr + "Minimum Value:  " + str(controlLogData[i][10]) + "\n"
+                    controlListStr = controlListStr + "Maximum Value:  " + str(controlLogData[i][11]) + "\n"
+                    textHeight = textHeight + 6
+
+                elif controlLogData[i][6] == '1' or controlLogData[i][6] == 1:    #Control is Arpegio
+                    #self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][4], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], conditionData=self.controlInitData[i][2], bpm = self.writer.bpm, controlNum=i, rate=self.controlInitData[i][5], direction=self.controlInitData[i][6]))  
+                    controlListStr = controlListStr + "Control Type:  Arpeggio\n" 
+                    controlListStr = controlListStr + "Channel:  " + str(controlLogData[i][7]) + "\n"
+                    controlListStr = controlListStr + "Rate:  " + str(controlLogData[i][8]) + "\n"
+                    controlListStr = controlListStr + "Direction:  " + controlLogData[i][9] + "\n"
+                    textHeight = textHeight + 4
+
+            elif controlLogData[i][1] == '1' or controlLogData[i][1] == 1:  #Condition type = Transition
+                controlListStr = controlListStr + "Condition Type:  Transition\n"
+                controlListStr = controlListStr + "Begin On Position: " + str(controlLogData[i][2]) + "\n"
+                controlListStr = controlListStr + "Begin On Threshold: " + str(controlLogData[i][3]) + "\n"
+                controlListStr = controlListStr + "End On Position: " + str(controlLogData[i][4]) + "\n"
+                controlListStr = controlListStr + "End On Threshold: " + str(controlLogData[i][5]) + "\n"
+                controlListStr = controlListStr + "Begin Off Position: " + str(controlLogData[i][6]) + "\n"
+                controlListStr = controlListStr + "Begin Off Threshold: " + str(controlLogData[i][7]) + "\n"
+                controlListStr = controlListStr + "End Off Position: " + str(controlLogData[i][8]) + "\n"
+                controlListStr = controlListStr + "END Off Threshold: " + str(controlLogData[i][9]) + "\n"
+                textHeight = textHeight + 9
+
+                if controlLogData[i][10] == '0' or controlLogData[i][10] == 0:    #Control is Modulate
+                    #self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][4], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], conditionData=self.controlInitData[i][2], bpm = self.writer.bpm, controlNum=i, rate=self.controlInitData[i][5], waveform=self.controlInitData[i][6], minimum=self.controlInitData[i][7], maximum=self.controlInitData[i][8]))
+                    #self.writer.controlList.append(newControl)
+                    controlListStr = controlListStr + "Control Type:  Modulate\n" 
+                    controlListStr = controlListStr + "Channel:  " + str(controlLogData[i][11]) + "\n"
+                    controlListStr = controlListStr + "Rate:  " + str(controlLogData[i][12]) + "\n"
+                    controlListStr = controlListStr + "Waveform:  " + controlLogData[i][13] + "\n"
+                    controlListStr = controlListStr + "Minimum Value:  " + str(controlLogData[i][14]) + "\n"
+                    controlListStr = controlListStr + "Maximum Value:  " + str(controlLogData[i][15]) + "\n"
+                    textHeight = textHeight + 6
+                
+                elif controlLogData[i][10] == '1' or controlLogData[i][10] == 1:    #Control is Arpegio
+                    #self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][4], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], conditionData=self.controlInitData[i][2], bpm = self.writer.bpm, controlNum=i, rate=self.controlInitData[i][5], direction=self.controlInitData[i][6]))  
+                    controlListStr = controlListStr + "Control Type:  Arpeggio\n" 
+                    controlListStr = controlListStr + "Channel:  " + str(controlLogData[i][11]) + "\n"
+                    controlListStr = controlListStr + "Rate:  " + str(controlLogData[i][12]) + "\n"
+                    controlListStr = controlListStr + "Direction:  " + controlLogData[i][13] + "\n"
+                    textHeight = textHeight + 4
+        
+        return controlListStr, textHeight
+            
+
+    
 ###############################################################################################
 ##############                  Window Definitions                            #################
 ###############################################################################################
@@ -279,82 +357,14 @@ class UX:
         controlLogData = self.checkControlLog()
         logVisibility = False
         logInvisibility = True
-        textHeight = 1
 
         if controlLogData[0] != -1:
-            
             self.writer.midiPortOut = controlLogData[0][0]  #MidiPort Name
             self.writer.bpm = controlLogData[0][1]
 
-            #Describe the logged controls for the user:
-            controlListStr = "Logged Controls Found: \n MiDi Port: " + str(self.writer.midiPortOut) + " BPM: " + str(self.writer.bpm) + "\n"
-            
-            for i in range(len(controlLogData) - 1):
-                print(f'i: {i}')
-                self.controlInitData.append(controlLogData[i+1])
+            newControlList = controlLogData[1:]  #Take the first item off the list
+            controlListStr, textHeight = self.getControlListStr(newControlList)
 
-                controlListStr = controlListStr + "\nControl Name: " + controlLogData[i+1][0] + "\n"
-                #ConditionType
-                textHeight = textHeight + 4 
-                if controlLogData[i+1][1] == '0':  #Condition type = Hold
-                    controlListStr = controlListStr + "Condition Type:  Hold\n"
-                    #print(f'position: {type(int(controlLogData[i+1][2][2]))}')
-                    controlListStr = controlListStr + "On Position: " + str(controlLogData[i+1][2]) + "\n"
-                    controlListStr = controlListStr + "On Threshold: " + str(controlLogData[i+1][3]) + "\n"
-                    controlListStr = controlListStr + "Off Position: " + str(controlLogData[i+1][4]) + "\n"
-                    controlListStr = controlListStr + "Off Threshold: " + str(controlLogData[i+1][5]) + "\n"
-                    textHeight = textHeight + 5 
-
-                    if controlLogData[i+1][6] == '0':    #Control is Modulate
-                        #self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][4], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], conditionData=self.controlInitData[i][2], bpm = self.writer.bpm, controlNum=i, rate=self.controlInitData[i][5], waveform=self.controlInitData[i][6], minimum=self.controlInitData[i][7], maximum=self.controlInitData[i][8]))
-                        #self.writer.controlList.append(newControl)
-                        controlListStr = controlListStr + "Control Type:  Modulate\n" 
-                        controlListStr = controlListStr + "Channel:  " + str(controlLogData[i+1][7]) + "\n"
-                        controlListStr = controlListStr + "Rate:  " + str(controlLogData[i+1][8]) + "\n"
-                        controlListStr = controlListStr + "Waveform:  " + controlLogData[i+1][9] + "\n"
-                        controlListStr = controlListStr + "Minimum Value:  " + str(controlLogData[i+1][10]) + "\n"
-                        controlListStr = controlListStr + "Maximum Value:  " + str(controlLogData[i+1][11]) + "\n"
-                        textHeight = textHeight + 6
-
-                    elif controlLogData[i+1][6] == '1':    #Control is Arpegio
-                        #self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][4], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], conditionData=self.controlInitData[i][2], bpm = self.writer.bpm, controlNum=i, rate=self.controlInitData[i][5], direction=self.controlInitData[i][6]))  
-                        controlListStr = controlListStr + "Control Type:  Arpeggio\n" 
-                        controlListStr = controlListStr + "Channel:  " + str(controlLogData[i+1][7]) + "\n"
-                        controlListStr = controlListStr + "Rate:  " + str(controlLogData[i+1][8]) + "\n"
-                        controlListStr = controlListStr + "Direction:  " + controlLogData[i+1][9] + "\n"
-                        textHeight = textHeight + 4
-
-                elif controlLogData[i+1][1] == '1':  #Condition type = Transition
-                    controlListStr = controlListStr + "Condition Type:  Transition\n"
-                    controlListStr = controlListStr + "Begin On Position: " + str(controlLogData[i+1][2]) + "\n"
-                    controlListStr = controlListStr + "Begin On Threshold: " + str(controlLogData[i+1][3]) + "\n"
-                    controlListStr = controlListStr + "End On Position: " + str(controlLogData[i+1][4]) + "\n"
-                    controlListStr = controlListStr + "End On Threshold: " + str(controlLogData[i+1][5]) + "\n"
-                    controlListStr = controlListStr + "Begin Off Position: " + str(controlLogData[i+1][6]) + "\n"
-                    controlListStr = controlListStr + "Begin Off Threshold: " + str(controlLogData[i+1][7]) + "\n"
-                    controlListStr = controlListStr + "End Off Position: " + str(controlLogData[i+1][8]) + "\n"
-                    controlListStr = controlListStr + "END Off Threshold: " + str(controlLogData[i+1][9]) + "\n"
-                    textHeight = textHeight + 9
-
-                    if controlLogData[i+1][10] == '0':    #Control is Modulate
-                        #self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][4], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], conditionData=self.controlInitData[i][2], bpm = self.writer.bpm, controlNum=i, rate=self.controlInitData[i][5], waveform=self.controlInitData[i][6], minimum=self.controlInitData[i][7], maximum=self.controlInitData[i][8]))
-                        #self.writer.controlList.append(newControl)
-                        controlListStr = controlListStr + "Control Type:  Modulate\n" 
-                        controlListStr = controlListStr + "Channel:  " + str(controlLogData[i+1][11]) + "\n"
-                        controlListStr = controlListStr + "Rate:  " + str(controlLogData[i+1][12]) + "\n"
-                        controlListStr = controlListStr + "Waveform:  " + controlLogData[i+1][13] + "\n"
-                        controlListStr = controlListStr + "Minimum Value:  " + str(controlLogData[i+1][14]) + "\n"
-                        controlListStr = controlListStr + "Maximum Value:  " + str(controlLogData[i+1][15]) + "\n"
-                        textHeight = textHeight + 6
-                    
-                    elif controlLogData[i+1][10] == '1':    #Control is Arpegio
-                        #self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][4], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], conditionData=self.controlInitData[i][2], bpm = self.writer.bpm, controlNum=i, rate=self.controlInitData[i][5], direction=self.controlInitData[i][6]))  
-                        controlListStr = controlListStr + "Control Type:  Arpeggio\n" 
-                        controlListStr = controlListStr + "Channel:  " + str(controlLogData[i+1][11]) + "\n"
-                        controlListStr = controlListStr + "Rate:  " + str(controlLogData[i+1][12]) + "\n"
-                        controlListStr = controlListStr + "Direction:  " + controlLogData[i+1][13] + "\n"
-                        textHeight = textHeight + 4
-                
             print(f'controlListStr: {controlListStr} textHeight: {textHeight}')
             Message00Text = "A log file exists with premapped controls.\n Click Ok to use these controls, or Overwrite to create new controls"
             logVisibility = True
@@ -372,7 +382,7 @@ class UX:
                     [
                         sg.Column([[sg.Text(Message00Text, key='-TOPMESSAGE00-', size=(50,2), visible=True)], 
                                    [sg.Text(controlListStr, key='-TOPMESSAGE01-', size=(50,textHeight), visible=True)],
-                                   [sg.Button('OK', key='-USELOGBTN-', visible=logVisibility)], [sg.Button('Overwrite', key='-NEWCONTROLBTN-', visible=logVisibility)]
+                                   [sg.Button('OK', key='-USELOGBTN-', visible=logVisibility)], [sg.Button('Overwrite', key='-NEWCONTROLBTN-', visible=logVisibility)], [sg.Button('Continue', key='-CONTUBTN-', visible=False)]
                                    ], 
                                    key='-TOPMESSAGE00COL-', element_justification='left', background_color='Blue', expand_x = True, vertical_alignment='t', pad=(0,0)), 
                         sg.Column([[sg.Listbox(midiOutList, size=(50, 8), key="-MIDIPORTOUT-", expand_x=True, expand_y=True,enable_events=True, visible=logInvisibility)], 
@@ -1372,7 +1382,7 @@ class UX:
                 print(f'self.controlInitData: {self.controlInitData}')
                 
                 controlTypeStr = 'Arpegiator'
-                window['-TOPMESSAGE01-'].update(f'Control Created! /n Name:{newControl[0]} /n Condition Type:{newControl[1]} /n {positionMessage} Control Type: {controlTypeStr} /n Rate: {newControl[5]} /n Direction: {newControl[6]} /n')
+                window['-TOPMESSAGE01-'].update(f'Control Created!')
                 window['-TOPMESSAGE01-'].update(visible=True)
                 window['-DONELABEL-'].update(visible=True)
                 window['-ANOTHERBTN-'].update(visible=True)
@@ -1384,80 +1394,83 @@ class UX:
             if event == '-MAPPINGDONEBTN-':
                 print()
                 print(f'Window 2 -MAPPINGDONEBTN-')
-                
-                window['-TOPMESSAGE00-'].update(f'Controls Created! Click Ok to continue. /n')
-                window['-TOPMESSAGE01-'].update(visible=False)
-                window.refresh()
 
                 print(f'Controls: {self.controlInitData}')
-                controlListStr = "Controls\n"
-                controlListStr = controlListStr + "BPM:" + str(self.writer.bpm) + "\n" 
-                controlListStr = controlListStr + "MiDi Port:" + str(self.writer.midiPortOut) + "\n" 
+                # controlListStr = "Controls\n"
+                # controlListStr = controlListStr + "BPM:" + str(self.writer.bpm) + "\n" 
+                # controlListStr = controlListStr + "MiDi Port:" + str(self.writer.midiPortOut) + "\n" 
 
-                print(f'controlListStr: {controlListStr}')
+                #print(f'controlListStr: {controlListStr}')
                 print(f'self.controlInitData: {self.controlInitData}')
-                print(f'type(self.controlInitData): {type(self.controlInitData)}')
+                #print(f'type(self.controlInitData): {type(self.controlInitData)}')
                 #Append the control data to the file
-                
+                controlListStr, textHeight = self.getControlListStr(self.controlInitData)
+                print(controlListStr)
+                print(f'textHeight: {textHeight}')
+                window['-TOPMESSAGE00-'].update(f'Controls Created! Click Continue to train or use the neural network.')
+                window['-TOPMESSAGE01-'].set_size(size=(50,textHeight))
+                window['-TOPMESSAGE01-'].update(controlListStr)
+                window['-TOPMESSAGE01-'].update(visible=True)
+                window['-CONTUBTN-'].update(visible=True)
+                window['-DONELABEL-'].update(visible=False)
+                window['-ANOTHERBTN-'].update(visible=False)
+                window['-MAPPINGDONEBTN-'].update(visible=False)
+                window['-DONECOL-'].size(size=(0,0))
+                window['-DONECOL-'].update(visible=False)
+                window.refresh()
+
                 #if self.checkControlLog == 0: #Not using the logged data so we need a new log
                 for i in range(len(self.controlInitData)):
                     if self.controlLogCheck == 0: #Not using the logged data so we need a new log
                         self.dataStream.logCSVRow('controls.csv', self.controlInitData[i], append=True)
                     #tmpList.append(self.controlInitData[i])
 
-                        #Check the file has been logged properly
-                        with open(controlPath, 'r') as csvfile:
-                            tmpList = list(csv.reader(csvfile, delimiter=","))
-                            print(f'controls.csv: {tmpList}')
-
-                controlListStr = controlListStr + "Control Name: " + self.controlInitData[i][0] + "/n"
+                        # #Check the file has been logged properly
+                        # with open(controlPath, 'r') as csvfile:
+                        #     tmpList = list(csv.reader(csvfile, delimiter=","))
+                        #     print(f'controls.csv: {tmpList}')
                 
-                #ConditionType
-                if self.controlInitData[i][1] == 0:  #Condition type = Hold
-                    controlListStr = controlListStr + "Condition Type:  Hold/n" 
-                    conditionDataList = [[self.controlInitData[i][2], self.controlInitData[i][2]], [self.controlInitData[i][3], self.controlInitData[i][4]]]
-                
-                    if self.controlInitData[i][3] == 0:    #Control is Modulate
 
-                        self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][7], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], controlType=self.controlInitData[i][6], conditionData=conditionDataList, bpm = self.writer.bpm, controlNum=i, rate=self.controlInitData[i][8], waveform=self.controlInitData[i][9], minimum=self.controlInitData[i][10], maximum=self.controlInitData[i][11]))
+                    #Create the writer.Control instances in controlList
+                    if self.controlInitData[i][1] == 0:  #Condition type = Hold
+                        
+                        conditionDataList = [[int(self.controlInitData[i][2]), int(self.controlInitData[i][2])], [int(self.controlInitData[i][3]), int(self.controlInitData[i][4])]]
+                    
+                        if self.controlInitData[i][3] == 0:    #Control is Modulate
+
+                            self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][7], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], controlType=self.controlInitData[i][6], conditionData=conditionDataList, bpm = self.writer.bpm, controlNum=i, rate=self.controlInitData[i][8], waveform=self.controlInitData[i][9], minimum=self.controlInitData[i][10], maximum=self.controlInitData[i][11]))
+                            #self.writer.controlList.append(newControl)   
+                            print(f'self.writer.controlList: {self.writer.controlList}')
+                            print(f'self.writer.controlList[i+1].controlLabel: {self.writer.controlList[i].controlLabel}')
+                            print(f'self.writer.controlList[0].controlLabel: {self.writer.controlList[0].controlLabel}')
+                            print(f'self.writer.controlList[1].controlLabel: {self.writer.controlList[1].controlLabel}')
+                        elif self.controlInitData[i][3] == 1:    #Control is Arpegio
+                            self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][7], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], controlType=self.controlInitData[i][6], conditionData=conditionDataList, bpm = self.writer.bpm, controlNum=i, rate=self.controlInitData[i][8], direction=self.controlInitData[i][9]))
                         #self.writer.controlList.append(newControl)   
-                        print(f'self.writer.controlList: {self.writer.controlList}')
-                        print(f'self.writer.controlList[i+1].controlLabel: {self.writer.controlList[i].controlLabel}')
-                        print(f'self.writer.controlList[0].controlLabel: {self.writer.controlList[0].controlLabel}')
-                        print(f'self.writer.controlList[1].controlLabel: {self.writer.controlList[1].controlLabel}')
-                    elif self.controlInitData[i][3] == 1:    #Control is Arpegio
-                        self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][7], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], controlType=self.controlInitData[i][6], conditionData=conditionDataList, bpm = self.writer.bpm, controlNum=i, rate=self.controlInitData[i][8], direction=self.controlInitData[i][9]))
-                    #self.writer.controlList.append(newControl)   
-                        print(f'self.writer.controlList: {self.writer.controlList}')
-                        print(f'self.writer.controlList[i+1].controlLabel: {self.writer.controlList[i].controlLabel}')
-                        print(f'self.writer.controlList[0].controlLabel: {self.writer.controlList[0].controlLabel}')
-                        print(f'self.writer.controlList[1].controlLabel: {self.writer.controlList[1].controlLabel}')
-                elif self.controlInitData[i][1] == 1:  #Condition type = Transition
-                    controlListStr = controlListStr + "Condition Type:  Transition/n"
-                    conditionDataList = [
-                        [[self.controlInitData[i][2], self.controlInitData[i][3]], [self.controlInitData[i][4], self.controlInitData[i][5]]],
-                        [[self.controlInitData[i][6], self.controlInitData[i][7]], [self.controlInitData[i][8], self.controlInitData[i][9]]]
-                    ]
+                            print(f'self.writer.controlList: {self.writer.controlList}')
+                            print(f'self.writer.controlList[i+1].controlLabel: {self.writer.controlList[i].controlLabel}')
+                            print(f'self.writer.controlList[0].controlLabel: {self.writer.controlList[0].controlLabel}')
+                            print(f'self.writer.controlList[1].controlLabel: {self.writer.controlList[1].controlLabel}')
+                    elif self.controlInitData[i][1] == 1:  #Condition type = Transition
+                        conditionDataList = [
+                            [[int(self.controlInitData[i][2]), int(self.controlInitData[i][3])], [int(self.controlInitData[i][4]), int(self.controlInitData[i][5])]],
+                            [[int(self.controlInitData[i][6]), int(self.controlInitData[i][7])], [int(self.controlInitData[i][8]), int(self.controlInitData[i][9])]]
+                        ]
 
-                    if self.controlInitData[i][3] == 0:    #Control is Modulate
-                        self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][11], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], controlType=self.controlInitData[i][10], conditionData=conditionDataList, bpm = self.writer.bpm, controlNum=i, rate=self.controlInitData[i][12], waveform=self.controlInitData[i][13], minimum=self.controlInitData[i][14], maximum=self.controlInitData[i][15]))
+                        if self.controlInitData[i][3] == 0:    #Control is Modulate
+                            self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][11], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], controlType=self.controlInitData[i][10], conditionData=conditionDataList, bpm = self.writer.bpm, controlNum=i, rate=self.controlInitData[i][12], waveform=self.controlInitData[i][13], minimum=self.controlInitData[i][14], maximum=self.controlInitData[i][15]))
+                            #self.writer.controlList.append(newControl)   
+                            print(f'self.writer.controlList: {self.writer.controlList}')
+                            print(f'self.writer.controlList[i+1].controlLabel: {self.writer.controlList[i].controlLabel}')
+                            print(f'self.writer.controlList[0].controlLabel: {self.writer.controlList[0].controlLabel}')
+                            print(f'self.writer.controlList[1].controlLabel: {self.writer.controlList[1].controlLabel}')
+                        elif self.controlInitData[i][3] == 1:    #Control is Arpegio
+                            self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][11], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], controlType=self.controlInitData[i][10], conditionData=conditionDataList, bpm = self.writer.bpm, controlNum=i, rate=self.controlInitData[i][12], direction=self.controlInitData[i][13]))
                         #self.writer.controlList.append(newControl)   
-                        print(f'self.writer.controlList: {self.writer.controlList}')
-                        print(f'self.writer.controlList[i+1].controlLabel: {self.writer.controlList[i].controlLabel}')
-                        print(f'self.writer.controlList[0].controlLabel: {self.writer.controlList[0].controlLabel}')
-                        print(f'self.writer.controlList[1].controlLabel: {self.writer.controlList[1].controlLabel}')
-                    elif self.controlInitData[i][3] == 1:    #Control is Arpegio
-                        self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][11], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], controlType=self.controlInitData[i][10], conditionData=conditionDataList, bpm = self.writer.bpm, controlNum=i, rate=self.controlInitData[i][12], direction=self.controlInitData[i][13]))
-                    #self.writer.controlList.append(newControl)   
-                        print(f'self.writer.controlList: {self.writer.controlList}')
-                        print(f'self.writer.controlList[i+1].controlLabel: {self.writer.controlList[i].controlLabel}')
-                        print(f'self.writer.controlList[0].controlLabel: {self.writer.controlList[0].controlLabel}')
-                        print(f'self.writer.controlList[1].controlLabel: {self.writer.controlList[1].controlLabel}')
-               
-
-                window2.hide()
-                window2_1 = self.makeWindow2_1()
-
+                            print(f'self.writer.controlList: {self.writer.controlList}')
+                            print(f'self.writer.controlList[i+1].controlLabel: {self.writer.controlList[i].controlLabel}')
+                            print(f'self.writer.controlList[0].controlLabel: {self.writer.controlList[0].controlLabel}')
+                            print(f'self.writer.controlList[1].controlLabel: {self.writer.controlList[1].controlLabel}')
 
             if event == '-ANOTHERBTN-':
                 print()
@@ -1466,9 +1479,11 @@ class UX:
         
                 window.write_event_value("-MORECTRLS-", '') 
 
-            if event == '-FINISHED-':
+            if event == '-CONTUBTN-':
                 print()
-                print('Finished')
+                print('-CONTUBTN-')
+                window2.hide()
+                window2_1 = self.makeWindow2_1()
 
                     
 
