@@ -28,7 +28,7 @@ import window
 # [2] conditions data: [[[BEGIN ON POSITION], [BEGIN ON THRESHOLD], [END ON POSITION], [END ON THRESHOLD]], [[BEGIN OFF POSITION], [BEGIN OFF THRESHOLD], [END OFF POSITION], [END OFF THRESHOLD]]]
 # [3] Control Type {INT} 0 = modulate, 1 = Arpegiate, 2 = note
 # [4] Channel
-# [5] Rate
+# [5] Rate [Float]
 
 #Control Type Modulate
 # [6] WaveForm {STR}
@@ -1207,21 +1207,34 @@ class UX:
                 print(f'controlListStr: {controlListStr}')
                 print(f'self.controlInitData: {self.controlInitData}')
                 print(f'type(self.controlInitData): {type(self.controlInitData)}')
+                #ConditionType
+                if self.controlInitData[i][1] == 0:  #Condition type = Hold
+                    controlListStr = controlListStr + "Condition Type:  Hold\n" 
+                elif self.controlInitData[i][1] == 1:  #Condition type = Transition
+                    controlListStr = controlListStr + "Condition Type:  Transition\n"
+
                 for i in range(len(self.controlInitData)):
                     controlListStr = controlListStr + "Control Name: " + self.controlInitData[i][0] + "\n"
-                    if self.controlInitData[i][3] == 0:    #Control is MOdulate
-                        controlListStr = controlListStr + "Condition Type: Hold\n" 
+                    if self.controlInitData[i][3] == 0:    #Control is Modulate
 
-                        self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][4], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], conditionData=self.controlInitData[i][2], bpm = self.writer.bpm, controlNum=i))
+                        self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][4], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], conditionData=self.controlInitData[i][2], bpm = self.writer.bpm, controlNum=i, rate=self.controlInitData[i][5], waveform=self.controlInitData[i][6], minimum=self.controlInitData[i][7], maximum=self.controlInitData[i][8]))
                         #self.writer.controlList.append(newControl)   
                         print(f'self.writer.controlList: {self.writer.controlList}')
                         print(f'self.writer.controlList[i+1].controlLabel: {self.writer.controlList[i].controlLabel}')
                         print(f'self.writer.controlList[0].controlLabel: {self.writer.controlList[0].controlLabel}')
                         print(f'self.writer.controlList[1].controlLabel: {self.writer.controlList[1].controlLabel}')
+                    elif self.controlInitData[i][3] == 1:    #Control is Arpegio
+                         self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][4], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], conditionData=self.controlInitData[i][2], bpm = self.writer.bpm, controlNum=i, rate=self.controlInitData[i][5], direction=self.controlInitData[i][6]))
+                        #self.writer.controlList.append(newControl)   
+                         print(f'self.writer.controlList: {self.writer.controlList}')
+                         print(f'self.writer.controlList[i+1].controlLabel: {self.writer.controlList[i].controlLabel}')
+                         print(f'self.writer.controlList[0].controlLabel: {self.writer.controlList[0].controlLabel}')
+                         print(f'self.writer.controlList[1].controlLabel: {self.writer.controlList[1].controlLabel}')
+                    
 
-                #TODO Write the Mapping for the arpegio one 
-                # # add the proper values to map to them
-                #Log the data from the control class handles
+
+
+                #TODO Log the data from the control class handles
 
             if event == '-ANOTHERBTN-':
                 newControl = []

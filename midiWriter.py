@@ -142,14 +142,20 @@ class MiDiWriter:
     # ###           MidiControl
     # ############################################################################################################    
     class MidiControl:
-        def __init__(self, *, controlLabel='', midiOut=None, ToFEnable=0, updateFlag=0, predictions=[], conditionType=0, conditionData=[[0,3], [1,3]], value=-1, channel=None, controlNum=None, midiLoopCount = 0, bpm=0):
+        def __init__(self, *, controlLabel='', midiOut=None, ToFEnable=0, updateFlag=0, predictions=[], conditionType=0, conditionData=[[0,3], [1,3]], value=-1, channel=None, controlNum=None, midiLoopCount = 0, rate=None, waveform=None, minimum=None, maximum=None, direction=None):
             self.midiLoopCount = midiLoopCount #Precious value fed in each time the loop runs
             self.controlLabel = controlLabel
             self.midiOut = midiOut
-            self.bpm = bpm
+            #self.bpm = bpm
             self.channel = channel
             self.controlNum = controlNum
             self.updateFlag = updateFlag
+            #attributes provided by GUI
+            self.rate = rate
+            self.waveform = waveform
+            self.mimimum = minimum
+            self.maximum = maximum
+            self.direction = direction
             ##ConditionType determines what methods will be used to determine when and which attributes to change
             #Parameters for condition checcking methods will be passed in conditionData[]
             ###Condition Type definitions:
