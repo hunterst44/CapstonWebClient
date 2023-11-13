@@ -158,16 +158,16 @@ class GetData:
         else:
             mode = 'w'
         networkPath = self.pathPreface + '/' + pathSuffix #"/networks.csv"
-        print(f'networkPath: {networkPath}')
+        print(f'CSV writer path: {networkPath}')
         if os.path.exists(networkPath):
             print(f"network file exists")
-            with open(networkPath, mode) as csvfile:
+            with open(networkPath, mode, newline='') as csvfile:
                 csvWrite = csv.writer(csvfile)
                 csvWrite.writerow(csvRowList)
                 #[self.ssid, self.pswd, self.host, self.port]
         else:
              print(f"Creating new network file")
-             with open(networkPath, 'w') as csvfile:
+             with open(networkPath, 'w', newline='') as csvfile:
                 csvWrite = csv.writer(csvfile)
                 csvWrite.writerow(csvRowList)
 

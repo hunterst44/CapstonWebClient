@@ -23,20 +23,28 @@ import dill
 # [0] Control Name {STR}
 # [1] Condition Type {INT} 0 = Hold, 1 = Tranisiton, 2 = Pattern
 #Condition Type = Hold
-#[2] conditions data: [[ON POSITION], [ON THRESHOLD], [OFF POSITION], [OFFTHRESHOLD]]
+#[2] - [5] conditions data: [[ON POSITION], [ON THRESHOLD], [OFF POSITION], [OFFTHRESHOLD]]
+# [6] Control Type {INT} 0 = modulate, 1 = Arpegiate, 2 = note
+# [7] Channel
+# [8] Rate [Float]
+#Control Type Modulate
+# [9] WaveForm {STR}
+# [10] Minimum   {FLOAT} Modulate only
+# [11] Maximum   {FLOAT} Modulate only
+#Control Type Arpegiate
+# [9] Direction
 
 #Condition Type = Transition
-# [2] conditions data: [[[BEGIN ON POSITION], [BEGIN ON THRESHOLD], [END ON POSITION], [END ON THRESHOLD]], [[BEGIN OFF POSITION], [BEGIN OFF THRESHOLD], [END OFF POSITION], [END OFF THRESHOLD]]]
-# [3] Control Type {INT} 0 = modulate, 1 = Arpegiate, 2 = note
-# [4] Channel
-# [5] Rate [Float]
-
+# [2] - [9] conditions data: [[[BEGIN ON POSITION], [BEGIN ON THRESHOLD], [END ON POSITION], [END ON THRESHOLD]], [[BEGIN OFF POSITION], [BEGIN OFF THRESHOLD], [END OFF POSITION], [END OFF THRESHOLD]]]
+# [10] Control Type {INT} 0 = modulate, 1 = Arpegiate, 2 = note
+# [11] Channel
+# [12] Rate [Float]
 #Control Type Modulate
-# [6] WaveForm {STR}
+# [13] WaveForm {STR}
+# [14] Minimum   {FLOAT} Modulate only
+# [15] Maximum   {FLOAT} Modulate only
 #Control Type Arpegiate
-# [6] Direction
-# [7] Minimum
-# [8] Maximum
+# [13] Direction
 
 #Useful data:
 #controlTypeStr - text label of the control type
@@ -69,7 +77,7 @@ class UX:
         self.controlInitData = []
         #define a graph to make the double slider for max / min values
         #self.rateGraph=sg.Graph(canvas_size=(127,10), graph_bottom_left=(0, 0), graph_top_right=(100,10), background_color='blue', enable_events=True, drag_submits=True, key='-RATEGRAPH-', visible=False)
-
+        self.controlLogCheck = 0 #Change to 1 after the control log file has been checked  
 
         ports = self.writer.midiOut.get_ports()
         print(f'ports {ports}')
@@ -167,6 +175,16 @@ class UX:
             # window.write_event_value('-MESSAGE-', message)
             # #window['-MESSAGE-'].update(f'message')
 
+    def checkControlLog(self):
+        controlPath = self.dataStream.pathPreface + "/controls.csv"
+        newControlData = [-1]
+        if os.path.exists(controlPath):
+            with open(controlPath, 'r') as csvfile:
+                newControlData = list(csv.reader(csvfile, delimiter=","))
+                print(f'newControlData: {newControlData}')
+                
+        return newControlData
+    
 ###############################################################################################
 ##############                  Window Definitions                            #################
 ###############################################################################################
@@ -242,6 +260,8 @@ class UX:
         return sg.Window('THE CONDUCTOR: Step 1', layout, size=(self.windowSizeX,self.windowSizeY), finalize=True)
     
     def makeWindow2(self):
+
+        #Find MiDi ports to connect to
         self.writer.available_MiDiPortsOut = self.writer.midiOut.get_ports()
         self.writer.available_MiDiPortsIn = self.writer.midiIn.get_ports()
         
@@ -256,30 +276,108 @@ class UX:
         currentPositionList = []
         arpegDirList = ['Up', 'Down', 'Random']
 
+        controlLogData = self.checkControlLog()
+        logVisibility = False
+        logInvisibility = True
+        textHeight = 1
+
+        if controlLogData[0] != -1:
+            
+            self.writer.midiPortOut = controlLogData[0][0]  #MidiPort Name
+            self.writer.bpm = controlLogData[0][1]
+
+            #Describe the logged controls for the user:
+            controlListStr = "Logged Controls Found: \n MiDi Port: " + str(self.writer.midiPortOut) + " BPM: " + str(self.writer.bpm) + "\n"
+            
+            for i in range(len(controlLogData) - 1):
+                print(f'i: {i}')
+                self.controlInitData.append(controlLogData[i+1])
+
+                controlListStr = controlListStr + "\nControl Name: " + controlLogData[i+1][0] + "\n"
+                #ConditionType
+                textHeight = textHeight + 4 
+                if controlLogData[i+1][1] == '0':  #Condition type = Hold
+                    controlListStr = controlListStr + "Condition Type:  Hold\n"
+                    #print(f'position: {type(int(controlLogData[i+1][2][2]))}')
+                    controlListStr = controlListStr + "On Position: " + str(controlLogData[i+1][2]) + "\n"
+                    controlListStr = controlListStr + "On Threshold: " + str(controlLogData[i+1][3]) + "\n"
+                    controlListStr = controlListStr + "Off Position: " + str(controlLogData[i+1][4]) + "\n"
+                    controlListStr = controlListStr + "Off Threshold: " + str(controlLogData[i+1][5]) + "\n"
+                    textHeight = textHeight + 5 
+
+                    if controlLogData[i+1][6] == '0':    #Control is Modulate
+                        #self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][4], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], conditionData=self.controlInitData[i][2], bpm = self.writer.bpm, controlNum=i, rate=self.controlInitData[i][5], waveform=self.controlInitData[i][6], minimum=self.controlInitData[i][7], maximum=self.controlInitData[i][8]))
+                        #self.writer.controlList.append(newControl)
+                        controlListStr = controlListStr + "Control Type:  Modulate\n" 
+                        controlListStr = controlListStr + "Channel:  " + str(controlLogData[i+1][7]) + "\n"
+                        controlListStr = controlListStr + "Rate:  " + str(controlLogData[i+1][8]) + "\n"
+                        controlListStr = controlListStr + "Waveform:  " + controlLogData[i+1][9] + "\n"
+                        controlListStr = controlListStr + "Minimum Value:  " + str(controlLogData[i+1][10]) + "\n"
+                        controlListStr = controlListStr + "Maximum Value:  " + str(controlLogData[i+1][11]) + "\n"
+                        textHeight = textHeight + 6
+
+                    elif controlLogData[i+1][6] == '1':    #Control is Arpegio
+                        #self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][4], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], conditionData=self.controlInitData[i][2], bpm = self.writer.bpm, controlNum=i, rate=self.controlInitData[i][5], direction=self.controlInitData[i][6]))  
+                        controlListStr = controlListStr + "Control Type:  Arpeggio\n" 
+                        controlListStr = controlListStr + "Channel:  " + str(controlLogData[i+1][7]) + "\n"
+                        controlListStr = controlListStr + "Rate:  " + str(controlLogData[i+1][8]) + "\n"
+                        controlListStr = controlListStr + "Direction:  " + controlLogData[i+1][9] + "\n"
+                        textHeight = textHeight + 4
+
+                elif controlLogData[i+1][1] == '1':  #Condition type = Transition
+                    controlListStr = controlListStr + "Condition Type:  Transition\n"
+                    controlListStr = controlListStr + "Begin On Position: " + str(controlLogData[i+1][2]) + "\n"
+                    controlListStr = controlListStr + "Begin On Threshold: " + str(controlLogData[i+1][3]) + "\n"
+                    controlListStr = controlListStr + "End On Position: " + str(controlLogData[i+1][4]) + "\n"
+                    controlListStr = controlListStr + "End On Threshold: " + str(controlLogData[i+1][5]) + "\n"
+                    controlListStr = controlListStr + "Begin Off Position: " + str(controlLogData[i+1][6]) + "\n"
+                    controlListStr = controlListStr + "Begin Off Threshold: " + str(controlLogData[i+1][7]) + "\n"
+                    controlListStr = controlListStr + "End Off Position: " + str(controlLogData[i+1][8]) + "\n"
+                    controlListStr = controlListStr + "END Off Threshold: " + str(controlLogData[i+1][9]) + "\n"
+                    textHeight = textHeight + 9
+
+                    if controlLogData[i+1][10] == '0':    #Control is Modulate
+                        #self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][4], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], conditionData=self.controlInitData[i][2], bpm = self.writer.bpm, controlNum=i, rate=self.controlInitData[i][5], waveform=self.controlInitData[i][6], minimum=self.controlInitData[i][7], maximum=self.controlInitData[i][8]))
+                        #self.writer.controlList.append(newControl)
+                        controlListStr = controlListStr + "Control Type:  Modulate\n" 
+                        controlListStr = controlListStr + "Channel:  " + str(controlLogData[i+1][11]) + "\n"
+                        controlListStr = controlListStr + "Rate:  " + str(controlLogData[i+1][12]) + "\n"
+                        controlListStr = controlListStr + "Waveform:  " + controlLogData[i+1][13] + "\n"
+                        controlListStr = controlListStr + "Minimum Value:  " + str(controlLogData[i+1][14]) + "\n"
+                        controlListStr = controlListStr + "Maximum Value:  " + str(controlLogData[i+1][15]) + "\n"
+                        textHeight = textHeight + 6
+                    
+                    elif controlLogData[i+1][10] == '1':    #Control is Arpegio
+                        #self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][4], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], conditionData=self.controlInitData[i][2], bpm = self.writer.bpm, controlNum=i, rate=self.controlInitData[i][5], direction=self.controlInitData[i][6]))  
+                        controlListStr = controlListStr + "Control Type:  Arpeggio\n" 
+                        controlListStr = controlListStr + "Channel:  " + str(controlLogData[i+1][11]) + "\n"
+                        controlListStr = controlListStr + "Rate:  " + str(controlLogData[i+1][12]) + "\n"
+                        controlListStr = controlListStr + "Direction:  " + controlLogData[i+1][13] + "\n"
+                        textHeight = textHeight + 4
+                
+            print(f'controlListStr: {controlListStr} textHeight: {textHeight}')
+            Message00Text = "A log file exists with premapped controls.\n Click Ok to use these controls, or Overwrite to create new controls"
+            logVisibility = True
+            logInvisibility = False
+
+        else:
+             Message00Text = "Let's map MiDi controls to hand positions."
+             controlListStr = "First choose a MiDi port to send commands to:"
         
-        #Window2 Training or prediction select
-        #col1=[[sg.Text('Column1', background_color='red', size=sz)]]
-        # col2=[[sg.Text('Column2', background_color='green', size=sz)]]
-        # col3=[[sg.Text('Column3', background_color='yellow', size=sz)]]
-        # col4=[[sg.Text('Column4', background_color='blue', size=sz)]]
-
-        # layout = [[sg.Column(col1, element_justification='c' ), sg.Column(col2, element_justification='c')
-        #         , sg.Column(col3, element_justification='c'), sg.Column(col4, element_justification='c')]]
-
         layout = [
                     [
                         sg.Text('The Conductor: Window 2'), sg.Text(size=(2,1), key='-OUTPUT-')
                         #[sg.Input('How many hand positions will you train?', key="-NUMPOS-", visible=False, enable_events=True)]
                     ],
                     [
-                        sg.Column([[sg.Text(f"Let's map MiDi controls to hand positions.", key='-TOPMESSAGE00-', size=(50,1), visible=True)], 
-                                   [sg.Text(f"First choose a MiDi port to send commands to:", key='-TOPMESSAGE01-', size=(50,1), visible=True)],
-                                   [sg.Button('Ok', key='-USELOGBTN-', visible=False)]
+                        sg.Column([[sg.Text(Message00Text, key='-TOPMESSAGE00-', size=(50,2), visible=True)], 
+                                   [sg.Text(controlListStr, key='-TOPMESSAGE01-', size=(50,textHeight), visible=True)],
+                                   [sg.Button('OK', key='-USELOGBTN-', visible=logVisibility)], [sg.Button('Overwrite', key='-NEWCONTROLBTN-', visible=logVisibility)]
                                    ], 
                                    key='-TOPMESSAGE00COL-', element_justification='left', background_color='Blue', expand_x = True, vertical_alignment='t', pad=(0,0)), 
-                        sg.Column([[sg.Listbox(midiOutList, size=(50, 8), key="-MIDIPORTOUT-", expand_x=True, expand_y=True,enable_events=True, visible=True)], 
-                                   [sg.Button('Refresh', key='-MIDIOUTLISTRFH-', visible=True)], 
-                                   [sg.Button('Connect', key='-MIDIOUTCNTBTN-', visible=True)]
+                        sg.Column([[sg.Listbox(midiOutList, size=(50, 8), key="-MIDIPORTOUT-", expand_x=True, expand_y=True,enable_events=True, visible=logInvisibility)], 
+                                   [sg.Button('Refresh', key='-MIDIOUTLISTRFH-', visible=logInvisibility)], 
+                                   [sg.Button('Connect', key='-MIDIOUTCNTBTN-', visible=logInvisibility)]
                                   ], 
                                    key='-MIDIPORTOUTCOL-', background_color='Green', element_justification='left', expand_x = True, vertical_alignment='t', pad=(0,0))
                     ],
@@ -367,7 +465,7 @@ class UX:
         newControl = [] #Holds data from a new control until it is appended to the list
         usedPositions = [] #indexes of the positions in self.dataStream.
         usedChannels = {'m': 0, 'a':0, 'n': 0}
-        controlPath = self.dataStream.pathPreface + "control.csv"  
+        controlPath = self.dataStream.pathPreface + "/controls.csv"
         #self.positonPathList = ['pos1', 'pos2', 'pos3']
 
         stopPredict = 0
@@ -757,37 +855,51 @@ class UX:
                 print()
                 print()
                 print("Window 2")
-                if os.path.exists(controlPath):
-                    with open(controlPath, 'r') as csvfile:
-                        newControlData = list(csv.reader(csvfile, delimiter=","))
-                        print(f'newControlData: {newControlData}')
-                        
-                    # controlFile = open(controlPath, "rb")
-                    # newControlList = dill.load(controlFile)
-                    # controlFile.close()
-                    window['-TOPMESSAGE00COL-'].update("Previous Controls Found. Use these controls?")
-                    window['-USELOGBTN-'].update(visible=True)
-                    #TODO display the controls in the log file
 
-                    #self.writer.controlList
-
-                # self.writer.available_MiDiPortsOut = self.writer.midiOut.get_ports()
-                # self.writer.available_MiDiPortsIn = self.writer.midiIn.get_ports()
-
-                # print(f'self.writer.available_MiDiPortsOut: {self.writer.available_MiDiPortsOut}')
-                # print(f'self.writer.available_MiDiPortsOut[0]: {self.writer.available_MiDiPortsOut[0]}')
+                if event == sg.WIN_CLOSED or event == 'Exit':
+                    window2.hide()
+                    window1 =self.makeWindow1() 
 
                 if event == '-USELOGBTN-':
                     print()
                     print(f'Window 2 -USELOGBTN-')
-                    #TODO parse out the file
-                    self.controlInitData  = newControlData
-                    window.write_event_value(" -MAPPINGDONEBTN-", '')
+                    window['-TOPMESSAGE01-'].set_size(size = (50, 1))
+                    window['-NEWCONTROLBTN-'].update(visible=False)
+                    window['-USELOGBTN-'].update(visible=False)
+                    window['-MAPPINGDONEBTN-'].update(visible=True)
 
+                    self.controlLogCheck = 1
 
-                if event == sg.WIN_CLOSED or event == 'Exit':
-                    window2.hide()
-                    window1 =self.makeWindow1()   
+                    #Connect to stored MiDi port
+                    if not self.writer.midiOut.is_port_open():
+                        try:
+                            self.writer.midiOut.open_port(self.writer.midiPortOut) 
+                        except:
+                            print(f'Unable to connect to port {self.writer.midiPortOut}')  
+                    else:
+                        print(f'Port already open')
+                    print(f'midi port connected') 
+                    
+                    #Skip to the end
+                    window.write_event_value("-MAPPINGDONEBTN-", '')
+
+                if event == '-NEWCONTROLBTN-':
+                    print()
+                    print(f'Window 2 -NEWCONTROLBTN-')
+
+                    #Clear the log values
+                    self.controlInitData = []
+                    self.controlLogCheck = 0
+
+                    window['-TOPMESSAGE00-'].update("Let's map MiDi controls to hand positions.")
+                    window['-TOPMESSAGE01-'].update("First choose a MiDi port to send commands to:")
+                    window['-TOPMESSAGE01-'].set_size(size=(50,1))
+                    window['-USELOGBTN-'].update(visible=False)
+                    window['-NEWCONTROLBTN-'].update(visible=False)
+                    window['-MIDIPORTOUT-'].update(visible=True)
+                    window['-MIDIOUTLISTRFH-'].update(visible=True)
+                    window['-MIDIOUTCNTBTN-'].update(visible=True)
+                    window.refresh()
 
                 #Set up MiDi port
                 if event == '-MIDIOUTLISTRFH-':
@@ -865,10 +977,15 @@ class UX:
                     print(f'values["-BPMSLIDE-"][0]: {values["-BPMSLIDE-"]}')
                     
                     self.writer.bpm = values["-BPMSLIDE-"]
-                    if os.path.exists(controlPath):
-                        self.dataStream.logCSVRow('controls.csv', [self.writer.midiPortOut, self.writer.bpm], append=True)
-                    else:
-                        self.dataStream.logCSVRow('controls.csv', [self.writer.midiPortOut, self.writer.bpm], append=False)
+                    print(f'controlPath: {controlPath}')
+                    #Write the midiport and bpm to the file - overwrite file
+                    self.dataStream.logCSVRow('controls.csv', [self.writer.midiPortOut, self.writer.bpm], append=False)
+                    print(f'Write Port and Midi out - file does not exist')
+                    
+                    #Check the file contents
+                    with open(controlPath, 'r') as csvfile:
+                        print(f'{list(csv.reader(csvfile, delimiter=","))}')
+                        
                     print(f'self.writer.bpm: {self.writer.bpm}')
 
                     window['-BPMLABEL-'].update(visible=False)
@@ -885,11 +1002,7 @@ class UX:
                 if event == '-MORECTRLS-':
                    print()
                    print(f'Window 2 -MORECTRLS-')
-                #    if os.path.exists(controlPath):
-                #         self.dataStream.logCSVRow('/controls.csv', [self.writer.midiPortOut, self.writer.bpm], append=True)
-                #    else:
-                #         self.dataStream.logCSVRow('/controls.csv', [self.writer.midiPortOut, self.writer.bpm], append=False)
-
+                
                    window['-BPMBTN-'].update(visible=False)
                    window['-TOPMESSAGE00-'].update("Choose a name for the control")
                    window['-BPMCOL-'].set_size(size=(0,0))
@@ -897,6 +1010,11 @@ class UX:
                    window['-CTRLNAMECOL-'].update(visible=True)
                    window['-CTRLNAME-'].update(visible=True)
                    window['-CTRLNAMEBTN-'].update(visible=True)
+                   window['-DONELABEL-'].update(visible=False)
+                   window['-ANOTHERBTN-'].update(visible=False)
+                   window['-MAPPINGDONEBTN-'].update(visible=False)
+                   window['-DONECOL-'].set_size(size=(0,0))
+                   window['-DONECOL-'].update(visible=False)
                    window.refresh()
 
                 #Set Conditions
@@ -980,10 +1098,27 @@ class UX:
                         print(f'Window 2 -CONDBTN-')
 
                         #TODO Add selected positions indexes to usedPositions list
-
+                        onPos = -1
+                        offPos = -1
                         #print(f'values["-CONDBTN-"]: {values["-CONDBTN-"]}')
                     # [[On Position, On Threshold], [Off Position, Off Threshold]]
-                        newControl.append([[values['-CURRPOSLISTON-'][0], int(values['-CURRPOSONSLIDE-'])], [values['-CURRPOSLISTOFF-'][0], int(values['-CURRPOSOFFSLIDE-'])]])
+                        for i in range(len(self.positionPathList)):
+                            
+                            if values["-CURRPOSLISTON-"][0] == self.positionPathList[i]:
+                                print(f'values["-CURRPOSLISTON-"][0]: {values["-CURRPOSLISTON-"][0]}')
+                                print(f'self.positionPathList[i]: {self.positionPathList[i]}')
+                                onPos = i
+                            
+                            if values["-CURRPOSLISTOFF-"][0] == self.positionPathList[i]:
+                                print(f'values["-CURRPOSLISTOFF-"][0]: {values["-CURRPOSLISTOFF-"][0]}')
+                                print(f'self.positionPathList[i]: {self.positionPathList[i]}')
+                                offPos = i   
+                            print()
+
+                        newControl.append(onPos)
+                        newControl.append(int(values['-CURRPOSONSLIDE-']))
+                        newControl.append(offPos)
+                        newControl.append(int(values['-CURRPOSOFFSLIDE-']))
                     
                     else:
                        #Transition 
@@ -996,15 +1131,31 @@ class UX:
                        #    [Off Position End, Off Threshold End]
                        # ]
                        #]
-                       newControl.append([     #newControl[2] condition data
-                           [
-                            [values['-CURRPOSLISTON-'][0], int(values['-CURRPOSONSLIDE-'])], 
-                            [values['-CURRPOSLISTTRANSON-'][0], int(values['-CURRPOSTRANSONSLIDE-'])]
-                            ],                                           
-                            [[values['-CURRPOSLISTOFF-'][0], int(values['-CURRPOSOFFSLIDE-'])], 
-                             [values['-CURRPOSLISTTRANSOFF-'][0], int(values['-CURRPOSOFFTRANSSLIDE-'])]
-                            ]
-                       ])
+                        beginOnPos = -1 
+                        endOnPos = -1 
+                        beginOffPos = -1 
+                        endOffPos = -1
+                        for i in range(len(self.positionPathList)):
+                            if values["-CURRPOSLISTON-"][0] == self.positionPathList[i]:
+                                beginOnPos = i
+                            if values["-CURRPOSLISTTRANSON-"][0] == self.positionPathList[i]:
+                                endOnPos = i 
+                            if values["-CURRPOSLISTOFF-"][0] == self.positionPathList[i]:
+                                beginOffPos = i
+                            if values["-CURRPOSLISTTRANSOFF-"][0] == self.positionPathList[i]:
+                                endOffPos = i 
+                         #print(f'values["-CURRPOSLISTON-"]: {values["-CURRPOSLISTON-"]}')
+                         #print(f'values[-CURRPOSONSLIDE-]: {values["-CURRPOSONSLIDE-"]}')
+                         
+                        newControl.append(beginOnPos)
+                        newControl.append(int(values['-CURRPOSONSLIDE-']))
+                        newControl.append(endOnPos)
+                        newControl.append(int(values['-CURRPOSTRANSONSLIDE-']))
+                        newControl.append(beginOffPos)
+                        newControl.append(int(values['-CURRPOSOFFSLIDE-']))
+                        newControl.append(endOffPos)
+                        newControl.append(int(values['-CURRPOSOFFTRANSSLIDE-'])) 
+                        
                     print(f'newControl: {newControl}')
                     #Set Control Type
                     window['-CURRPOSTRANSONSLIDE-'].update(visible=False)
@@ -1166,16 +1317,16 @@ class UX:
                     newControl.append(newWaveForm)
                     newControl.append(newMin)
                     newControl.append(newMax)
-                    print(f'newControl: {newControl}')
+                    #print(f'newControl: {newControl}')
 
                     if newControl[1] == 0:
-                        positionMessage = "On Position: " + str(newControl[2][0][0]) + ", Threshold: " + str(newControl[2][0][1]) + "/n"
-                        positionMessage = positionMessage + "Off Position: " + str(newControl[2][1][0]) + ", Threshold: " + str(newControl[2][1][1])
-                    elif newControl[2] == 1:
-                        positionMessage = "Start /n On Position: " + str(newControl[2][0][0][0]) + ", Threshold: " + str(newControl[2][0][0][1]) + "/n"
-                        positionMessage = positionMessage + "End /n On Position: " + str(newControl[2][0][1][0]) + ", Threshold: " + str(newControl[2][0][1][1]) + "/n"
-                        positionMessage = positionMessage + "Start /n off Position: " + str(newControl[2][1][0][0]) + ", Threshold: " + str(newControl[2][1][0][1]) + "/n"
-                        positionMessage = positionMessage + "End /n Off Position: " + str(newControl[2][1][1][0]) + ", Threshold: " + str(newControl[2][1][1][1]) + "/n"
+                        positionMessage = "On Position: " + str(newControl[2]) + ", On Threshold: " + str(newControl[3]) + "/n"
+                        positionMessage = positionMessage + "Off Position: " + str(newControl[4]) + ", Off Threshold: " + str(newControl[5])
+                    elif newControl[1] == 1:
+                        positionMessage = "Start /n On Position: " + str(newControl[2]) + ", Threshold: " + str(newControl[3]) + "/n"
+                        positionMessage = positionMessage + "End /n On Position: " + str(newControl[4]) + ", Threshold: " + str(newControl[5]) + "/n"
+                        positionMessage = positionMessage + "Start /n off Position: " + str(newControl[6]) + ", Threshold: " + str(newControl[7]) + "/n"
+                        positionMessage = positionMessage + "End /n Off Position: " + str(newControl[8]) + ", Threshold: " + str(newControl[9]) + "/n"
                     else:
                        positionMessage = "[[XX,XX],[XX,XX]]"
 
@@ -1184,8 +1335,8 @@ class UX:
                 
                     print(f'self.controlInitData: {self.controlInitData}')
 
-                    window['-TOPMESSAGE01-'].update(f'Control Created! /n Name:{newControl[0]} /n Condition Type:{newControl[1]} /n {positionMessage} Control Type: {controlTypeStr} /n Rate: {newControl[5]} /n Waveform: {newControl[6]} /n Minimum: {newControl[7]} Maximum: {newControl[8]}')
-                    window['-TOPMESSAGE01-'].update(visible=True)
+                    window['-TOPMESSAGE00-'].update(f'Controls Created!')
+                    window['-TOPMESSAGE00-'].update(visible=True)
                     window['-DONELABEL-'].update(visible=True)
                     window['-ANOTHERBTN-'].update(visible=True)
                     window['-MAPPINGDONEBTN-'].update(visible=True)
@@ -1199,21 +1350,21 @@ class UX:
                 window['-ARPEGDIRCOL-'].set_size(size=(0,0))
                 window['-ARPEGDIRCOL-'].update(visible=False)
                 newRate = int(values['-RATESLIDE-'])
-                newOrder = values['-ARPEGDIR-']
+                newOrder = values['-ARPEGDIR-'][0]
 
                 newControl.append(newRate)
                 newControl.append(newOrder)
 
-                if newControl[1] == 'Hold':
-                        positionMessage = "On Position: " + str(newControl[2][0][0]) + ", Threshold: " + str(newControl[2][0][1]) + "/n"
-                        positionMessage = positionMessage + "Off Position: " + str(newControl[2][1][0]) + ", Threshold: " + str(newControl[2][1][1])
-                elif newControl[2] == 'Transition':
-                    positionMessage = "Start /n On Position: " + str(newControl[2][0][0][0]) + ", Threshold: " + str(newControl[2][0][0][1]) + "/n"
-                    positionMessage = positionMessage + "End /n On Position: " + str(newControl[2][0][1][0]) + ", Threshold: " + str(newControl[2][0][1][1]) + "/n"
-                    positionMessage = positionMessage + "Start /n off Position: " + str(newControl[2][1][0][0]) + ", Threshold: " + str(newControl[2][1][0][1]) + "/n"
-                    positionMessage = positionMessage + "End /n Off Position: " + str(newControl[2][1][1][0]) + ", Threshold: " + str(newControl[2][1][1][1]) + "/n"
+                if newControl[1] == 0:
+                    positionMessage = "On Position: " + str(newControl[2]) + ", On Threshold: " + str(newControl[3]) + "/n"
+                    positionMessage = positionMessage + "Off Position: " + str(newControl[4]) + ", Off Threshold: " + str(newControl[5])
+                elif newControl[1] == 1:
+                    positionMessage = "Start /n On Position: " + str(newControl[2]) + ", Threshold: " + str(newControl[3]) + "/n"
+                    positionMessage = positionMessage + "End /n On Position: " + str(newControl[4]) + ", Threshold: " + str(newControl[5]) + "/n"
+                    positionMessage = positionMessage + "Start /n off Position: " + str(newControl[6]) + ", Threshold: " + str(newControl[7]) + "/n"
+                    positionMessage = positionMessage + "End /n Off Position: " + str(newControl[8]) + ", Threshold: " + str(newControl[9]) + "/n"
                 else:
-                       positionMessage = "[[XX,XX],[XX,XX]]"
+                    positionMessage = "[[XX,XX],[XX,XX]]"
 
                 self.controlInitData.append(newControl)
                 print(f'newControl: {newControl}')
@@ -1231,7 +1382,13 @@ class UX:
                     #window['-MESSAGE01-'].update(f'Control Created! /n Name:{newControl[0]} /n Condition Type:{newControl[1]} /n {positionMessage} Control Type: {controlTypeStr} /n Rate: {newControl[5]} /n Waveform: {newControl[6]} /n Minimum: {newControl[7]} Maximum: {newControl[8]}')
                         
             if event == '-MAPPINGDONEBTN-':
-                #TODO log controlList
+                print()
+                print(f'Window 2 -MAPPINGDONEBTN-')
+                
+                window['-TOPMESSAGE00-'].update(f'Controls Created! Click Ok to continue. /n')
+                window['-TOPMESSAGE01-'].update(visible=False)
+                window.refresh()
+
                 print(f'Controls: {self.controlInitData}')
                 controlListStr = "Controls\n"
                 controlListStr = controlListStr + "BPM:" + str(self.writer.bpm) + "\n" 
@@ -1240,41 +1397,73 @@ class UX:
                 print(f'controlListStr: {controlListStr}')
                 print(f'self.controlInitData: {self.controlInitData}')
                 print(f'type(self.controlInitData): {type(self.controlInitData)}')
+                #Append the control data to the file
                 
-                
+                #if self.checkControlLog == 0: #Not using the logged data so we need a new log
                 for i in range(len(self.controlInitData)):
-                    if os.path.exists(controlPath):
+                    if self.controlLogCheck == 0: #Not using the logged data so we need a new log
                         self.dataStream.logCSVRow('controls.csv', self.controlInitData[i], append=True)
-                    else:
-                        self.dataStream.logCSVRow('controls.csv', self.controlInitData[i], append=False)
+                    #tmpList.append(self.controlInitData[i])
 
-                    controlListStr = controlListStr + "Control Name: " + self.controlInitData[i][0] + "/n"
-                    #ConditionType
-                    if self.controlInitData[i][1] == 0:  #Condition type = Hold
-                        controlListStr = controlListStr + "Condition Type:  Hold/n" 
-                    elif self.controlInitData[i][1] == 1:  #Condition type = Transition
-                        controlListStr = controlListStr + "Condition Type:  Transition/n"
-                    
+                        #Check the file has been logged properly
+                        with open(controlPath, 'r') as csvfile:
+                            tmpList = list(csv.reader(csvfile, delimiter=","))
+                            print(f'controls.csv: {tmpList}')
+
+                controlListStr = controlListStr + "Control Name: " + self.controlInitData[i][0] + "/n"
+                
+                #ConditionType
+                if self.controlInitData[i][1] == 0:  #Condition type = Hold
+                    controlListStr = controlListStr + "Condition Type:  Hold/n" 
+                    conditionDataList = [[self.controlInitData[i][2], self.controlInitData[i][2]], [self.controlInitData[i][3], self.controlInitData[i][4]]]
+                
                     if self.controlInitData[i][3] == 0:    #Control is Modulate
 
-                        self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][4], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], conditionData=self.controlInitData[i][2], bpm = self.writer.bpm, controlNum=i, rate=self.controlInitData[i][5], waveform=self.controlInitData[i][6], minimum=self.controlInitData[i][7], maximum=self.controlInitData[i][8]))
+                        self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][7], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], controlType=self.controlInitData[i][6], conditionData=conditionDataList, bpm = self.writer.bpm, controlNum=i, rate=self.controlInitData[i][8], waveform=self.controlInitData[i][9], minimum=self.controlInitData[i][10], maximum=self.controlInitData[i][11]))
                         #self.writer.controlList.append(newControl)   
                         print(f'self.writer.controlList: {self.writer.controlList}')
                         print(f'self.writer.controlList[i+1].controlLabel: {self.writer.controlList[i].controlLabel}')
                         print(f'self.writer.controlList[0].controlLabel: {self.writer.controlList[0].controlLabel}')
                         print(f'self.writer.controlList[1].controlLabel: {self.writer.controlList[1].controlLabel}')
                     elif self.controlInitData[i][3] == 1:    #Control is Arpegio
-                         self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][4], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], conditionData=self.controlInitData[i][2], bpm = self.writer.bpm, controlNum=i, rate=self.controlInitData[i][5], direction=self.controlInitData[i][6]))
+                        self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][7], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], controlType=self.controlInitData[i][6], conditionData=conditionDataList, bpm = self.writer.bpm, controlNum=i, rate=self.controlInitData[i][8], direction=self.controlInitData[i][9]))
+                    #self.writer.controlList.append(newControl)   
+                        print(f'self.writer.controlList: {self.writer.controlList}')
+                        print(f'self.writer.controlList[i+1].controlLabel: {self.writer.controlList[i].controlLabel}')
+                        print(f'self.writer.controlList[0].controlLabel: {self.writer.controlList[0].controlLabel}')
+                        print(f'self.writer.controlList[1].controlLabel: {self.writer.controlList[1].controlLabel}')
+                elif self.controlInitData[i][1] == 1:  #Condition type = Transition
+                    controlListStr = controlListStr + "Condition Type:  Transition/n"
+                    conditionDataList = [
+                        [[self.controlInitData[i][2], self.controlInitData[i][3]], [self.controlInitData[i][4], self.controlInitData[i][5]]],
+                        [[self.controlInitData[i][6], self.controlInitData[i][7]], [self.controlInitData[i][8], self.controlInitData[i][9]]]
+                    ]
+
+                    if self.controlInitData[i][3] == 0:    #Control is Modulate
+                        self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][11], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], controlType=self.controlInitData[i][10], conditionData=conditionDataList, bpm = self.writer.bpm, controlNum=i, rate=self.controlInitData[i][12], waveform=self.controlInitData[i][13], minimum=self.controlInitData[i][14], maximum=self.controlInitData[i][15]))
                         #self.writer.controlList.append(newControl)   
-                         print(f'self.writer.controlList: {self.writer.controlList}')
-                         print(f'self.writer.controlList[i+1].controlLabel: {self.writer.controlList[i].controlLabel}')
-                         print(f'self.writer.controlList[0].controlLabel: {self.writer.controlList[0].controlLabel}')
-                         print(f'self.writer.controlList[1].controlLabel: {self.writer.controlList[1].controlLabel}')
+                        print(f'self.writer.controlList: {self.writer.controlList}')
+                        print(f'self.writer.controlList[i+1].controlLabel: {self.writer.controlList[i].controlLabel}')
+                        print(f'self.writer.controlList[0].controlLabel: {self.writer.controlList[0].controlLabel}')
+                        print(f'self.writer.controlList[1].controlLabel: {self.writer.controlList[1].controlLabel}')
+                    elif self.controlInitData[i][3] == 1:    #Control is Arpegio
+                        self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][11], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], controlType=self.controlInitData[i][10], conditionData=conditionDataList, bpm = self.writer.bpm, controlNum=i, rate=self.controlInitData[i][12], direction=self.controlInitData[i][13]))
+                    #self.writer.controlList.append(newControl)   
+                        print(f'self.writer.controlList: {self.writer.controlList}')
+                        print(f'self.writer.controlList[i+1].controlLabel: {self.writer.controlList[i].controlLabel}')
+                        print(f'self.writer.controlList[0].controlLabel: {self.writer.controlList[0].controlLabel}')
+                        print(f'self.writer.controlList[1].controlLabel: {self.writer.controlList[1].controlLabel}')
+               
+
+                window2.hide()
+                window2_1 = self.makeWindow2_1()
+
 
             if event == '-ANOTHERBTN-':
+                print()
+                print(f'Window 2 -ANOTHERBTN-')
                 newControl = []
-                
-
+        
                 window.write_event_value("-MORECTRLS-", '') 
 
             if event == '-FINISHED-':
