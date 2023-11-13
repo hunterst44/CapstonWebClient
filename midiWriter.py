@@ -17,6 +17,7 @@ from scipy import signal
 from metronome import Metronome
 import buildMidi
 from midiPlayer import MidiPlayer
+from midiArp import MidiArp
 
 BPM = 30
 # import sys
@@ -57,6 +58,9 @@ class MiDiWriter:
         self.writerON = 0
         self.rate = rate
         self.midi_data_list = []
+        self.midiArp = MidiArp(midiIn_port_index = 3)
+        
+        self.midiArp.start_processing_thread()
         
         
         # self.midiBuilder = buildMidi.MidiBuilder()
@@ -281,7 +285,7 @@ class MiDiWriter:
     # ###           MidiControl
     # ############################################################################################################    
     class MidiControl:
-        def __init__(self, *, controlLabel='', midiOut=None, ToFEnable=0, updateFlag=0, predictions=[], conditionType=0, conditionData=[[0,3], [1,3]], value=-1, channel=None, controlNum=None, midiLoopCount = 0, bpm=BPM, controllerType=0, startFlag = 0, midiMessage = [60], shape = 0):
+        def __init__(self, *, controlLabel='', midiOut=None, ToFEnable=0, updateFlag=0, predictions=[], conditionType=0, conditionData=[[0,3], [1,3]], value=-1, channel=None, controlNum=None, midiLoopCount = 0, bpm=BPM, controllerType=0, startFlag = 0, midiMessage = [60], shape = 0, octave = 0, order = 0, midiIn = []):
             self.midiLoopCount = midiLoopCount #Precious value fed in each time the loop runs
             self.controlLabel = controlLabel
             self.midiOut = midiOut
@@ -320,6 +324,12 @@ class MiDiWriter:
             self.midiBuilder = buildMidi.MidiBuilder(dataType=self.controllerType, midiMessage=self.midiMessage, ch=self.channel, velocity=self.velocity, rate=self.beatLenStr)
             self.midiResults = self.midiBuilder.build_midi()
             self.startFlag = startFlag
+            
+            #midiArp Attributes
+            self.octave = octave
+            self.order = order
+            self.midiIn = midiIn
+            
 
       
         def changeRate(self, rate):  
