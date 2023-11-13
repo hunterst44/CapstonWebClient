@@ -2,6 +2,7 @@ import numpy as np
 from scipy import signal
 from rtmidi.midiconstants import CONTROL_CHANGE
 import matplotlib.pylab as plt
+import time
 
 BPM = 30
 
@@ -98,10 +99,19 @@ class MidiBuilder:
     def build_midi(self):
         midi_array = []
         if self.dataType == 0:  # for MIDI note data
-            for _ in range(self.multiply_rate()):
-                for note in self.midiMessage:
-                    midiNote = self.MIDINoteMessage(ch=self.ch, note=note, velocity=self.velocity)
-                    midi_array.append(midiNote.get_midi())
+            for _ in range(self.multiply_rate(self.rate)):
+                for note in set(self.midiMessage):  # Create a copy of the set
+                    # Create MIDI note-on message
+                    note_on = self.MIDINoteMessage(ch=self.ch, note=note, velocity=self.velocity)
+                    midi_array.append(note_on.get_midi())
+
+                    # Add a small delay between note-on and note-off (adjust as needed)
+                    time.sleep(0.1)
+
+                    # Create MIDI note-off message
+                    note_off = self.MIDINoteMessage(ch=self.ch, note=note, velocity=0)
+                    midi_array.append(note_off.get_midi())
+
             return midi_array
         elif self.dataType == 1:  # for MIDI control change data
             # ##Take out

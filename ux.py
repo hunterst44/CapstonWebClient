@@ -9,6 +9,7 @@ import socket
 import subprocess
 import shutil
 import sys
+import atexit
 
 
 class UX:
@@ -651,6 +652,7 @@ class UX:
                     break
 
                 if event == "-GOBTN-":
+                    # self.writer.refreshMidi()
                     print()
                     print("-GOBTN-")
                     #print(f'Collected sample {sampleCount + 1} of {self.packetLimit} samples for gesture {self.gestureCount + 1} of {self.numGestures} gestures')
@@ -688,6 +690,8 @@ class UX:
                         self.stopPredict = 0
                         
                 self.writer.writerON = 1
+                # if self.writer.midiArp.is_running == False:
+                #     self.writer.midiArp.start_processing_thread()
 
                 if event == "-STOPBTN-":
                     print()
@@ -700,6 +704,10 @@ class UX:
                     self.stopPredict = 1
                     self.writer.writerON = 0
                     self.writer.play_loop_started = False
+                    self.writer.metro.startFlag = 0
+                    # self.writer.midiArp.stop_processing_thread()
+                    # self.writer.midiArp.thread.join()
+                    # self.writer.midiArp.is_running = False
 
         window.close()
 

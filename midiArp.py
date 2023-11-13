@@ -15,7 +15,7 @@ class MidiArp:
         
 
     def process_messages(self):
-        self.is_running = True
+        # self.is_running = True
         try:
             while self.is_running:
                 msg = self.midi_in.get_message()
@@ -25,6 +25,9 @@ class MidiArp:
                 time.sleep(0.001)
                 
                 print(f"Currently Held Notes: {self.held_notes}")
+                print("Hello")
+                if self.is_running == False:
+                    return
 
         except KeyboardInterrupt:
             pass
@@ -45,10 +48,13 @@ class MidiArp:
 
     def start_processing_thread(self):
         thread = threading.Thread(target=self.process_messages)
+        self.is_running = True
         thread.start()
 
     def stop_processing_thread(self):
         self.is_running = False
+        # self.thread.join()
+        
 
     def reorder_held_notes(self):
         if self.order == 0:
@@ -71,33 +77,33 @@ class MidiArp:
             
         
 
-if __name__ == "__main__":
-    # Choose the desired input port index (change this to the appropriate index)
-    midiIn_port_index = 3
+# if __name__ == "__main__":
+#     # Choose the desired input port index (change this to the appropriate index)
+#     midiIn_port_index = 3
 
-    # Create an instance of MidiArp
-    midi_note_manager = MidiArp(midiIn_port_index)
+#     # Create an instance of MidiArp
+#     midi_note_manager = MidiArp(midiIn_port_index)
 
-    # Start processing MIDI messages in a separate thread
-    midi_note_manager.start_processing_thread()
+#     # Start processing MIDI messages in a separate thread
+#     midi_note_manager.start_processing_thread()
 
-    try:
-        while True:
-            # Print the held notes every second in the main thread
+#     try:
+#         while True:
+#             # Print the held notes every second in the main thread
             
             
-            # Change order every 5 seconds
+#             # Change order every 5 seconds
             
-            midi_note_manager.reorder_held_notes(2)
+#             midi_note_manager.reorder_held_notes(2)
 
-            # Shift the octaves every 7 seconds
+#             # Shift the octaves every 7 seconds
            
-            midi_note_manager.change_octave(2)
+#             midi_note_manager.change_octave(2)
 
-            print(f"Currently Held Notes: {midi_note_manager.held_notes}")
+#             print(f"Currently Held Notes: {midi_note_manager.held_notes}")
 
-            time.sleep(1)
+#             time.sleep(1)
 
-    except KeyboardInterrupt:
-        # Stop the processing thread when the main thread is interrupted
-        midi_note_manager.stop_processing_thread()
+#     except KeyboardInterrupt:
+#         # Stop the processing thread when the main thread is interrupted
+#         midi_note_manager.stop_processing_thread()

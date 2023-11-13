@@ -63,13 +63,7 @@ class MiDiWriter:
         # self.midiArp.start_processing_thread()
         
         
-        # self.midiBuilder = buildMidi.MidiBuilder()
-        # # self.midi_player = MidiPlayer()
 
-        # metro = Metronome(bpm = self.bpm)
-        # builder1 = buildMidi.MidiBuilder(dataType=self.control00.controllerType, midiMessage=[60], ch=self.control00.channel, velocity=64, rate='w')
-        # result1 = builder1.build_midi()
-        # midi_data_list = [result1]
         
         
         
@@ -203,19 +197,11 @@ class MiDiWriter:
         print()
         print('conductor()')
         
-        # self.control00.midiBuilder.midiMessage = [70]
-        # self.control01.midiBuilder.midiMessage= [65]
-        # self.control02.midiBuilder.midiMessage= [55]
+   
 
         self.refreshMidi()
         
-        
-        
-        # midi_data_list = [self.control00.midiResults, self.control01.midiResults, self.control02.midiResults]
-        # midi_players = [MidiPlayer(self.midiOut, self.metro.getTimeTick(midi_data), midi_data, onFlag="startFlag") for midi_data in midi_data_list]
-        
-        # midi_players = [MidiPlayer(self.midiOut, self.metro.getTimeTick(midi_data), midi_data) for control, midi_data in zip(self.controlList, midi_data_list)]
-
+       
         
         
        
@@ -233,11 +219,7 @@ class MiDiWriter:
        
         
         
-        
-        ##Conducts the process of gathering and sending data
-        #Called once per prediction loop
-        #Add as many controles as you need to get the effects you want
-        # Eventually I will write a control generator so you can create controles and conditions            
+            
        
         self.ToFEnable = 0
         #print(f'control List: {self.controlList}')
@@ -263,29 +245,7 @@ class MiDiWriter:
                     if self.ToFByte > 0 and self.ToFByte < 128:   #Make sure we have a valid ToF value
                         control.controlValue = self.ToFByte    #ToF supplies the control value 
                         # control.midiBuilder.newTof = control.controlValue
-            
-                #control.buildMidi()
-                # control.changeRate()
-
-        # 4 Start controlThread if it's not going already
-            # WriterThread = Thread(target=control00.sendBeat)
-                # if control.thread == None:
-                #     control.thread = threading.Thread(name=control.controlLabel, target=control.playBeat, args=(control.midiResults, midi_player.timeSlice, self.midiOut))
-                #     # control.thread =  threading.Thread(name=control.controlLabel, target=control.play_modulation_loop, args=( control.period, control.max_duration, control.invert))
-                #     control.thread.start()
-                #     print(f'control name {control.thread.getName()}')
-                #     print(f'control is alive {control.thread.is_alive()}')
-                #     print(f'Threads (In writer): {threading.enumerate()}')
-                # else:
-                #     print(f'control is alive? {control.thread.is_alive()}')
-                    
-            # control.startFlag=False
-                
-                    #control.thread.start()
-        
-        # while threading.active_count() > 1:    #wait for the last threads to finish processing
-        #     #print(f'threading.active_count(): {threading.active_count()}')
-        #     OSCThread.join() 
+    
 
 
     ##############################################################################################################
@@ -362,91 +322,7 @@ class MiDiWriter:
                
             print(self.beatLenStr)
 
-        # def playBeat(self, midi_data, timeSlice, midiOut):
-        #     while True:
-        #         startFlag = self.startFlag
-        #         if self.startFlag != True:
-        #             count = 0
-        #             while(count < 3):
-        #                 for msg in midi_data:
-        #                 # msg = midi_data
-        #                     print(f"Playing MIDI from control: {msg}")
-        #                     print(self.midiOut.is_port_open)
-        #                     midiOut.send_message(msg)
-        #                     time.sleep(timeSlice / 1000)
-        #                     time.sleep(0.002)
-        #             break
-                        
-        #         while (self.startFlag == True):
-        #             for msg in midi_data:
-        #                 # msg = midi_data
-        #                 print(f"Playing MIDI from control: {msg}")
-        #                 print(self.midiOut.is_port_open)
-        #                 midiOut.send_message(msg)
-        #                 time.sleep(timeSlice / 1000)
-        #                 time.sleep(0.002)
-                    
-     
-        #             #self.midiMessage = ([CONTROL_CHANGE | self.channel, self.controlNum, self.controlValue])
-        
-
-
-        # def play_modulation_loop(self, period, max_duration, signal):
-        #     if self.getBeatMillis():
-        #         modulation = self.modulation_shape(self.shape, self.period, 1, self.invert)
-        #         while True:
-        #             self.play_modulation(modulation, 8, self.midiOut)
-        #             #need to add flag to stop modulation
-               
-                    
-        # def play_modulation(self, y, max_duration,midiOut):
-        #     bpm = self.bpm
-        #     bps = bpm/60
-        #     pause_duration = self.getBeatMillis()/y.size
-        #     # pause_duration = max_duration / y.size
-        #     for v in y:
-        #         # beatStart = int(time() * 1000)
-        #         # beatStop = beatStart + pause_duration
-        #         v = self.convert_range(v, -1.0, 1.0, 0, 127)
-        #         v = self.convert_range(v, 0, 127, self.min_val, self.max_val)
-        #         # print(f"Mod: {v}")
-        #         mod = ([CONTROL_CHANGE | self.channel, self.cc_num, v])
-        #         print(self.midiOut.is_port_open())
-        #         midiOut.send_message(mod)
-        #         self.midiOut.send_message(mod)
-        #         print(time.time())
-        #         # time.sleep(0.5)
-                
-        #         # beatNow = int(time() * 1000)
-        #         # while beatNow < beatStop:
-        #         time.sleep((self.getBeatMillis()/1000)/10)
-        # def sendBeat(self, midiOut):
-        #     print("sendBeat")
-        #     self.getBeatMillis()
-        #     while True:
-        #         beatStart = int(time.time() * 1000)
-        #         #print(f'beatStart: {beatStart}')
-        #         beatStop = beatStart + self.beatMillis
-        #         print(self.getBeatMillis)
-        #         # print(f'beatStop: {beatStart}')
-        #         #Add other commands here...
-        #         if self.updateFlag:
-        #             try:
-        #                 midiOut.send_message(self.midiMessage)   
-        #                 print(f'midiOut sent: {self.midiMessage}')
-        #             except:
-        #                 print('midiOut failure') 
-        #         beatNow = int(time.time() * 1000)
-        #         # print(f'beatNow: {beatNow}')
-        #         # print(f'beatStop - beatNow: {beatStop - beatNow}') 
-        #         while beatStop - beatNow > 1:
-        #             beatNow = int(time.time() * 1000)
-        #             #print(f'beatStop - beatNow: {beatStop - beatNow}') 
-        #             time.sleep(0.001)
-        #         # if self.threadToggle == 1:
-        #         #     self.threadToggle = 0
-        #         # else:
-        #         #    self.threadToggle = 1 
+   
                 
                 
 
@@ -571,30 +447,7 @@ class MiDiWriter:
                             self.updateFlag = 0
                             self.startFlag = 0
 
-        # def buildMidi(self):
-        #     match self.controlNumType:
-        #         case 0:
-        #             print(f'channel:{self.channel}')
-        #             print(f'controlNum:{self.controlNum}')
-        #             print(f'controlValue:{self.controlValue}')
-
-        #             self.midiMessage = ([CONTROL_CHANGE | int(self.channel), int(self.controlNum), int(self.controlValue)])
-
-        # def changeRate(self):  
-        #         newRate = self.controlValue
-        #         print(newRate)
-        #         if(newRate < 10):
-        #             self.beatLenStr = 's'
-        #         elif( 10 < newRate and newRate < 20):
-        #             self.beatLenStr = 'e'
-        #         elif( 20 < newRate and newRate < 30):
-        #             self.beatLenStr = 'q'
-        #         elif( 30 < newRate and newRate < 50):
-        #             self.beatLenStr = 'h'
-        #         elif(50 < newRate):
-        #             self.beatLenStr = 'w'
-               
-        #         print(self.beatLenStr)
+  
 
 #####################################################################################      
 #Condition checking methods - called in checkConditions() based on switch case result
@@ -642,87 +495,6 @@ class MiDiWriter:
             else:
                 return -1 
 
-#####################################################################################
-##Midi Command builder methods - call these within condition checking methods above  
-######################################################################################       
-        # def modulateDist(self, gesture, threshold):
-        #     print("modulateDist")
-        #     self.gestureThreshold(gesture, threshold, 0) 
-
-        #     while self.midiLoopCount < self.modXIdx * 0.01:
-        #         self.modulate()
-        #         if self.messageType == 0xB:  #This is a control command so send this data...
-        #             self.midiMessage = ([CONTROL_CHANGE | self.channel, self.controlNum, self.controlValue])
-        #         self.midiLoopCount += 1
-
-        # def modulate(self):
-        # #How does self.ToFByte change the modulation?
-        #     y = self.modulation_shape(self.period, self.modLenS, self.midiLoopCount)
-        #     y = self.convert_range(y, -1.0, 1.0, 0, 127)
-        #     y = self.convert_range(y, 0, 127, self.min_val, self.max_val) 
-        #     self.controlValue = int((y * self.ToFByte) / 256)
-
-
-        # #Joel's modulation shape function - uses self.xxx atributes to set shape etc. 
-        # # We need these there so they can be exposed to the GUI        
-        # def modulation_shape(self, period, x, xArrIdx):
-        #     xArr = np.arrange(0, self.modLenS, 0.01)
-        #     x = xArr[xArrIdx]
-        #     y = 1
-
-        #     if self.shape == 0: #'sine':
-        #         y = self.invert * np.sin(2 * np.pi / period * x)
-        #     elif self.shape == 1: #'saw':
-        #         y = self.invert * signal.sawtooth(2 * np.pi / period * x)
-        #     elif self.shape == 2: #'square':
-        #         y = self.invert * signal.square(2 * np.pi / period * x)
-        #     else:
-        #         print("That wave is not supported")
-
-        #     return y   
-
-        # def modulation_shape(self, shape, period, max_duration, signal_invert):
-        #     x = np.arange(0, max_duration, 0.01)
-        #     y = 1
-        #     sig_invert = 1
-
-        #     if signal_invert:
-        #         sig_invert = -1
-
-        #     if shape == 'sine':
-        #         y = sig_invert * np.sin(2 * np.pi / period * x)
-        #     elif shape == 'saw':
-        #         y = sig_invert * signal.sawtooth(2 * np.pi / period * x)
-        #     elif shape == 'square':
-        #         y = sig_invert * signal.square(2 * np.pi / period * x)
-        #     else:
-        #         print("That wave is not supported")
-        #         sys.exit()  #We need to exit 
-
-        #     return y  
-                
-            # bpm = self.bpm
-            # bps = bpm/60
-            # pause_duration = self.getBeatMillis()/y.size
-            # # pause_duration = max_duration / y.size
-            # for v in y:
-            #     beatStart = int(time() * 1000)
-            #     beatStop = beatStart + pause_duration
-            #     v = self.convert_range(v, -1.0, 1.0, 0, 127)
-            #     v = self.convert_range(v, 0, 127, self.min_val, self.max_val)
-            #     # print(f"Mod: {v}")
-            #     mod = ([CONTROL_CHANGE | self.channel, self.cc_num, v])
-            #     self.midiout.send_message(mod)
-            #     beatNow = int(time() * 1000)
-            #     # while beatNow < beatStop:
-            #     time.sleep(pause_duration)
-                    
-        # def convert_range(self, value, in_min, in_max, out_min, out_max):
-        #     l_span = in_max - in_min
-        #     r_span = out_max - out_min
-        #     scaled_value = (value - in_min) / l_span
-        #     scaled_value = out_min + (scaled_value * r_span)
-        #     return np.round(scaled_value)
     
 
 def main():
