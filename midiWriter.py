@@ -33,7 +33,8 @@ class MiDiWriter:
 
     def __init__(self, *, predictions=[], port_name=1, channel=0, cc_num=75, bpm=240, rate='s', ToFByte=-1):
         self.midiOut = rtmidi.MidiOut()
-        self.port_name = port_name
+        self.midiIn = rtmidi.MidiIn()
+        self.midiPortOut = port_name
         self.bpm = bpm
         self.predictions = predictions
         self.ToFEnable = 0
@@ -41,14 +42,18 @@ class MiDiWriter:
         self.memorySizeMin = 100 #How many predictions to keep on purge
         self.ToFByte = ToFByte
         #self.channelCounters = []  #Use this to count each channels loops outside the loop
-        available_ports = self.midiOut.get_ports()
+        self.available_MiDiPortsOut = self.midiOut.get_ports()
         self.controlList = []
         self.loadChannels() #Load the Channels above - must be defined in loadChannels
-        available_ports = self.midiOut.get_ports()
+        self.available_MiDiPortsIn = self.midiIn.get_ports()
         
-        if len(available_ports) > 1:
-            print(f'available_ports: {available_ports}')
-            print(f'available_ports[0]: {available_ports[0]}')
+        # print(f'self.available_MiDiPortsOut: {self.available_MiDiPortsOut}')
+        # #print(f'self.available_MiDiPortsOut[0]: {self.available_MiDiPortsOut[0]}')
+        # print(f'self.available_MiDiPortsIn: {self.available_MiDiPortsIn}')
+        # #print(f'self.available_MiDiPortsIn[0]: {self.available_MiDiPortsIn[0]}')
+
+        if len(self.available_MiDiPortsOut) > 1:
+            
             self.midiOut.open_port(port_name)
         else:
             print(f"Could not find {port_name} in available ports. Opening the first port.")
@@ -65,7 +70,7 @@ class MiDiWriter:
         # Gesture -> conditionData[x][0] 
         # threshold -> conditionData[x][1])
 
-        self.control00 = self.MidiControl(controlLabel="Channel0", midiOut=self.midiOut, channel=0, predictions=self.predictions, conditionType=0, conditionData=[[0,3],[1,3]], bpm = self.bpm, controlNum=0, controllerType=0)
+        self.control00 = self.MidiControl(controlLabel="Channel0", midiOut=self.midiOut, channel=0, predictions=self.predictions, conditionType=0, conditionData=[[0,3],[1,3]], controlNum=0)
         
         self.controlList = [self.control00]
                   
@@ -117,15 +122,15 @@ class MiDiWriter:
 
         #4 Start controlThread if it's not going already
             #WriterThread = Thread(target=control00.sendBeat)
-                if control.thread == None:
-                    control.thread = threading.Thread(name=control.controlLabel, target=control.sendBeat, args=(self.midiOut,))
-                    control.thread =  threading.Thread(name=control.controlLabel, target=control.play_modulation_loop, args=( control.period, control.max_duration, control.invert))
-                    control.thread.start()
-                    print(f'control name {control.thread.getName()}')
-                    print(f'control is alive {control.thread.is_alive()}')
-                    print(f'Threads (In writer): {threading.enumerate()}')
-                else:
-                    print(f'control is alive? {control.thread.is_alive()}')
+                # if control.thread == None:
+                #     #control.thread = threading.Thread(name=control.controlLabel, target=control.sendBeat, args=(self.midiOut,))
+                #     #control.thread =  threading.Thread(name=control.controlLabel, target=control.play_modulation_loop, args=( control.period, control.max_duration, control.invert))
+                #     #control.thread.start()
+                #     print(f'control name {control.thread.getName()}')
+                #     print(f'control is alive {control.thread.is_alive()}')
+                #     print(f'Threads (In writer): {threading.enumerate()}')
+                # else:
+                #     print(f'control is alive? {control.thread.is_alive()}')
                 #control.thread.start()
         
         # while threading.active_count() > 1:    #wait for the last threads to finish processing
@@ -137,20 +142,28 @@ class MiDiWriter:
     # ###           MidiControl
     # ############################################################################################################    
     class MidiControl:
-        def __init__(self, *, controlLabel='', midiOut=None, ToFEnable=0, updateFlag=0, predictions=[], conditionType=0, conditionData=[[0,3], [1,3]], value=-1, channel=None, controlNum=None, midiLoopCount = 0, bpm=0, controllerType=0):
+        def __init__(self, *, controlLabel='', midiOut=None, ToFEnable=0, updateFlag=0, predictions=[], conditionType=0, conditionData=[[0,3], [1,3]], value=-1, channel=None, controlNum=None, midiLoopCount = 0, rate=None, waveform=None, minimum=None, maximum=None, direction=None, bpm=120, controlType = 0):
             self.midiLoopCount = midiLoopCount #Precious value fed in each time the loop runs
             self.controlLabel = controlLabel
             self.midiOut = midiOut
             self.bpm = bpm
             self.channel = channel
             self.controlNum = controlNum
+            self.controlType = controlType  #0 modulate, 1 arpeggiate, 2 notes
             self.updateFlag = updateFlag
+            #attributes provided by GUI
+            self.rate = rate
+            self.waveform = waveform
+            self.mimimum = minimum
+            self.maximum = maximum
+            self.direction = direction
             ##ConditionType determines what methods will be used to determine when and which attributes to change
             #Parameters for condition checcking methods will be passed in conditionData[]
             ###Condition Type definitions:
              ## 0 - gestureThreshold(gesture, threshold) 
             #       checks for a gesture (conditionData[x][0]) 
             #       held for a threshold (conditionData[x][1])
+            ## 1 
             self.conditionType = conditionType 
             self.conditionData = conditionData   ##
             self.value = value
@@ -170,7 +183,7 @@ class MiDiWriter:
             self.max_val = 127
             self.period = 1
             self.thread = None
-            self.controllerType = controllerType
+            #self.controllerType = controllerType
             self.threadToggle = 0 #toggle this within the thread to see what it is doing
             #self.max_duration = max_duration
 
@@ -205,19 +218,19 @@ class MiDiWriter:
                 # while beatNow < beatStop:
                 time.sleep((self.getBeatMillis()/1000)/10)
         def sendBeat(self, midiOut):
-            print("sendBeat")
+            #print("sendBeat")
             self.getBeatMillis()
             while True:
                 beatStart = int(time.time() * 1000)
                 #print(f'beatStart: {beatStart}')
                 beatStop = beatStart + self.beatMillis
-                print(self.getBeatMillis)
+                #print(self.getBeatMillis)
                 # print(f'beatStop: {beatStart}')
                 #Add other commands here...
                 if self.updateFlag:
                     try:
                         midiOut.send_message(self.midiMessage)   
-                        print(f'midiOut sent: {self.midiMessage}')
+                        #print(f'midiOut sent: {self.midiMessage}')
                     except:
                         print('midiOut failure') 
                 beatNow = int(time.time() * 1000)

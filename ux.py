@@ -12,10 +12,42 @@ import NeuralNetwork
 # import shutil
 #import sys
 import window
+import dill
 
 
 # UX.py use this file for developing data bindings to the GUI. Window difinitions are defined in this file.
 
+#self.writer.controlList is a list of lists containing data for setting up controls in midiwriter.py
+# The format and content of the controls lists changes depending on the condition and control types:
+#  Some are common to all types
+# [0] Control Name {STR}
+# [1] Condition Type {INT} 0 = Hold, 1 = Tranisiton, 2 = Pattern
+#Condition Type = Hold
+#[2] - [5] conditions data: [[ON POSITION], [ON THRESHOLD], [OFF POSITION], [OFFTHRESHOLD]]
+# [6] Control Type {INT} 0 = modulate, 1 = Arpegiate, 2 = note
+# [7] Channel
+# [8] Rate [Float]
+#Control Type Modulate
+# [9] WaveForm {STR}
+# [10] Minimum   {FLOAT} Modulate only
+# [11] Maximum   {FLOAT} Modulate only
+#Control Type Arpegiate
+# [9] Direction
+
+#Condition Type = Transition
+# [2] - [9] conditions data: [[[BEGIN ON POSITION], [BEGIN ON THRESHOLD], [END ON POSITION], [END ON THRESHOLD]], [[BEGIN OFF POSITION], [BEGIN OFF THRESHOLD], [END OFF POSITION], [END OFF THRESHOLD]]]
+# [10] Control Type {INT} 0 = modulate, 1 = Arpegiate, 2 = note
+# [11] Channel
+# [12] Rate [Float]
+#Control Type Modulate
+# [13] WaveForm {STR}
+# [14] Minimum   {FLOAT} Modulate only
+# [15] Maximum   {FLOAT} Modulate only
+#Control Type Arpegiate
+# [13] Direction
+
+#Useful data:
+#controlTypeStr - text label of the control type
 
 
 class UX:
@@ -35,12 +67,24 @@ class UX:
         self.goTrain = 0
         self.Test = 0 # A variable to test things
         self.windowSizeX = 900
-        self.windowSizeY = 500
+        self.windowSizeY = 700
         self.stopPredict = 0
         self.dataStream = socketClientUx.GetData() # default values: host="192.168.4.1", port=80, packetSize=1, numSensors=4, pathPreface='data/test', labelPath="Test", label=0, getTraining=True
         self.IPAddress = ''
         self.SSIDList = []
-        self.positionPathList = []
+        self.positionPathList = ['pos1', 'pos2', 'pos3']
+        #self.controlList = [] #a List of controls from GUI or log file
+        self.controlInitData = []
+        #define a graph to make the double slider for max / min values
+        #self.rateGraph=sg.Graph(canvas_size=(127,10), graph_bottom_left=(0, 0), graph_top_right=(100,10), background_color='blue', enable_events=True, drag_submits=True, key='-RATEGRAPH-', visible=False)
+        self.controlLogCheck = 0 #Change to 1 after the control log file has been checked  
+
+        ports = self.writer.midiOut.get_ports()
+        print(f'ports {ports}')
+        
+        print(f'available_MiDiPortsOut {self.writer.available_MiDiPortsOut}')
+        ports = self.writer.midiOut.get_ports()
+        print(f'ports {ports}')
 
 
 ###############################################################################################
@@ -131,6 +175,94 @@ class UX:
             # window.write_event_value('-MESSAGE-', message)
             # #window['-MESSAGE-'].update(f'message')
 
+    def checkControlLog(self):
+        controlPath = self.dataStream.pathPreface + "/controls.csv"
+        newControlData = [-1]
+        if os.path.exists(controlPath):
+            with open(controlPath, 'r') as csvfile:
+                newControlData = list(csv.reader(csvfile, delimiter=","))
+                print(f'newControlData: {newControlData}')
+                
+        return newControlData
+    
+    def getControlListStr(self, controlLogData):
+        #Parses the logged controls into human readable format for the GUI
+        #Also returns the height in lines of text
+        print('getControlListStr(self, controlLogData)')
+        controlListStr = "Logged Controls Found: \n MiDi Port: " + str(self.writer.midiPortOut) + " BPM: " + str(self.writer.bpm) + "\n"
+        textHeight = 1
+
+        for i in range(len(controlLogData)):
+            print(f'i: {i}')
+            print(f'controlLogData: {controlLogData}')            
+            self.controlInitData.append(controlLogData[i])
+
+            controlListStr = controlListStr + "\nControl Name: " + controlLogData[i][0] + "\n"
+            #ConditionType
+            textHeight = textHeight + 4 
+            if controlLogData[i][1] == '0' or controlLogData[i][1] == 0:  #Condition type = Hold
+                controlListStr = controlListStr + "Condition Type:  Hold\n"
+                #print(f'position: {type(int(controlLogData[i][2][2]))}')
+                controlListStr = controlListStr + "On Position: " + str(controlLogData[i][2]) + "\n"
+                controlListStr = controlListStr + "On Threshold: " + str(controlLogData[i][3]) + "\n"
+                controlListStr = controlListStr + "Off Position: " + str(controlLogData[i][4]) + "\n"
+                controlListStr = controlListStr + "Off Threshold: " + str(controlLogData[i][5]) + "\n"
+                textHeight = textHeight + 5 
+
+                if controlLogData[i][6] == '0' or controlLogData[i][6] == 0:    #Control is Modulate
+                    #self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][4], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], conditionData=self.controlInitData[i][2], bpm = self.writer.bpm, controlNum=i, rate=self.controlInitData[i][5], waveform=self.controlInitData[i][6], minimum=self.controlInitData[i][7], maximum=self.controlInitData[i][8]))
+                    #self.writer.controlList.append(newControl)
+                    controlListStr = controlListStr + "Control Type:  Modulate\n" 
+                    controlListStr = controlListStr + "Channel:  " + str(controlLogData[i][7]) + "\n"
+                    controlListStr = controlListStr + "Rate:  " + str(controlLogData[i][8]) + "\n"
+                    controlListStr = controlListStr + "Waveform:  " + controlLogData[i][9] + "\n"
+                    controlListStr = controlListStr + "Minimum Value:  " + str(controlLogData[i][10]) + "\n"
+                    controlListStr = controlListStr + "Maximum Value:  " + str(controlLogData[i][11]) + "\n"
+                    textHeight = textHeight + 6
+
+                elif controlLogData[i][6] == '1' or controlLogData[i][6] == 1:    #Control is Arpegio
+                    #self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][4], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], conditionData=self.controlInitData[i][2], bpm = self.writer.bpm, controlNum=i, rate=self.controlInitData[i][5], direction=self.controlInitData[i][6]))  
+                    controlListStr = controlListStr + "Control Type:  Arpeggio\n" 
+                    controlListStr = controlListStr + "Channel:  " + str(controlLogData[i][7]) + "\n"
+                    controlListStr = controlListStr + "Rate:  " + str(controlLogData[i][8]) + "\n"
+                    controlListStr = controlListStr + "Direction:  " + controlLogData[i][9] + "\n"
+                    textHeight = textHeight + 4
+
+            elif controlLogData[i][1] == '1' or controlLogData[i][1] == 1:  #Condition type = Transition
+                controlListStr = controlListStr + "Condition Type:  Transition\n"
+                controlListStr = controlListStr + "Begin On Position: " + str(controlLogData[i][2]) + "\n"
+                controlListStr = controlListStr + "Begin On Threshold: " + str(controlLogData[i][3]) + "\n"
+                controlListStr = controlListStr + "End On Position: " + str(controlLogData[i][4]) + "\n"
+                controlListStr = controlListStr + "End On Threshold: " + str(controlLogData[i][5]) + "\n"
+                controlListStr = controlListStr + "Begin Off Position: " + str(controlLogData[i][6]) + "\n"
+                controlListStr = controlListStr + "Begin Off Threshold: " + str(controlLogData[i][7]) + "\n"
+                controlListStr = controlListStr + "End Off Position: " + str(controlLogData[i][8]) + "\n"
+                controlListStr = controlListStr + "END Off Threshold: " + str(controlLogData[i][9]) + "\n"
+                textHeight = textHeight + 9
+
+                if controlLogData[i][10] == '0' or controlLogData[i][10] == 0:    #Control is Modulate
+                    #self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][4], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], conditionData=self.controlInitData[i][2], bpm = self.writer.bpm, controlNum=i, rate=self.controlInitData[i][5], waveform=self.controlInitData[i][6], minimum=self.controlInitData[i][7], maximum=self.controlInitData[i][8]))
+                    #self.writer.controlList.append(newControl)
+                    controlListStr = controlListStr + "Control Type:  Modulate\n" 
+                    controlListStr = controlListStr + "Channel:  " + str(controlLogData[i][11]) + "\n"
+                    controlListStr = controlListStr + "Rate:  " + str(controlLogData[i][12]) + "\n"
+                    controlListStr = controlListStr + "Waveform:  " + controlLogData[i][13] + "\n"
+                    controlListStr = controlListStr + "Minimum Value:  " + str(controlLogData[i][14]) + "\n"
+                    controlListStr = controlListStr + "Maximum Value:  " + str(controlLogData[i][15]) + "\n"
+                    textHeight = textHeight + 6
+                
+                elif controlLogData[i][10] == '1' or controlLogData[i][10] == 1:    #Control is Arpegio
+                    #self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][4], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], conditionData=self.controlInitData[i][2], bpm = self.writer.bpm, controlNum=i, rate=self.controlInitData[i][5], direction=self.controlInitData[i][6]))  
+                    controlListStr = controlListStr + "Control Type:  Arpeggio\n" 
+                    controlListStr = controlListStr + "Channel:  " + str(controlLogData[i][11]) + "\n"
+                    controlListStr = controlListStr + "Rate:  " + str(controlLogData[i][12]) + "\n"
+                    controlListStr = controlListStr + "Direction:  " + controlLogData[i][13] + "\n"
+                    textHeight = textHeight + 4
+        
+        return controlListStr, textHeight
+            
+
+    
 ###############################################################################################
 ##############                  Window Definitions                            #################
 ###############################################################################################
@@ -206,12 +338,97 @@ class UX:
         return sg.Window('THE CONDUCTOR: Step 1', layout, size=(self.windowSizeX,self.windowSizeY), finalize=True)
     
     def makeWindow2(self):
-        #Window3 Training or prediction select
-        layout = [[sg.Text('The Conductor: Window 2'), sg.Text(size=(2,1), key='-OUTPUT-')],
-                  [sg.pin(sg.Column([[sg.Text('Train Model'), sg.Text(size=(2,1), key='-TRAIN-'), sg.Button('Train', key='-TRAINBTN-')]]))],
-                  [sg.pin(sg.Column([[sg.Text('Predict hand positions'), sg.Text(size=(2,1), key='-PREDICT-'), sg.Button('Predict', key='-PREDICTBTN-')]]))],
-                  [sg.pin(sg.Column([[sg.Text('', visible=True, key='-WORDS-'), sg.Text(size=(2,1))]], pad=(0,0)), shrink=False)],
-        ]
+
+        #Find MiDi ports to connect to
+        self.writer.available_MiDiPortsOut = self.writer.midiOut.get_ports()
+        self.writer.available_MiDiPortsIn = self.writer.midiIn.get_ports()
+        
+        numOutPOrts = len(self.writer.available_MiDiPortsOut)
+        midiOutList = [] 
+        for i in range(numOutPOrts):
+            midiOutList.append(self.writer.available_MiDiPortsOut[i])
+
+        controlList = ['Modulate', 'Arrpegiate']
+        waveList = ['sine', 'square', 'saw']
+        conditionTypeList = ['Hold', 'Transition']
+        currentPositionList = []
+        arpegDirList = ['Up', 'Down', 'Random']
+
+        controlLogData = self.checkControlLog()
+        logVisibility = False
+        logInvisibility = True
+
+        if controlLogData[0] != -1:
+            self.writer.midiPortOut = controlLogData[0][0]  #MidiPort Name
+            self.writer.bpm = controlLogData[0][1]
+
+            newControlList = controlLogData[1:]  #Take the first item off the list
+            controlListStr, textHeight = self.getControlListStr(newControlList)
+
+            print(f'controlListStr: {controlListStr} textHeight: {textHeight}')
+            Message00Text = "A log file exists with premapped controls.\n Click Ok to use these controls, or Overwrite to create new controls"
+            logVisibility = True
+            logInvisibility = False
+
+        else:
+             Message00Text = "Let's map MiDi controls to hand positions."
+             controlListStr = "First choose a MiDi port to send commands to:"
+        
+        layout = [
+                    [
+                        sg.Text('The Conductor: Window 2'), sg.Text(size=(2,1), key='-OUTPUT-')
+                        #[sg.Input('How many hand positions will you train?', key="-NUMPOS-", visible=False, enable_events=True)]
+                    ],
+                    [
+                        sg.Column([[sg.Text(Message00Text, key='-TOPMESSAGE00-', size=(50,2), visible=True)], 
+                                   [sg.Text(controlListStr, key='-TOPMESSAGE01-', size=(50,textHeight), visible=True)],
+                                   [sg.Button('OK', key='-USELOGBTN-', visible=logVisibility)], [sg.Button('Overwrite', key='-NEWCONTROLBTN-', visible=logVisibility)], [sg.Button('Continue', key='-CONTUBTN-', visible=False)]
+                                   ], 
+                                   key='-TOPMESSAGE00COL-', element_justification='left', background_color='Blue', expand_x = True, vertical_alignment='t', pad=(0,0)), 
+                        sg.Column([[sg.Listbox(midiOutList, size=(50, 8), key="-MIDIPORTOUT-", expand_x=True, expand_y=True,enable_events=True, visible=logInvisibility)], 
+                                   [sg.Button('Refresh', key='-MIDIOUTLISTRFH-', visible=logInvisibility)], 
+                                   [sg.Button('Connect', key='-MIDIOUTCNTBTN-', visible=logInvisibility)]
+                                  ], 
+                                   key='-MIDIPORTOUTCOL-', background_color='Green', element_justification='left', expand_x = True, vertical_alignment='t', pad=(0,0))
+                    ],
+                    [
+                        sg.pin(sg.Column([[sg.Text("BPM", key='-BPMLABEL-', visible=False)],[sg.Slider(range=(30, 300), default_value=120, expand_x=True,orientation='horizontal', key='-BPMSLIDE-', visible=False)], [sg.Button('Ok', key='-BPMBTN-', visible=False)]], key='-BPMCOL-', background_color = 'Yellow', vertical_alignment='t', pad=(0,0)), shrink=True),
+                        sg.Column([[sg.Input('Control Name', size=(15,10), key="-CTRLNAME-", visible=False)], [sg.Button('Ok', key='-CTRLNAMEBTN-', visible=False)]], key='-CTRLNAMECOL-', background_color = 'Yellow', vertical_alignment='t', visible=False, pad=(0,0)),
+                        sg.Column([[sg.Listbox(conditionTypeList, size=(10, 3), key="-CONDTYPE-", expand_y=True, enable_events=True, visible=False)]], key='-CONDTYPECOL-', background_color = 'Red', vertical_alignment='t', pad=(0,0), visible=False),
+                        sg.Column([[sg.Text(f"Position, threshold Control ON.", key='-CURRPOSONLABEL-', size=(15,2), visible=False)], [sg.Listbox(currentPositionList, size=(10, 3), key="-CURRPOSLISTON-", expand_y=True, enable_events=True, visible=False)], [sg.Slider(range=(1, 25), default_value=3, expand_x=True,orientation='horizontal', key='-CURRPOSONSLIDE-', visible=False)]], key='-CURRPOSLISTONCOL-', background_color = 'Red', vertical_alignment='t', pad=(0,0), visible=False),
+                        sg.Column([[sg.Text(f"Position, threshold at END ON.", key='-CURRPOSTRANSONLABEL-', size=(15,2), visible=False)], [sg.Listbox(currentPositionList, size=(10, 3), key="-CURRPOSLISTTRANSON-", expand_y=True, enable_events=True, visible=False)], [sg.Slider(range=(1, 25), default_value=3, expand_x=True,orientation='horizontal', key='-CURRPOSTRANSONSLIDE-', visible=False)]], key='-CURRPOSLISTTRANSONCOL-', background_color = 'Red', vertical_alignment='t', pad=(0,0), visible=False),
+                        
+                        sg.Column([[sg.Text(f"Position, threshold control OFF.", key='-CURRPOSOFFLABEL-', size=(15,2), visible=False)], [sg.Listbox(currentPositionList, size=(10, 3), key="-CURRPOSLISTOFF-", expand_y=True, enable_events=True, visible=False)], [sg.Slider(range=(1, 25), default_value=3, expand_x=True,orientation='horizontal', key='-CURRPOSOFFSLIDE-', visible=False)], [sg.Button('Ok', key='-CONDBTN-', visible=False)]], key='-CURRPOSLISTOFFCOL-', background_color = 'Red', vertical_alignment='t', pad=(0,0), visible=False),
+                        sg.Column([[sg.Text(f"Position, threshold at END OFF.", key='-CURRPOSOFFTRANSLABEL-', size=(15,2), visible=False)], [sg.Listbox(currentPositionList, size=(10, 3), key="-CURRPOSLISTTRANSOFF-", expand_y=True, enable_events=True, visible=False)], [sg.Slider(range=(1, 25), default_value=3, expand_x=True,orientation='horizontal', key='-CURRPOSOFFTRANSSLIDE-', visible=False)], [sg.Button('Ok', key='-CONDTRANSBTN-', visible=False)]], key='-CURRPOSLISTTRANSOFFCOL-', background_color = 'Red', vertical_alignment='t', pad=(0,0), visible=False),
+                        sg.Column([[sg.Listbox(arpegDirList, size=(10, 3), key="-ARPEGDIR-", expand_y=True, enable_events=True, visible=False)], [sg.Button('Ok', key='-ARPEGBTN-', visible=False)]], key='-ARPEGDIRCOL-', background_color = 'Red', vertical_alignment='t', pad=(0,0), visible=False),
+                        
+                        sg.Column([[sg.Listbox(controlList, size=(10, 3), key="-CTRLLIST-", expand_y=True, enable_events=True, visible=False)], [sg.Button('Select', key='-SELCNTRLTYPEBTN-', visible=False)]], key='-CTRLLISTCOL-', background_color = 'Red', vertical_alignment='t', pad=(0,0)),
+                        sg.Column([[sg.Text(f"Rate", key='-RATELABEL-', size=(15,2), visible=False)], [sg.Slider(range=(0, 127), default_value=30, expand_x=True,orientation='horizontal', key='-RATESLIDE-', visible=False)]], key='-RATECOL-', background_color = 'Red', vertical_alignment='t', pad=(0,0)),
+                        sg.Column([[sg.Text(f"Waveform", key='-WAVELABEL-', size=(15,2), visible=False)], [sg.Listbox(waveList, size=(50, 3), key="-WAVELIST-", enable_events=True, visible=False)]], key='-WAVECOL-', background_color = 'Blue', vertical_alignment='t', pad=(0,0)),
+                        sg.Column([[sg.Text(f"Minimum", key='-MINLABEL-', size=(15,2), visible=False)], [sg.Slider(range=(0, 127), default_value=30, expand_x=True,orientation='horizontal', key='-MINSLIDE-', visible=False)]], key='-MINCOL-', background_color = 'Pink', vertical_alignment='t', pad=(0,0)),
+                        sg.Column([[sg.Text(f"Maximum", key='-MAXLABEL-', size=(15,2), visible=False)], [sg.Slider(range=(0, 127), default_value=30, expand_x=True,orientation='horizontal', key='-MAXSLIDE-', visible=False)], [sg.Button('Ok', key='-MODDATABTN-', visible=False)]], key='-MAXCOL-', background_color = 'Violet', vertical_alignment='t', pad=(0,0)),
+                        sg.Column([[sg.Text(f"Click 'Another' to setup another control, or click 'Done' to continue.", key='-DONELABEL-', size=(15,2), visible=False)], [sg.Button('Another', key='-ANOTHERBTN-', visible=False)], [sg.Button('Done', key='-MAPPINGDONEBTN-', visible=False)] ], key='-DONECOL-', background_color = 'Green', vertical_alignment='t', pad=(0,0), visible=False),
+                        #sg.Column([[sg.Text(f"Min / Max", key='-MINMAXLABEL-', size=(15,2), visible=False)], [sg.Listbox(waveList, size=(50, 15), key="-WAVELIST-", expand_y=True, enable_events=True, visible=False)]], key='-MINCOL-', background_color = 'Orange', vertical_alignment='t', pad=(0,0))
+                    ]
+        #          [[sg.pin(sg.Column([[sg.Text(f"Let's map MiDi controls to hand positions.", key='-TOPMESSAGE00-', size=(100,2), visible=True)]], key='-TOPMESSAGE00COL-', background_color = 'Green'), shrink=True, expand_x = True, expand_y = True)],
+        #           [sg.pin(sg.Column([[sg.Text(f"First choose a MiDi port to send commands to:", key='-TOPMESSAGE01-', size=(100,2), visible=True)]], key='-MIDIPORTOUTCOL-', background_color = 'Blue'), shrink=True, expand_x = True, expand_y = True)]],
+        #           [sg.pin(sg.Column([[sg.Listbox(midiOutList, size=(50, 8), key="-MIDIPORTOUT-", expand_y=True, expand_x=True, enable_events=True, visible=True)], [sg.Button('Refresh', key='-MIDIOUTLISTRFH-', visible=True)], [sg.Button('Connect', key='-MIDIOUTCNTBTN-', visible=True)]], size=(250,220), expand_x = True, expand_y = True, pad=(0,0), key='-BPMCOL-', background_color = 'Red'), expand_x = True, expand_y = True, shrink=True)],
+        #           [sg.pin(sg.Column([[sg.Text(f"BPM", key='-BPMLABEL-', size=(15,2), visible=False)], [sg.Slider(range=(30, 300), default_value=120, expand_x=True,orientation='horizontal', key='-BPMSLIDE-', visible=False)],  [sg.Button('Ok', key='-BPMBTN-', visible=False)]], pad=(0,0), key='-CTRLLISTCOL-', background_color = 'Yellow'), shrink=True, expand_x = True, expand_y = True,)],
+                  
+                  
+        #           #[sg.pin(sg.Column([[sg.Text(f"BPM", key='-BPMLABEL-', size=(15,2), visible=False)], [sg.Slider(range=(30, 300), default_value=120, expand_x=True,orientation='horizontal', key='-BPMSLIDE-', visible=False)],  [sg.Button('Ok', key='-BPMBTN-', visible=True)]], pad=(0,0), visible=False, key='-BPMCOL-'), shrink=True)],
+                  
+                  
+        #           [sg.pin(sg.Column([[sg.Text(f"Waveform", key='-WAVELABEL-', size=(15,2), visible=False)], [sg.Listbox(waveList, size=(50, 15), key="-WAVELIST-", expand_y=True, enable_events=True, visible=False)]], pad=(0,0)), shrink=True)],
+        #           [sg.pin(sg.Column([[sg.Text(f"Rate", key='-RATELABEL-', size=(15,2), visible=False)], [rateGraph]], pad=(0,0)), shrink=True)],
+        #           [sg.pin(sg.Column([[sg.Listbox(controlList, size=(10, 3), key="-CTRLLIST-", expand_y=True, enable_events=True, visible=False)], [sg.Button('Select', key='-SELCNTRLTYPEBTN-', visible=False)]], pad=(0,0)), shrink=True)],
+                  
+                 
+                 
+   #[sg.pin(sg.Column([[sg.Button('Reconnect', key='-RECNTBTN-', visible=True)]], pad=(0,0)), shrink=True)]#[sg.pin(sg.Column([[sg.Text('Train Model'), sg.Text(size=(2,1), key='-TRAIN-'), sg.Button('Train', key='-TRAINBTN-')]]))],
+                  #[sg.pin(sg.Column([[sg.Text('Predict hand positions'), sg.Text(size=(2,1), key='-PREDICT-'), sg.Button('Predict', key='-PREDICTBTN-')]]))],
+                  #[sg.pin(sg.Column([[sg.Text('', visible=True, key='-WORDS-'), sg.Text(size=(2,1))]], pad=(0,0)), shrink=False)],
+       ]
         return sg.Window('THE CONDUCTOR: Step 2 Map positions to controls', layout, layout, size=(self.windowSizeX,self.windowSizeY), finalize=True)
     
 
@@ -253,8 +470,14 @@ class UX:
         print()
         print('uxLoop Start')
         newIP = "192.168.4.1"
-        newSSID = "TheCOnductor"
+        newSSID = "TheConductor"
         newPSWD = "NoneShallPass"
+        newControl = [] #Holds data from a new control until it is appended to the list
+        usedPositions = [] #indexes of the positions in self.dataStream.
+        usedChannels = {'m': 0, 'a':0, 'n': 0}
+        controlPath = self.dataStream.pathPreface + "/controls.csv"
+        #self.positonPathList = ['pos1', 'pos2', 'pos3']
+
         stopPredict = 0
        
         ##Methods to collect run time data required for the GUI
@@ -271,10 +494,12 @@ class UX:
         newPositionLabelList = []
 
         # Set all windows to Noe except window 1 to start
-        window0 = self.makeWindow0(self.dataStream.sockConnection)
+        #window0 = self.makeWindow0(self.dataStream.sockConnection)
+        window0 = None #self.makeWindow0(self.dataStream.sockConnection)
         #window1 = self.makeWindow1(modelMessage)
         window1 = None
-        window2 = None
+        window2 = self.makeWindow2()
+        #window2=None
         window2_1 = None
         window3 = None
         window3_1 = None
@@ -346,6 +571,7 @@ class UX:
                     window['-IPIN-'].update(visible=False)
                     window['-SSIDIN-'].update(self.SSIDList)
                     window['-SSIDIN-'].update(visible=True)
+                    window['-SSIDLISTRFH-'].update(visible=True)
                     window['-PSWDIN-'].update(visible=True)
                     window['-RECNTBTN-'].update(visible=True)
                     window['-APCNTEBTN-'].update(visible=False)
@@ -639,13 +865,627 @@ class UX:
                 print()
                 print()
                 print("Window 2")
-                #print(self.Test)
-                
+
                 if event == sg.WIN_CLOSED or event == 'Exit':
                     window2.hide()
-                    window1 =self.makeWindow1()   
+                    window1 =self.makeWindow1() 
 
+                if event == '-USELOGBTN-':
+                    print()
+                    print(f'Window 2 -USELOGBTN-')
+                    window['-TOPMESSAGE01-'].set_size(size = (50, 1))
+                    window['-NEWCONTROLBTN-'].update(visible=False)
+                    window['-USELOGBTN-'].update(visible=False)
+                    window['-MAPPINGDONEBTN-'].update(visible=True)
 
+                    self.controlLogCheck = 1
+
+                    #Connect to stored MiDi port
+                    if not self.writer.midiOut.is_port_open():
+                        try:
+                            self.writer.midiOut.open_port(self.writer.midiPortOut) 
+                        except:
+                            print(f'Unable to connect to port {self.writer.midiPortOut}')  
+                    else:
+                        print(f'Port already open')
+                    print(f'midi port connected') 
+                    
+                    #Skip to the end
+                    window.write_event_value("-MAPPINGDONEBTN-", '')
+
+                if event == '-NEWCONTROLBTN-':
+                    print()
+                    print(f'Window 2 -NEWCONTROLBTN-')
+
+                    #Clear the log values
+                    self.controlInitData = []
+                    self.controlLogCheck = 0
+
+                    window['-TOPMESSAGE00-'].update("Let's map MiDi controls to hand positions.")
+                    window['-TOPMESSAGE01-'].update("First choose a MiDi port to send commands to:")
+                    window['-TOPMESSAGE01-'].set_size(size=(50,1))
+                    window['-USELOGBTN-'].update(visible=False)
+                    window['-NEWCONTROLBTN-'].update(visible=False)
+                    window['-MIDIPORTOUT-'].update(visible=True)
+                    window['-MIDIOUTLISTRFH-'].update(visible=True)
+                    window['-MIDIOUTCNTBTN-'].update(visible=True)
+                    window.refresh()
+
+                #Set up MiDi port
+                if event == '-MIDIOUTLISTRFH-':
+                    print()
+                    print(f'Window 2 -MIDIOUTLISTRFH-')
+                    self.writer.available_MiDiPortsOut = self.writer.midiOut.get_ports()
+                    self.writer.available_MiDiPortsIn = self.writer.midiIn.get_ports()
+        
+                    numOutPOrts = len(self.writer.available_MiDiPortsOut)
+                    midiOutList = [] 
+                    for i in range(numOutPOrts):
+                        midiOutList.append(self.writer.available_MiDiPortsOut[i])
+
+                    window['-MIDIPORTOUT-'].update(midiOutList)
+                    window.refresh()
+
+                #Set BPM
+                if event == '-MIDIOUTCNTBTN-': 
+                    print()
+                    print(f'Window 2 -MIDIOUTCNTBTN-')
+                    
+                    newPortlen = len(values["-MIDIPORTOUT-"])
+                    if newPortlen >= 1:
+                        newPortlen = len(values["-MIDIPORTOUT-"][0])
+                        print(f'values["-MIDIPORTOUT-"][0]: {values["-MIDIPORTOUT-"][0]}')
+                        newMidiOutPort = values["-MIDIPORTOUT-"][0]
+                        self.writer.midiPortOut = int(newMidiOutPort[newPortlen-1])
+                        print(f'self.writer.midiPortOut: {self.writer.midiPortOut}')
+                        print(f'type(self.writer.midiPortOut): {type(self.writer.midiPortOut)}')
+
+                        if not self.writer.midiOut.is_port_open():
+                            try:
+                                self.writer.midiOut.open_port(self.writer.midiPortOut) 
+                            except:
+                                print(f'Unable to connect to port {newMidiOutPort}')  
+                        else:
+                            print(f'Port already open')
+                        print(f'midi port connected') 
+
+                        window['-MIDIPORTOUT-'].hide_row()
+                        window['-MIDIPORTOUT-'].set_size(size=(0,0))
+                        window['-MIDIPORTOUT-'].update(visible=False)
+                        window['-MIDIOUTLISTRFH-'].update(visible=False)
+                        window['-MIDIOUTLISTRFH-'].set_size(size=(0,0))
+                        window['-MIDIOUTCNTBTN-'].update(visible=False)
+                        window['-MIDIOUTCNTBTN-'].set_size(size=(0,0))
+
+                        window['-MIDIPORTOUTCOL-'].set_size(size=(0,0))
+                        window['-MIDIPORTOUTCOL-'].update(visible=False)
+                        window['-BPMCOL-'].update(visible=True)
+                        window['-TOPMESSAGE00-'].update("Set the Beats per minute")
+                        window['-TOPMESSAGE01-'].update(visible=False)
+                        #window['-TOPMESSAGE01-'].set_size(size=(0,0))
+                        #window['-TOPMESSAGE01-'].hide_row()
+                        # window['-MIDIOUTLISTRFH-'].update(visible=False)
+                        # window['-MIDIOUTCNTBTN-'].update(visible=False)
+                        #window['-MIDIOUTCOL-'].hide_row()
+
+                        window['-BPMLABEL-'].update(visible=True)
+                        window['-BPMSLIDE-'].update(visible=True)
+                        window['-BPMBTN-'].update(visible=True)
+                        #window['-MESSAGE-'].update(visible=False)
+                        window.refresh()  
+                    else:
+                        print(f'No MiDI port selected')
+                        window['-MIDIPORTOUT-'].update(visible=True)
+                        window['-MIDIOUTLISTRFH-'].update(visible=True)
+                        window['-MIDIOUTCNTBTN-'].update(visible=True)
+                        window.write_event_value("-MIDIOUTLISTRFH-", '')
+
+                #Set Control Name
+                if event == '-BPMBTN-':
+                    print()
+                    print(f'Window 2 -BPMBTM-')
+                    print(f'values["-BPMSLIDE-"][0]: {values["-BPMSLIDE-"]}')
+                    
+                    self.writer.bpm = values["-BPMSLIDE-"]
+                    print(f'controlPath: {controlPath}')
+                    #Write the midiport and bpm to the file - overwrite file
+                    self.dataStream.logCSVRow('controls.csv', [self.writer.midiPortOut, self.writer.bpm], append=False)
+                    print(f'Write Port and Midi out - file does not exist')
+                    
+                    #Check the file contents
+                    with open(controlPath, 'r') as csvfile:
+                        print(f'{list(csv.reader(csvfile, delimiter=","))}')
+                        
+                    print(f'self.writer.bpm: {self.writer.bpm}')
+
+                    window['-BPMLABEL-'].update(visible=False)
+                    window['-BPMSLIDE-'].update(visible=False)
+                    window['-BPMBTN-'].update(visible=False)
+                    window['-TOPMESSAGE00-'].update("Choose a name for the control")
+                    window['-BPMCOL-'].set_size(size=(0,0))
+                    window['-BPMCOL-'].update(visible=False)
+                    window['-CTRLNAMECOL-'].update(visible=True)
+                    window['-CTRLNAME-'].update(visible=True)
+                    window['-CTRLNAMEBTN-'].update(visible=True)
+                    window.refresh()
+
+                if event == '-MORECTRLS-':
+                   print()
+                   print(f'Window 2 -MORECTRLS-')
+                
+                   window['-BPMBTN-'].update(visible=False)
+                   window['-TOPMESSAGE00-'].update("Choose a name for the control")
+                   window['-BPMCOL-'].set_size(size=(0,0))
+                   window['-BPMCOL-'].update(visible=False)
+                   window['-CTRLNAMECOL-'].update(visible=True)
+                   window['-CTRLNAME-'].update(visible=True)
+                   window['-CTRLNAMEBTN-'].update(visible=True)
+                   window['-DONELABEL-'].update(visible=False)
+                   window['-ANOTHERBTN-'].update(visible=False)
+                   window['-MAPPINGDONEBTN-'].update(visible=False)
+                   window['-DONECOL-'].set_size(size=(0,0))
+                   window['-DONECOL-'].update(visible=False)
+                   window.refresh()
+
+                #Set Conditions
+                if event == '-CTRLNAMEBTN-':
+                    print()
+                    print(f'Window 2 -CTRLNAMEBTN-')
+                    print(f'values["-CTRLNAME-"]: {values["-CTRLNAME-"]}')
+                    newControl.append(values['-CTRLNAME-'])    #newControl[0] Control name
+                    
+                    window['-CTRLNAMECOL-'].set_size(size=(0,0))
+                    window['-CTRLNAMECOL-'].update(visible=False)
+                    window['-CTRLLISTCOL-'].set_size(size=(0,0))
+                    window['-CTRLLISTCOL-'].update(visible=False)
+                    window['-CONDTYPECOL-'].update(visible=True)
+                    window['-CONDTYPE-'].update(visible=True)
+                    window.refresh()
+                
+                if event == '-CONDTYPE-':
+                    print()
+                    print(f'Window 2 -CONDTYPE-')
+                    print(f'values["-CONDTYPE-"]: {values["-CONDTYPE-"]}')
+                    if values['-CONDTYPE-'][0] == 'Hold':
+                       newControl.append(0)   #newControl[1] condition type
+                    elif values['-CONDTYPE-'][0] == 'Transition':
+                        newControl.append(1)   #newControl[1] condition type
+                    print(f'newControl: {newControl}')
+
+                    posNum = len(self.positionPathList)
+                    usedNum = len(usedPositions)
+                    positionList = []
+                    print(f'positionPathList: {self.positionPathList}')
+                    #Make a list of unused gestures
+                    for i in range(posNum):
+                        used = 0
+                        print(f'positionList: {self.positionPathList[i]}')
+                        for j in range(usedNum):
+                            if i == j:
+                                used = 1
+                                break
+                        print(f'positionList: {positionList}')
+                        if used == 0:
+                            positionList.append(self.positionPathList[i])
+                    print(f'positionList: {positionList}')
+                    window['-CURRPOSLISTON-'].update(positionList)
+                    window['-CURRPOSLISTOFF-'].update(positionList)
+                    window['-CURRPOSLISTTRANSON-'].update(positionList)
+                    window['-CURRPOSLISTTRANSOFF-'].update(positionList)
+                    
+                    window['-CONDTYPECOL-'].set_size(size=(0,0))
+                    window['-CONDTYPECOL-'].update(visible=False)
+                    window['-CURRPOSLISTONCOL-'].update(visible=True)
+                    window['-CURRPOSLISTON-'].update(visible=True)
+                    window['-CURRPOSONLABEL-'].update(visible=True)
+                    window['-CURRPOSONSLIDE-'].update(visible=True)
+                    #window['-CURRPOSOFFON-'].update(visible=True)
+                    window['-CURRPOSLISTOFFCOL-'].update(visible=True)
+                    window['-CURRPOSLISTOFF-'].update(visible=True)
+                    window['-CURRPOSOFFLABEL-'].update(visible=True)
+                    window['-CURRPOSOFFSLIDE-'].update(visible=True)
+                    window['-CONDBTN-'].update(visible=True)
+                    if values["-CONDTYPE-"][0] == 'Transition':
+                        print("Transition")
+                        window['-CURRPOSONLABEL-'].update("Position, threshold START ON")
+                        window['-CURRPOSLISTTRANSONCOL-'].update(visible=True)
+                        window['-CURRPOSTRANSONSLIDE-'].update(visible=True)
+                        window['-CURRPOSLISTTRANSON-'].update(visible=True)
+                        window['-CURRPOSTRANSONLABEL-'].update(visible=True)
+                        window['-CURRPOSONLABEL-'].update("Position, threshold START OFF")
+                        window['-CURRPOSLISTTRANSOFFCOL-'].update(visible=True)
+                        window['-CURRPOSOFFTRANSSLIDE-'].update(visible=True)
+                        window['-CURRPOSLISTTRANSOFF-'].update(visible=True)
+                        window['-CURRPOSOFFTRANSLABEL-'].update(visible=True)
+                        window['-CONDTRANSBTN-'].update(visible=True)
+                        window['-CONDBTN-'].update(visible=False)
+                    window.refresh()
+
+                #Set Control Type    
+                if event == '-CONDBTN-' or event == '-CONDTRANSBTN-': 
+                    if event == '-CONDBTN-':
+                        print()
+                        print(f'Window 2 -CONDBTN-')
+
+                        #TODO Add selected positions indexes to usedPositions list
+                        onPos = -1
+                        offPos = -1
+                        #print(f'values["-CONDBTN-"]: {values["-CONDBTN-"]}')
+                    # [[On Position, On Threshold], [Off Position, Off Threshold]]
+                        for i in range(len(self.positionPathList)):
+                            
+                            if values["-CURRPOSLISTON-"][0] == self.positionPathList[i]:
+                                print(f'values["-CURRPOSLISTON-"][0]: {values["-CURRPOSLISTON-"][0]}')
+                                print(f'self.positionPathList[i]: {self.positionPathList[i]}')
+                                onPos = i
+                            
+                            if values["-CURRPOSLISTOFF-"][0] == self.positionPathList[i]:
+                                print(f'values["-CURRPOSLISTOFF-"][0]: {values["-CURRPOSLISTOFF-"][0]}')
+                                print(f'self.positionPathList[i]: {self.positionPathList[i]}')
+                                offPos = i   
+                            print()
+
+                        newControl.append(onPos)
+                        newControl.append(int(values['-CURRPOSONSLIDE-']))
+                        newControl.append(offPos)
+                        newControl.append(int(values['-CURRPOSOFFSLIDE-']))
+                    
+                    else:
+                       #Transition 
+                       #[
+                       # [
+                       #    [On Position Start, On Threshold Start], 
+                       #    [On Position End, On Threshold End]
+                       # ], 
+                       #    [Off Position Start, Off Threshold Start], 
+                       #    [Off Position End, Off Threshold End]
+                       # ]
+                       #]
+                        beginOnPos = -1 
+                        endOnPos = -1 
+                        beginOffPos = -1 
+                        endOffPos = -1
+                        for i in range(len(self.positionPathList)):
+                            if values["-CURRPOSLISTON-"][0] == self.positionPathList[i]:
+                                beginOnPos = i
+                            if values["-CURRPOSLISTTRANSON-"][0] == self.positionPathList[i]:
+                                endOnPos = i 
+                            if values["-CURRPOSLISTOFF-"][0] == self.positionPathList[i]:
+                                beginOffPos = i
+                            if values["-CURRPOSLISTTRANSOFF-"][0] == self.positionPathList[i]:
+                                endOffPos = i 
+                         #print(f'values["-CURRPOSLISTON-"]: {values["-CURRPOSLISTON-"]}')
+                         #print(f'values[-CURRPOSONSLIDE-]: {values["-CURRPOSONSLIDE-"]}')
+                         
+                        newControl.append(beginOnPos)
+                        newControl.append(int(values['-CURRPOSONSLIDE-']))
+                        newControl.append(endOnPos)
+                        newControl.append(int(values['-CURRPOSTRANSONSLIDE-']))
+                        newControl.append(beginOffPos)
+                        newControl.append(int(values['-CURRPOSOFFSLIDE-']))
+                        newControl.append(endOffPos)
+                        newControl.append(int(values['-CURRPOSOFFTRANSSLIDE-'])) 
+                        
+                    print(f'newControl: {newControl}')
+                    #Set Control Type
+                    window['-CURRPOSTRANSONSLIDE-'].update(visible=False)
+                    window['-CURRPOSLISTTRANSON-'].update(visible=False)
+                    window['-CURRPOSTRANSONLABEL-'].update(visible=False)
+                    window['-CURRPOSOFFTRANSSLIDE-'].update(visible=False)
+                    window['-CURRPOSLISTTRANSOFF-'].update(visible=False)
+                    window['-CURRPOSOFFTRANSLABEL-'].update(visible=False)
+                    window['-CONDTRANSBTN-'].update(visible=False)
+                    window['-CONDBTN-'].update(visible=False)
+                    window['-CURRPOSLISTONCOL-'].update(visible=False)
+                    window['-CURRPOSLISTON-'].update(visible=False)
+                    window['-CURRPOSONLABEL-'].update(visible=False)
+                    #window['-CURRPOSOFFON-'].update(visible=False)
+                    window['-CURRPOSLISTOFFCOL-'].update(visible=False)
+                    window['-CURRPOSLISTOFF-'].update(visible=False)
+                    window['-CURRPOSOFFLABEL-'].update(visible=False)
+                    window['-CURRPOSOFFSLIDE-'].update(visible=False)
+                    window['-CURRPOSLISTONCOL-'].set_size(size=(0,0))
+                    window['-CURRPOSLISTONCOL-'].update(visible=False)
+                    window['-CURRPOSLISTOFFCOL-'].set_size(size=(0,0))
+                    window['-CURRPOSLISTOFFCOL-'].update(visible=False)
+                    window['-CURRPOSLISTTRANSONCOL-'].set_size(size=(0,0))
+                    window['-CURRPOSLISTTRANSONCOL-'].update(visible=False)
+                    window['-CURRPOSLISTTRANSOFFCOL-'].set_size(size=(0,0))
+                    window['-CURRPOSLISTTRANSOFFCOL-'].update(visible=False)
+                    window['-CURRPOSTRANSONSLIDE-'].update(visible=False)
+                    window['-CURRPOSLISTTRANSON-'].update(visible=False)
+                    window['-CURRPOSTRANSONLABEL-'].update(visible=False)
+                    window['-CURRPOSOFFTRANSSLIDE-'].update(visible=False)
+                    window['-CURRPOSLISTTRANSOFF-'].update(visible=False)
+                    window['-CURRPOSOFFTRANSLABEL-'].update(visible=False)
+                    window['-CONDTRANSBTN-'].update(visible=False)
+                    window['-CONDBTN-'].update(visible=False)
+                    window['-CURRPOSLISTONCOL-'].update(visible=False)
+                    window['-CURRPOSLISTON-'].update(visible=False)
+                    window['-CURRPOSONLABEL-'].update(visible=False)
+                    #window['-CURRPOSOFFON-'].update(visible=False)
+                    window['-CURRPOSLISTOFFCOL-'].update(visible=False)
+                    window['-CURRPOSLISTOFF-'].update(visible=False)
+                    window['-CURRPOSOFFLABEL-'].update(visible=False)
+                    window['-CURRPOSOFFSLIDE-'].update(visible=False)
+
+                    window['-CTRLLISTCOL-'].update(visible=True)
+                    window['-TOPMESSAGE00-'].update("Choose a Control Type.")
+                    window['-CTRLLIST-'].update(visible=True)
+                    window['-SELCNTRLTYPEBTN-'].update(visible=True)
+                    # window['-BPMBTN-'].update(visible=False)
+                    # window['-BPMSLIDE-'].update(visible=False)
+                    # window['-BPMLABEL-'].update(visible=False)
+                    #window['-CTRLLISTCOL-'].hide_row()
+                    window.refresh()
+
+                # if event == '-BPMSLIDE-':
+                #     print()
+                #     print(f'Window 2 -BPMSLIDE-')
+                #     print(f'values["-BPMSLIDE-"][0]: {values["-BPMSLIDE-"]}')
+                    
+                #     self.writer.bpm = values["-BPMSLIDE-"]
+                #     print(f'self.writer.bpm: {self.writer.bpm}')
+
+                #     # window['-TOPMESSAGE00-'].update("Choose a Control Type.")
+                #     # window['-CTRLLIST-'].update(visible=True)
+                #     # window['-SELCNTRLTYPEBTN-'].update(visible=True)
+                #     # window.refresh()
+
+                if event == '-SELCNTRLTYPEBTN-':
+                    #TODO Figure out how to switch the place of things...
+                    #Repopulate columns?
+                    print()
+                    print(f'Window 2 -SELCNTRLTYPEBTN-')
+                    #print(f'')
+                    miDIMappath = self.dataStream.pathPreface + '\MiDIMap.csv'
+
+                    if os.path.exists(miDIMappath):
+                        print('midiMap exists')
+                    
+                    else:
+                        print('No miDiMap')
+                    
+                    window['-CTRLLISTCOL-'].set_size(size=(0,0))
+                    window['-CTRLLISTCOL-'].update(visible=False)
+
+                    #TODO set up windows to grab the data that we need
+                        #Set conditions and then add values...
+                    if values['-CTRLLIST-'][0] == 'Modulate':
+                        print(f'Modulate')
+                        newControl.append(0)   # newControl[3]
+                        if (usedChannels['m'] < 17):
+                            newControl.append(usedChannels['m']) #newControl[3]
+                            usedChannels['m'] += 1
+                        else:
+                            print('Used up all channels')
+                            window2.hide()
+                            window3_1 =self.makeWindow3_1()
+                        
+                        window['-RATECOL-'].update(visible=True)
+                        window['-WAVECOL-'].update(visible=True)
+                        window['-MINCOL-'].update(visible=True)
+                        window['-MAXCOL-'].update(visible=True)
+                        window['-TOPMESSAGE00-'].update("Enter modulation values.")
+                        window['-CTRLLIST-'].update(visible=False)
+                        window['-SELCNTRLTYPEBTN-'].update(visible=False)
+                        window['-WAVELABEL-'].update(visible=True)
+                        window['-WAVELIST-'].update(visible=True)
+                        window['-RATELABEL-'].update(visible=True)
+                        window['-RATESLIDE-'].update(visible=True)
+                        window['-MINLABEL-'].update(visible=True)
+                        window['-MINSLIDE-'].update(visible=True)
+                        window['-MAXLABEL-'].update(visible=True)
+                        window['-MAXSLIDE-'].update(visible=True)
+                        window['-MODDATABTN-'].update(visible=True)
+                        window.refresh()
+                    elif values['-CTRLLIST-'][0] == 'Arrpegiate':
+                        print(f'Arrpegiate')
+                        newControl.append(1)
+                        if (usedChannels['a'] < 17):
+                            newControl.append(usedChannels['a'])
+                            usedChannels['a'] += 1
+                        else:
+                            print('Used up all channels')
+                            window2.hide()
+                            window3_1 =self.makeWindow3_1()
+
+                        window['-RATECOL-'].update(visible=True)
+                        window['-RATELABEL-'].update(visible=True)
+                        window['-RATESLIDE-'].update(visible=True)
+                        window['-ARPEGDIRCOL-'].update(visible=True)
+                        window['-ARPEGDIR-'].update(visible=True)
+                        window['-ARPEGBTN-'].update(visible=True)       
+                        
+                    elif values['-CTRLLIST-'][0] == 'Play Note':
+                        print(f'Play Note')
+                        #newControl.append(2)
+
+                if event == '-MODDATABTN-':
+                    print()
+                    print(f'Window 2 -MODDATABTN-')
+                    window['-RATECOL-'].set_size(size=(0,0))
+                    window['-RATECOL-'].update(visible=False)
+                    window['-WAVECOL-'].set_size(size=(0,0))
+                    window['-WAVECOL-'].update(visible=False)
+                    window['-MINCOL-'].set_size(size=(0,0))
+                    window['-MINCOL-'].update(visible=False)
+                    window['-MAXCOL-'].set_size(size=(0,0))
+                    window['-MAXCOL-'].update(visible=False)
+                    window['-ARPEGDIRCOL-'].set_size(size=(0,0))
+                    window['-ARPEGDIRCOL-'].update(visible=False)
+
+                    newRate = int(values['-RATESLIDE-'])
+                    newWaveForm = values['-WAVELIST-'][0]
+                    newMin = int(values['-MINSLIDE-'])
+                    newMax = int(values['-MAXSLIDE-'])
+
+                    #TODO do a bunch of error checking here...
+                    #Ensure min < max
+                    controlTypeStr = 'Modulator'
+                    newControl.append(newRate)
+                    newControl.append(newWaveForm)
+                    newControl.append(newMin)
+                    newControl.append(newMax)
+                    #print(f'newControl: {newControl}')
+
+                    if newControl[1] == 0:
+                        positionMessage = "On Position: " + str(newControl[2]) + ", On Threshold: " + str(newControl[3]) + "/n"
+                        positionMessage = positionMessage + "Off Position: " + str(newControl[4]) + ", Off Threshold: " + str(newControl[5])
+                    elif newControl[1] == 1:
+                        positionMessage = "Start /n On Position: " + str(newControl[2]) + ", Threshold: " + str(newControl[3]) + "/n"
+                        positionMessage = positionMessage + "End /n On Position: " + str(newControl[4]) + ", Threshold: " + str(newControl[5]) + "/n"
+                        positionMessage = positionMessage + "Start /n off Position: " + str(newControl[6]) + ", Threshold: " + str(newControl[7]) + "/n"
+                        positionMessage = positionMessage + "End /n Off Position: " + str(newControl[8]) + ", Threshold: " + str(newControl[9]) + "/n"
+                    else:
+                       positionMessage = "[[XX,XX],[XX,XX]]"
+
+                    self.controlInitData.append(newControl)
+                    print(f'newControl: {newControl}')
+                
+                    print(f'self.controlInitData: {self.controlInitData}')
+
+                    window['-TOPMESSAGE00-'].update(f'Controls Created!')
+                    window['-TOPMESSAGE00-'].update(visible=True)
+                    window['-DONELABEL-'].update(visible=True)
+                    window['-ANOTHERBTN-'].update(visible=True)
+                    window['-MAPPINGDONEBTN-'].update(visible=True)
+                    window['-DONECOL-'].update(visible=True)
+
+            if event == "-ARPEGBTN-":
+                print()
+                print(f'Window 2 -ARPEGBTN-')
+                window['-RATECOL-'].set_size(size=(0,0))
+                window['-RATECOL-'].update(visible=False)
+                window['-ARPEGDIRCOL-'].set_size(size=(0,0))
+                window['-ARPEGDIRCOL-'].update(visible=False)
+                newRate = int(values['-RATESLIDE-'])
+                newOrder = values['-ARPEGDIR-'][0]
+
+                newControl.append(newRate)
+                newControl.append(newOrder)
+
+                if newControl[1] == 0:
+                    positionMessage = "On Position: " + str(newControl[2]) + ", On Threshold: " + str(newControl[3]) + "/n"
+                    positionMessage = positionMessage + "Off Position: " + str(newControl[4]) + ", Off Threshold: " + str(newControl[5])
+                elif newControl[1] == 1:
+                    positionMessage = "Start /n On Position: " + str(newControl[2]) + ", Threshold: " + str(newControl[3]) + "/n"
+                    positionMessage = positionMessage + "End /n On Position: " + str(newControl[4]) + ", Threshold: " + str(newControl[5]) + "/n"
+                    positionMessage = positionMessage + "Start /n off Position: " + str(newControl[6]) + ", Threshold: " + str(newControl[7]) + "/n"
+                    positionMessage = positionMessage + "End /n Off Position: " + str(newControl[8]) + ", Threshold: " + str(newControl[9]) + "/n"
+                else:
+                    positionMessage = "[[XX,XX],[XX,XX]]"
+
+                self.controlInitData.append(newControl)
+                print(f'newControl: {newControl}')
+                
+                print(f'self.controlInitData: {self.controlInitData}')
+                
+                controlTypeStr = 'Arpegiator'
+                window['-TOPMESSAGE01-'].update(f'Control Created!')
+                window['-TOPMESSAGE01-'].update(visible=True)
+                window['-DONELABEL-'].update(visible=True)
+                window['-ANOTHERBTN-'].update(visible=True)
+                window['-MAPPINGDONEBTN-'].update(visible=True)
+                window['-DONECOL-'].update(visible=True)
+                window.refresh()
+                    #window['-MESSAGE01-'].update(f'Control Created! /n Name:{newControl[0]} /n Condition Type:{newControl[1]} /n {positionMessage} Control Type: {controlTypeStr} /n Rate: {newControl[5]} /n Waveform: {newControl[6]} /n Minimum: {newControl[7]} Maximum: {newControl[8]}')
+                        
+            if event == '-MAPPINGDONEBTN-':
+                print()
+                print(f'Window 2 -MAPPINGDONEBTN-')
+
+                print(f'Controls: {self.controlInitData}')
+                # controlListStr = "Controls\n"
+                # controlListStr = controlListStr + "BPM:" + str(self.writer.bpm) + "\n" 
+                # controlListStr = controlListStr + "MiDi Port:" + str(self.writer.midiPortOut) + "\n" 
+
+                #print(f'controlListStr: {controlListStr}')
+                print(f'self.controlInitData: {self.controlInitData}')
+                #print(f'type(self.controlInitData): {type(self.controlInitData)}')
+                #Append the control data to the file
+                controlListStr, textHeight = self.getControlListStr(self.controlInitData)
+                print(controlListStr)
+                print(f'textHeight: {textHeight}')
+                window['-TOPMESSAGE00-'].update(f'Controls Created! Click Continue to train or use the neural network.')
+                window['-TOPMESSAGE01-'].set_size(size=(50,textHeight))
+                window['-TOPMESSAGE01-'].update(controlListStr)
+                window['-TOPMESSAGE01-'].update(visible=True)
+                window['-CONTUBTN-'].update(visible=True)
+                window['-DONELABEL-'].update(visible=False)
+                window['-ANOTHERBTN-'].update(visible=False)
+                window['-MAPPINGDONEBTN-'].update(visible=False)
+                window['-DONECOL-'].size(size=(0,0))
+                window['-DONECOL-'].update(visible=False)
+                window.refresh()
+
+                #if self.checkControlLog == 0: #Not using the logged data so we need a new log
+                for i in range(len(self.controlInitData)):
+                    if self.controlLogCheck == 0: #Not using the logged data so we need a new log
+                        self.dataStream.logCSVRow('controls.csv', self.controlInitData[i], append=True)
+                    #tmpList.append(self.controlInitData[i])
+
+                        # #Check the file has been logged properly
+                        # with open(controlPath, 'r') as csvfile:
+                        #     tmpList = list(csv.reader(csvfile, delimiter=","))
+                        #     print(f'controls.csv: {tmpList}')
+                
+
+                    #Create the writer.Control instances in controlList
+                    if self.controlInitData[i][1] == 0:  #Condition type = Hold
+                        
+                        conditionDataList = [[int(self.controlInitData[i][2]), int(self.controlInitData[i][2])], [int(self.controlInitData[i][3]), int(self.controlInitData[i][4])]]
+                    
+                        if self.controlInitData[i][3] == 0:    #Control is Modulate
+
+                            self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][7], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], controlType=self.controlInitData[i][6], conditionData=conditionDataList, bpm = self.writer.bpm, controlNum=i, rate=self.controlInitData[i][8], waveform=self.controlInitData[i][9], minimum=self.controlInitData[i][10], maximum=self.controlInitData[i][11]))
+                            #self.writer.controlList.append(newControl)   
+                            print(f'self.writer.controlList: {self.writer.controlList}')
+                            print(f'self.writer.controlList[i+1].controlLabel: {self.writer.controlList[i].controlLabel}')
+                            print(f'self.writer.controlList[0].controlLabel: {self.writer.controlList[0].controlLabel}')
+                            print(f'self.writer.controlList[1].controlLabel: {self.writer.controlList[1].controlLabel}')
+                        elif self.controlInitData[i][3] == 1:    #Control is Arpegio
+                            self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][7], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], controlType=self.controlInitData[i][6], conditionData=conditionDataList, bpm = self.writer.bpm, controlNum=i, rate=self.controlInitData[i][8], direction=self.controlInitData[i][9]))
+                        #self.writer.controlList.append(newControl)   
+                            print(f'self.writer.controlList: {self.writer.controlList}')
+                            print(f'self.writer.controlList[i+1].controlLabel: {self.writer.controlList[i].controlLabel}')
+                            print(f'self.writer.controlList[0].controlLabel: {self.writer.controlList[0].controlLabel}')
+                            print(f'self.writer.controlList[1].controlLabel: {self.writer.controlList[1].controlLabel}')
+                    elif self.controlInitData[i][1] == 1:  #Condition type = Transition
+                        conditionDataList = [
+                            [[int(self.controlInitData[i][2]), int(self.controlInitData[i][3])], [int(self.controlInitData[i][4]), int(self.controlInitData[i][5])]],
+                            [[int(self.controlInitData[i][6]), int(self.controlInitData[i][7])], [int(self.controlInitData[i][8]), int(self.controlInitData[i][9])]]
+                        ]
+
+                        if self.controlInitData[i][3] == 0:    #Control is Modulate
+                            self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][11], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], controlType=self.controlInitData[i][10], conditionData=conditionDataList, bpm = self.writer.bpm, controlNum=i, rate=self.controlInitData[i][12], waveform=self.controlInitData[i][13], minimum=self.controlInitData[i][14], maximum=self.controlInitData[i][15]))
+                            #self.writer.controlList.append(newControl)   
+                            print(f'self.writer.controlList: {self.writer.controlList}')
+                            print(f'self.writer.controlList[i+1].controlLabel: {self.writer.controlList[i].controlLabel}')
+                            print(f'self.writer.controlList[0].controlLabel: {self.writer.controlList[0].controlLabel}')
+                            print(f'self.writer.controlList[1].controlLabel: {self.writer.controlList[1].controlLabel}')
+                        elif self.controlInitData[i][3] == 1:    #Control is Arpegio
+                            self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][11], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], controlType=self.controlInitData[i][10], conditionData=conditionDataList, bpm = self.writer.bpm, controlNum=i, rate=self.controlInitData[i][12], direction=self.controlInitData[i][13]))
+                        #self.writer.controlList.append(newControl)   
+                            print(f'self.writer.controlList: {self.writer.controlList}')
+                            print(f'self.writer.controlList[i+1].controlLabel: {self.writer.controlList[i].controlLabel}')
+                            print(f'self.writer.controlList[0].controlLabel: {self.writer.controlList[0].controlLabel}')
+                            print(f'self.writer.controlList[1].controlLabel: {self.writer.controlList[1].controlLabel}')
+
+            if event == '-ANOTHERBTN-':
+                print()
+                print(f'Window 2 -ANOTHERBTN-')
+                newControl = []
+        
+                window.write_event_value("-MORECTRLS-", '') 
+
+            if event == '-CONTUBTN-':
+                print()
+                print('-CONTUBTN-')
+                window2.hide()
+                window2_1 = self.makeWindow2_1()
+
+                    
 
 ##############     Window2_1          #################
             if window == window2_1:
@@ -760,8 +1600,8 @@ class UX:
                 #set up dataStream
                 self.dataStream.packetSize = 1
                 self.dataStream.getTraining = False
-                self.dataStream.numSensors = self.numSensors
-                self.dataStream.pathPreface = self.pathPreface
+                #self.dataStream.numSensors = self.numSensors
+                #self.dataStream.pathPreface = self.pathPreface
 
                 if event == sg.WIN_CLOSED or event == 'Exit':
                     break
