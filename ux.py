@@ -1406,7 +1406,14 @@ class UX:
                     window['-ARPEGDIRCOL-'].update(visible=False)
 
                     newRate = int(values['-RATESLIDE-'])
-                    newWaveForm = values['-WAVELIST-'][0]
+                    if values['-WAVELIST-'][0] == 'sine':
+                        newWaveForm = 0
+                    elif values['-WAVELIST-'][0] == 'square':
+                        newWaveForm = 1
+                    elif values['-WAVELIST-'][0] == 'saw':
+                        newWaveForm = 2
+                    else:
+                        newWaveForm = 0      
                     newMin = int(values['-MINSLIDE-'])
                     newMax = int(values['-MAXSLIDE-'])
 
@@ -1450,10 +1457,17 @@ class UX:
                 window['-ARPEGDIRCOL-'].set_size(size=(0,0))
                 window['-ARPEGDIRCOL-'].update(visible=False)
                 newRate = int(values['-RATESLIDE-'])
-                newOrder = values['-ARPEGDIR-'][0]
 
+                if values['-ARPEGDIR-'][0] == 'Up':
+                        newDir = 0
+                elif values['-ARPEGDIR-'][0] == 'Down':
+                        newWaveForm = 1
+                elif values['-ARPEGDIR-'][0] == 'Random':
+                        newDir = 2
+                else:
+                        newDir = 0 
                 newControl.append(newRate)
-                newControl.append(newOrder)
+                newControl.append(newDir)
 
                 if newControl[1] == 0:
                     positionMessage = "On Position: " + str(newControl[2]) + ", On Threshold: " + str(newControl[3]) + "/n"

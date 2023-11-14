@@ -144,7 +144,7 @@ class MiDiWriter:
                 control.changeRate(self.writerRate)
                 control.midiBuilder.rate = control.beatLenStr
                 control.midiBuilder.rate = control.beatLenStr
-                control.midiBuilder.shape = control.shape
+                control.midiBuilder.shape = control.waveform
                 control.midiBuilder.newTof = control.controlValue
                 
                 control.midiInput = self.midiArp.held_notes
@@ -183,26 +183,26 @@ class MiDiWriter:
     #     #self.metro = Metronome(bpm = BPM)
         
     #     #Control demo for midi Tof control
-    #     # self.control00 = self.MidiControl(controlLabel="Channel0", midiOut=self.midiOut, channel=0, predictions=self.predictions, conditionType=0, conditionData=[[0,3],[1,3]], bpm = self.bpm, controlNum=0, controllerType=2, shape=2)
-    #     # self.control01 = self.MidiControl(controlLabel="Channel1", midiOut=self.midiOut, channel=1, predictions=self.predictions, conditionType=1, conditionData=[[1,3],[2,3]], bpm = self.bpm, controlNum=1, controllerType=2, shape=2)
-    #     # self.control02 = self.MidiControl(controlLabel="Channel2", midiOut=self.midiOut, channel=2, predictions=self.predictions, conditionType=2, conditionData=[[2,3],[3,3]], bpm = self.bpm, controlNum=2, controllerType=2, shape=2)
+    #     # self.control00 = self.MidiControl(controlLabel="Channel0", midiOut=self.midiOut, channel=0, predictions=self.predictions, conditionType=0, conditionData=[[0,3],[1,3]], bpm = self.bpm, controlNum=0, controllerType=2, waveform=2)
+    #     # self.control01 = self.MidiControl(controlLabel="Channel1", midiOut=self.midiOut, channel=1, predictions=self.predictions, conditionType=1, conditionData=[[1,3],[2,3]], bpm = self.bpm, controlNum=1, controllerType=2, waveform=2)
+    #     # self.control02 = self.MidiControl(controlLabel="Channel2", midiOut=self.midiOut, channel=2, predictions=self.predictions, conditionType=2, conditionData=[[2,3],[3,3]], bpm = self.bpm, controlNum=2, controllerType=2, waveform=2)
        
     #     #Apregiator Demo
-    #     # self.control00 = self.MidiControl(controlLabel="Channel0", midiOut=self.midiOut, channel=0, predictions=self.predictions, conditionType=0, conditionData=[[0,3],[1,3]], bpm = self.bpm, controlNum=0, controllerType=0, shape=2)
-    #     # self.control01 = self.MidiControl(controlLabel="Channel1", midiOut=self.midiOut, channel=1, predictions=self.predictions, conditionType=1, conditionData=[[1,3],[2,3]], bpm = self.bpm, controlNum=1, controllerType=0, shape=2)
-    #     # self.control02 = self.MidiControl(controlLabel="Channel2", midiOut=self.midiOut, channel=2, predictions=self.predictions, conditionType=2, conditionData=[[2,3],[3,3]], bpm = self.bpm, controlNum=2, controllerType=0, shape=2)
+    #     # self.control00 = self.MidiControl(controlLabel="Channel0", midiOut=self.midiOut, channel=0, predictions=self.predictions, conditionType=0, conditionData=[[0,3],[1,3]], bpm = self.bpm, controlNum=0, controllerType=0, waveform=2)
+    #     # self.control01 = self.MidiControl(controlLabel="Channel1", midiOut=self.midiOut, channel=1, predictions=self.predictions, conditionType=1, conditionData=[[1,3],[2,3]], bpm = self.bpm, controlNum=1, controllerType=0, waveform=2)
+    #     # self.control02 = self.MidiControl(controlLabel="Channel2", midiOut=self.midiOut, channel=2, predictions=self.predictions, conditionType=2, conditionData=[[2,3],[3,3]], bpm = self.bpm, controlNum=2, controllerType=0, waveform=2)
         
     #      #Midi Mod demo
-    #     self.control00 = self.MidiControl(controlLabel="Channel0", midiOut=self.midiOut, channel=0, predictions=self.predictions, conditionType=0, conditionData=[[0,3],[1,3]], bpm = self.bpm, controlNum=0, controllerType=1, shape=0)
-    #     self.control01 = self.MidiControl(controlLabel="Channel1", midiOut=self.midiOut, channel=1, predictions=self.predictions, conditionType=1, conditionData=[[1,3],[2,3]], bpm = self.bpm, controlNum=1, controllerType=1, shape=1)
-    #     self.control02 = self.MidiControl(controlLabel="Channel2", midiOut=self.midiOut, channel=2, predictions=self.predictions, conditionType=2, conditionData=[[2,3],[3,3]], bpm = self.bpm, controlNum=2, controllerType=1, shape=2)
+    #     self.control00 = self.MidiControl(controlLabel="Channel0", midiOut=self.midiOut, channel=0, predictions=self.predictions, conditionType=0, conditionData=[[0,3],[1,3]], bpm = self.bpm, controlNum=0, controllerType=1, waveform=0)
+    #     self.control01 = self.MidiControl(controlLabel="Channel1", midiOut=self.midiOut, channel=1, predictions=self.predictions, conditionType=1, conditionData=[[1,3],[2,3]], bpm = self.bpm, controlNum=1, controllerType=1, waveform=1)
+    #     self.control02 = self.MidiControl(controlLabel="Channel2", midiOut=self.midiOut, channel=2, predictions=self.predictions, conditionType=2, conditionData=[[2,3],[3,3]], bpm = self.bpm, controlNum=2, controllerType=1, waveform=2)
         
     #     self.control00.midiBuilder.rate = 's'
     #     self.controlList = [self.control00, self.control01, self.control02]
                 
-    #     self.controlList[0].shape = 0
-    #     self.controlList[1].shape = 1
-    #     self.controlList[2].shape = 2
+    #     self.controlList[0].waveform = 0
+    #     self.controlList[1].waveform = 1
+    #     self.controlList[2].waveform = 2
         
     #     self.control00.order = 0
     #     self.control01.order = 1
@@ -319,8 +319,7 @@ class MiDiWriter:
     class MidiControl:
         def __init__(self, *, controlLabel='', midiOut=None, ToFEnable=0, updateFlag=0, predictions=[], conditionType=0, conditionData=[[0,3], [1,3]], channel=None, controlNum=None, midiLoopCount = 0, rate=None, waveform=None, minimum=None, maximum=None, direction=None, controlType = 0, bpm=0, controllerType=0, midiMessage=60, startFlag=0, octave=0, midiInput=[]):
             #Removed attributes:  value=-1, 
-            #Change waveform to ints and replace shape with it (0 - sine, 1 - square, 2 - saw)
-            #Change direction to ints as well
+            
             self.midiLoopCount = midiLoopCount #Precious value fed in each time the loop runs
             self.controlLabel = controlLabel
             self.midiOut = midiOut
@@ -355,7 +354,7 @@ class MiDiWriter:
             self.onNotOff = 0 #off by default
             self.midiMessage = midiMessage
             self.invert = 1 #1 or -1 only!
-            self.shape = 0 # 0 = sin; 1 = saw; 2 = square
+            #self.shape = 0 # 0 = sin; 1 = saw; 2 = square
             self.modLenS = 16 #The modulation duration in seconds
             self.min_val = 0
             self.max_val = 127
