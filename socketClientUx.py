@@ -86,7 +86,7 @@ class GetData:
         print(f'dataTx: {self.dataTx}')
         print(f'host {host}')
         print(f'port: {port}')
-        
+
         self.sock = socket.socket()
         #self.sock.setblocking(False)
         try:
@@ -124,7 +124,7 @@ class GetData:
         #Get list of network from the air
         SSIDList = []
         networks = subprocess.check_output(["netsh", "wlan", "show", "network"])
-        networks = networks.decode("ascii")
+        networks = networks.decode("utf-8","ignore")
         networks = networks.replace("\r,","")
         ls = networks.split('\n')
         ls = ls[4:]

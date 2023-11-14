@@ -1225,7 +1225,7 @@ def realTimePrediction(packetData, pathPreface):
     #print(f'Current Prediction: {predictions}')
     #Write predictions to binary
     if os.path.exists(predictionsPath):
-        tmpArr = np.load(predictionsPath,allow_pickle=False)
+        tmpArr = np.load(predictionsPath,allow_pickle=False)## Gets caughtup here
         #print(f'Predictions from file shape: {tmpArr.shape()}')
         #print(f'Predictions from file: {tmpArr}')
         tmpArr = np.append(tmpArr,predList, axis=0)
