@@ -6,8 +6,16 @@ import time
 
 BPM = 30
 
+class Rate:
+    whole = 'w'
+    half = 'h'
+    triplet = 't'
+    quarter = 'q'
+    eighth = 'e'
+    sixteenth = 's'
+    
 class MidiBuilder:
-    def __init__(self, dataType=0, midiMessage=[], ch=0, note=0, velocity=0, shape=0, signal_invert=0, midiCC_ch=0, min_val=0, max_val=127, deltaToF=0, oldTof=0, newTof=0, rate='w', midiCCNum=75.):
+    def __init__(self, dataType=0, midiMessage=[], ch=0, note=0, velocity=0, shape=0, signal_invert=0, midiCC_ch=0, min_val=0, max_val=127, deltaToF=0, oldTof=0, newTof=0, rate=Rate.whole, midiCCNum=75.):
         self.dataType = dataType
         self.midiMessage = midiMessage
         self.ch = ch
@@ -23,11 +31,12 @@ class MidiBuilder:
         self.newTof = newTof
         self.rate = rate
         self.midiCCnum = midiCCNum
+        self.threshold = 1  # Adjust this threshold as needed
+
 
     def modulation_shape(self):
-        print(self.rate)
-        x = np.arange(0, 1/self.multiply_rate(self.rate), 0.01)
-        
+        x = np.arange(0, 1 / self.multiply_rate(self.rate), 0.01)
+
         y = 1
         sig_invert = 1
 
@@ -35,19 +44,13 @@ class MidiBuilder:
             sig_invert = -1
 
         if self.shape == 0:  # 'sine'
-            y = sig_invert  * np.sin(2 * self.multiply_rate(self.rate)* np.pi * x)
+            y = sig_invert * np.sin(2 * self.multiply_rate(self.rate) * np.pi * x)
         elif self.shape == 1:  # 'saw'
             y = sig_invert * signal.sawtooth(2 * self.multiply_rate(self.rate) * np.pi * x)
         elif self.shape == 2:  # 'square'
             y = sig_invert * signal.square(2 * self.multiply_rate(self.rate) * np.pi * x)
         else:
             print("That wave is not supported")
-            
-        # plt.plot(x, y)
-        # plt.xlabel('Angle [rad]')
-        # plt.ylabel('sin(x)')
-        # plt.axis('tight')
-        # plt.show()
 
         return y
 
@@ -59,39 +62,29 @@ class MidiBuilder:
         return np.round(scaled_value)
 
     def generate_deltaTof_array(self):
-        print(self.newTof)
-        deltaArray = []
-    
-        if self.newTof > self.oldTof:
-            deltaArray = list(range(self.oldTof, self.newTof + 1))
-            print(deltaArray)
-        elif self.newTof < self.oldTof:
-            deltaArray = list(range(self.oldTof, self.newTof - 1, -1))
-            print(deltaArray)
-        else:
             deltaArray = []
-    
-        self.oldTof = self.newTof
-        print(deltaArray)
-        return deltaArray
 
-        
+            if abs(self.newTof - self.oldTof) > self.threshold:
+                if self.newTof > self.oldTof:
+                    deltaArray = list(range(self.oldTof, self.newTof + 1))
+                elif self.newTof < self.oldTof:
+                    deltaArray = list(range(self.oldTof, self.newTof - 1, -1))
 
-        
-    
+            self.oldTof = self.newTof
+            return deltaArray
+
     def multiply_rate(self, rate):
-        print(rate)
-        if rate == 'w':
+        if rate == Rate.whole:
             return 1
-        elif rate == 'h':
+        elif rate == Rate.half:
             return 2
-        elif rate == 't':
+        elif rate == Rate.triplet:
             return 3
-        elif rate == 'q':
+        elif rate == Rate.quarter:
             return 4
-        elif rate == 'e':
+        elif rate == Rate.eighth:
             return 8
-        elif rate == 's':
+        elif rate == Rate.sixteenth:
             return 16
         else:
             return 1  # Default value for an unknown note value
@@ -106,7 +99,7 @@ class MidiBuilder:
                     midi_array.append(note_on.get_midi())
 
                     # Add a small delay between note-on and note-off (adjust as needed)
-                    time.sleep(0.1)
+                    # time.sleep(0.1)
 
                     # Create MIDI note-off message
                     note_off = self.MIDINoteMessage(ch=self.ch, note=note, velocity=0)
@@ -114,9 +107,6 @@ class MidiBuilder:
 
             return midi_array
         elif self.dataType == 1:  # for MIDI control change data
-            # ##Take out
-            # self.rate = 'w'
-            # ##Take out
             waveform = self.modulation_shape()
             waveform = self.convert_range(waveform, -1.0, 1.0, 0, 127)
             waveform = self.convert_range(waveform, 0, 127, self.min_val, self.max_val)

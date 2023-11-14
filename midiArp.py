@@ -4,7 +4,7 @@ import time
 import random
 
 class MidiArp:
-    def __init__(self, midiIn_port_index = 3, octave = 0, order = 0):
+    def __init__(self, midiIn_port_index = 3, octave = -2, order = 0):
         self.midi_in = rtmidi.MidiIn()
         self.midi_in.open_port(midiIn_port_index)
         self.held_notes = set()
@@ -16,6 +16,8 @@ class MidiArp:
 
     def process_messages(self):
         # self.is_running = True
+        self.reorder_held_notes()
+        self.change_octave()
         try:
             while self.is_running:
                 msg = self.midi_in.get_message()
@@ -45,6 +47,8 @@ class MidiArp:
                 self.held_notes.add(note_value)
         elif msg[0] & 0xF0 == 0x80:  # Note-off
             self.held_notes.discard(note_value)
+        self.reorder_held_notes()
+        self.change_octave
 
     def start_processing_thread(self):
         thread = threading.Thread(target=self.process_messages)
@@ -71,9 +75,9 @@ class MidiArp:
 
     def change_octave(self):
         # Shift the octaves of held notes within the specified range
-        if self.shifted == 0 and len(self.held_notes) != 0:
-            self.held_notes = {note_value + self.shift * 12 for note_value in self.held_notes}
-            self.shifted = 1
+        if -2 <= self.octave <= 2 and len(self.held_notes) != 0:
+            self.held_notes = {note_value + -2 * 12 for note_value in self.held_notes}
+            
             
         
 

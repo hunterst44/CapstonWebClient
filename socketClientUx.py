@@ -25,7 +25,7 @@ import subprocess
 
 class GetData:
     
-    def __init__(self, *, host="192.168.4.1", port=80, packetSize=1, numSensors=4, pathPreface='data/test', labelPath="Test", label=0, getTraining=True):
+    def __init__(self, *, host="192.168.4.1", port=80, packetSize=1, numSensors=4, pathPreface='data/data', labelPath="Test", label=0, getTraining=True):
         self.host = host
         self.port = port
         self.ssid = "TheConductor"
@@ -83,9 +83,8 @@ class GetData:
         print(f'dataTx: {self.dataTx}')
         print(f'host {host}')
         print(f'port: {port}')
-        
+
         self.sock = socket.socket()
-        self.sock.setblocking(False)
         try:
             self.sock.connect((host, port))
 
@@ -121,7 +120,7 @@ class GetData:
         #Get list of network from the air
         SSIDList = []
         networks = subprocess.check_output(["netsh", "wlan", "show", "network"])
-        networks = networks.decode("ascii")
+        networks = networks.decode("utf-8","ignore")
         networks = networks.replace("\r,","")
         ls = networks.split('\n')
         ls = ls[4:]

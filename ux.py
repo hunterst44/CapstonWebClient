@@ -675,7 +675,7 @@ class UX:
                     else:                                                                   #ToF not enabled
                         PredictMessage = "ToF disabled. Detected Gesture " + str(prediction)
                     
-                    #self.writer.getPredictions(prediction)
+                    self.writer.getPredictions(prediction)
 
                     window['-GESTURE-'].update(PredictMessage)
                     window['-STOPBTN-'].update(visible=True)
@@ -705,9 +705,9 @@ class UX:
                     self.writer.writerON = 0
                     self.writer.play_loop_started = False
                     self.writer.metro.startFlag = 0
-                    # self.writer.midiArp.stop_processing_thread()
+                    self.writer.midiArp.stop_processing_thread()
                     # self.writer.midiArp.thread.join()
-                    # self.writer.midiArp.is_running = False
+                    self.writer.midiArp.is_running = False
 
         window.close()
 

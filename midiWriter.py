@@ -1,19 +1,15 @@
-# import socketClientUx
-# import NeuralNetwork
-import numpy as np
-# import pythonosc
-# import os.path
-# import dill
-# import socket
-import struct
+# Import standard library modules
 import time
 import threading
 from threading import Thread
-from xml.sax.xmlreader import InputSource
-from numpy.core.fromnumeric import shape
+import random
+
+# Import third-party modules
+import numpy as np
 import rtmidi
-from rtmidi.midiconstants import CONTROL_CHANGE
 from scipy import signal
+
+# Import local modules
 from metronome import Metronome
 import buildMidi
 from midiPlayer import MidiPlayer
@@ -58,9 +54,10 @@ class MiDiWriter:
         self.writerON = 0
         self.rate = rate
         self.midi_data_list = []
-        # self.midiArp = MidiArp(midiIn_port_index = 3)
+        self.busy = 0
+        self.midiArp = MidiArp(midiIn_port_index = 3)
         
-        # self.midiArp.start_processing_thread()
+        self.midiArp.start_processing_thread()
         
         
         # self.midiBuilder = buildMidi.MidiBuilder()
@@ -81,74 +78,93 @@ class MiDiWriter:
             print(f"Could not find {port_name} in available ports. Opening the first port.")
             #self.midiOut.open_port(1)
 
+    def generate_midi_data(self):
+        # Logic to generate new MIDI data
+        self.refreshMidi()
         
+    def start_play_loop(self):
+        if not self.play_loop_started:
+            self.refreshMidi()  # Refresh MIDI data before starting the loop
+            self.metro.startFlag = True
+            self.metro.doneFlag = True
+            play_thread = threading.Thread(target=self.play_loop, args=())
+            play_thread.start()
+            self.play_loop_started = True
+
     def play_loop(self):
         non_zero_indices = 0
-        while self.metro.startFlag == True:
+        while self.metro.startFlag:
+            self.refreshMidi()
             print("Indices where elements are not zero:", non_zero_indices)
             self.metro.startFlag = self.writerON
-            if self.writerON == True:
-                
-                playIndex = 0
-            
+            if self.writerON:
                 if self.metro.doneFlag == 1:
                     threads = []
-                    self.refreshMidi()
-                    for midi_player, midi_data in zip(self.midi_players, self.midi_data_list):
-                        if self.playControl[playIndex] == 1:
-                            # self.refreshMidi()
-                        
-                            # self.changeRate()
-                            # self.metro.getTimeTick
-                            # midi_player.timeSlice = self.metro.getTimeTick(midi_data)
-                        
-                       
-                            threads.append(threading.Thread(target=midi_player.playBeat, args=(midi_data, self.playControl[playIndex])))
-                            playIndex += 1
-
+                    for i, (midi_player, midi_data) in enumerate(zip(self.midi_players, self.midi_data_list)):
+                        threads.append(threading.Thread(target=midi_player.play_beat, args=(midi_data, self.playControl[i])))
                     for thread in threads:
                         thread.start()
-
                     for thread in threads:
                         thread.join()
-                    
-                print(self.control00.startFlag)
-            
-                print(self.control01.startFlag)
-                print(self.control02.startFlag)
-                self.playControl[0] = self.control00.startFlag
-                self.playControl[1] = self.control01.startFlag
-                self.playControl[2] = self.control02.startFlag
-                if all(element == 0 for element in self.playControl):
-                    print("All elements in the array are 0.")
-                    self.playControl[non_zero_indices] = 1
-                else:
-                    print("Some elements in the array are not 0.")
-            
-                print("")
-            
-                for i in range(len(self.playControl)):
-                    if self.playControl[i] != 0:
-                        non_zero_indices = i
+
+                    for i in range(len(self.playControl)):
+                        if self.playControl[i] != 0:
+                            non_zero_indices = i
+
+                    print(self.control00.startFlag)
+                    print(self.control01.startFlag)
+                    print(self.control02.startFlag)
+                
+                    # Update playControl based on conditions
+                    for i, control in enumerate(self.controlList):
+                        if control.startFlag != 0:
+                            self.playControl = [0, 0, 0]
+                            self.playControl[i] = 1
+                            non_zero_indices = i
+
+                    print("All elements in the array are 0." if all(element == 0 for element in self.playControl) else "Some elements in the array are not 0.")
+                    print("")
+
+                    for i in range(len(self.playControl)):
+                        if self.playControl[i] != 0:
+                            non_zero_indices = i
 
                 
         
             
     def refreshMidi(self):
-        for control in self.controlList:
-            control.changeRate(self.rate)
-            control.midiBuilder.rate = control.beatLenStr
-            control.midiBuilder.rate = control.beatLenStr
-            control.midiBuilder.shape = control.shape
-            control.midiBuilder.newTof = control.controlValue
-            # control.midiIn = self.midiArp.held_notes
-            control.midiBuilder.midiMessage = control.midiIn
-            print(f"refreshMidi notes {control.midiIn}")
-            # control.midiBuilder.rate = 'w'
-            print(control.midiBuilder.rate)
-            control.midiResults = control.midiBuilder.build_midi()
-        self.midi_data_list = [self.control00.midiResults, self.control01.midiResults, self.control02.midiResults]
-        self.midi_players = [MidiPlayer(self.midiOut, self.metro.getTimeTick(midi_data), midi_data) for control, midi_data in zip(self.controlList, self.midi_data_list)]
+            for control in self.controlList:
+                if control.startFlag == 1:
+                    self.midiArp.order = control.order
+                    self.midiArp.octave = control.octave
+
+                control.changeRate(self.rate)
+                control.midiBuilder.rate = control.beatLenStr
+                control.midiBuilder.rate = control.beatLenStr
+                control.midiBuilder.shape = control.shape
+                control.midiBuilder.newTof = control.controlValue
+                
+                control.midiIn = self.midiArp.held_notes
+                control.midiBuilder.midiMessage = control.midiIn
+                print(f"refreshMidi notes {control.midiIn}")
+                # control.midiBuilder.rate = 'w'
+                print(control.midiBuilder.rate)
+                control.midiResults = control.midiBuilder.build_midi()
+                self.midi_data_list = [self.control00.midiResults, self.control01.midiResults, self.control02.midiResults]
+                self.midi_players = [MidiPlayer(self.midiOut, self.metro.getTimeTick(midi_data), midi_data) for control, midi_data in zip(self.controlList, self.midi_data_list)]
+                
+    def reorder_held_notes(self, order):
+        if order == 0:
+            # Sort notes in ascending order
+            self.midiArp.held_notes = set(sorted(self.midiArp.held_notes))
+        elif order == 1:
+            # Sort notes in descending order
+            self.midiArp.held_notes = set(sorted(self.midiArp.held_notes, reverse=True))
+        elif order == 2:
+            # Shuffle notes randomly
+            self.midiArp.held_notes = set(random.sample(self.midiArp.held_notes, len(self.midiArp.held_notes)))
+        else:
+            print("Invalid order. Use 0 for ascending, 1 for descending, or 2 for random.")
             
             
        
@@ -165,14 +181,38 @@ class MiDiWriter:
         # Gesture -> conditionData[x][0] 
         # threshold -> conditionData[x][1])
         self.metro = Metronome(bpm = BPM)
-        self.control00 = self.MidiControl(controlLabel="Channel0", midiOut=self.midiOut, channel=0, predictions=self.predictions, conditionType=0, conditionData=[[0,3],[1,3]], bpm = self.bpm, controlNum=0, controllerType=1, shape=2)
-        self.control01 = self.MidiControl(controlLabel="Channel1", midiOut=self.midiOut, channel=1, predictions=self.predictions, conditionType=1, conditionData=[[1,3],[2,3]], bpm = self.bpm, controlNum=1, controllerType=1, shape=2)
+        
+        #Control demo for midi Tof control
+        # self.control00 = self.MidiControl(controlLabel="Channel0", midiOut=self.midiOut, channel=0, predictions=self.predictions, conditionType=0, conditionData=[[0,3],[1,3]], bpm = self.bpm, controlNum=0, controllerType=2, shape=2)
+        # self.control01 = self.MidiControl(controlLabel="Channel1", midiOut=self.midiOut, channel=1, predictions=self.predictions, conditionType=1, conditionData=[[1,3],[2,3]], bpm = self.bpm, controlNum=1, controllerType=2, shape=2)
+        # self.control02 = self.MidiControl(controlLabel="Channel2", midiOut=self.midiOut, channel=2, predictions=self.predictions, conditionType=2, conditionData=[[2,3],[3,3]], bpm = self.bpm, controlNum=2, controllerType=2, shape=2)
+       
+        #Apregiator Demo
+        # self.control00 = self.MidiControl(controlLabel="Channel0", midiOut=self.midiOut, channel=0, predictions=self.predictions, conditionType=0, conditionData=[[0,3],[1,3]], bpm = self.bpm, controlNum=0, controllerType=0, shape=2)
+        # self.control01 = self.MidiControl(controlLabel="Channel1", midiOut=self.midiOut, channel=1, predictions=self.predictions, conditionType=1, conditionData=[[1,3],[2,3]], bpm = self.bpm, controlNum=1, controllerType=0, shape=2)
+        # self.control02 = self.MidiControl(controlLabel="Channel2", midiOut=self.midiOut, channel=2, predictions=self.predictions, conditionType=2, conditionData=[[2,3],[3,3]], bpm = self.bpm, controlNum=2, controllerType=0, shape=2)
+        
+         #Midi Mod demo
+        self.control00 = self.MidiControl(controlLabel="Channel0", midiOut=self.midiOut, channel=0, predictions=self.predictions, conditionType=0, conditionData=[[0,3],[1,3]], bpm = self.bpm, controlNum=0, controllerType=1, shape=0)
+        self.control01 = self.MidiControl(controlLabel="Channel1", midiOut=self.midiOut, channel=1, predictions=self.predictions, conditionType=1, conditionData=[[1,3],[2,3]], bpm = self.bpm, controlNum=1, controllerType=1, shape=1)
         self.control02 = self.MidiControl(controlLabel="Channel2", midiOut=self.midiOut, channel=2, predictions=self.predictions, conditionType=2, conditionData=[[2,3],[3,3]], bpm = self.bpm, controlNum=2, controllerType=1, shape=2)
+        
+        self.control00.midiBuilder.rate = 's'
         self.controlList = [self.control00, self.control01, self.control02]
                 
         self.controlList[0].shape = 0
         self.controlList[1].shape = 1
         self.controlList[2].shape = 2
+        
+        self.control00.order = 0
+        self.control01.order = 1
+        self.control02.order = 2
+
+        self.control00.order = 1
+        self.control01.order = 2
+        self.control02.order = -2
+
+        
         self.midi_data_list = [self.control00.midiResults, self.control01.midiResults, self.control02.midiResults]
    
         self.midi_players = [MidiPlayer(self.midiOut, self.metro.getTimeTick(midi_data), midi_data) for control, midi_data in zip(self.controlList, self.midi_data_list)]
@@ -183,11 +223,7 @@ class MiDiWriter:
     def garbageMan(self):
         length = len(self.predictions)
         if length > self.memorySize:
-            newPredict = []
-            for i in range(length - self.memorySizeMin, length):
-                newPredict[i] = self.predictions[i]
-            
-            self.predictions = newPredict
+            self.predictions = [self.predictions[i] for i in range(length - self.memorySizeMin, length)]
 
     def getPredictions(self, prediction):
         print()
@@ -207,7 +243,7 @@ class MiDiWriter:
         # self.control01.midiBuilder.midiMessage= [65]
         # self.control02.midiBuilder.midiMessage= [55]
 
-        self.refreshMidi()
+        # self.refreshMidi()
         
         
         
@@ -361,6 +397,9 @@ class MiDiWriter:
                 self.beatLenStr = 'w'
                
             print(self.beatLenStr)
+            
+            
+
 
         # def playBeat(self, midi_data, timeSlice, midiOut):
         #     while True:
