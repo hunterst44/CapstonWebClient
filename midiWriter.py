@@ -47,7 +47,7 @@ class MiDiWriter:
         #self.channelCounters = []  #Use this to count each channels loops outside the loop
         self.available_MiDiPortsOut = self.midiOut.get_ports()
         self.controlList = []
-        self.loadChannels() #Load the Channels above - must be defined in loadChannels
+        #self.loadChannels() #Load the Channels above - must be defined in loadChannels
         self.available_MiDiPortsIn = self.midiIn.get_ports()
         self.metro = Metronome(bpm = BPM)
         self.play_loop_started = False
@@ -56,15 +56,15 @@ class MiDiWriter:
         self.writerRate = rate
         self.midi_data_list = []
         self.busy = 0
-        self.midiArp = MidiArp(midiIn_port_index = 3)
+        #self.midiArp = MidiArp(midiIn_port_index = 3)
         
-        self.midiArp.start_processing_thread()
+        #self.midiArp.start_processing_thread()
         
         
         # self.midiBuilder = buildMidi.MidiBuilder()
         # # self.midi_player = MidiPlayer()
 
-        # metro = Metronome(bpm = self.bpm)
+        self.metro = Metronome(bpm = self.bpm)
         # builder1 = buildMidi.MidiBuilder(dataType=self.control00.controllerType, midiMessage=[60], ch=self.control00.channel, velocity=64, rate='w')
         # result1 = builder1.build_midi()
         # midi_data_list = [result1]
@@ -215,10 +215,7 @@ class MiDiWriter:
         
     #     self.midi_data_list = [self.control00.midiResults, self.control01.midiResults, self.control02.midiResults]
    
-    #     self.midi_players = [MidiPlayer(self.midiOut, self.metro.getTimeTick(midi_data), midi_data) for control, midi_data in zip(self.controlList, self.midi_data_list)]
-        
-        
-        
+    #     self.midi_players = [MidiPlayer(self.midiOut, self.metro.getTimeTick(midi_data), midi_data) for control, midi_data in zip(self.controlList, self.midi_data_list)] 
                   
     def garbageMan(self):
         length = len(self.predictions)
@@ -763,8 +760,8 @@ class MiDiWriter:
         #     return np.round(scaled_value)
     
 
-def main():
+# def main():
 
-    writer = MiDiWriter(predictions=[], port_name=0, channel=0, cc_num=75, bpm=120, rate='w', ToFByte=-1)
+#     #writer = MiDiWriter(predictions=[], port_name=0, channel=0, cc_num=75, bpm=120, rate='w', ToFByte=-1)
 
-if __name__ == "__main__": main()
+# if __name__ == "__main__": main()
