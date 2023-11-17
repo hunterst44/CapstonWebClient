@@ -27,6 +27,7 @@ class GetData:
     def __init__(self, *, host="192.168.1.75", port=80, packetSize=1, numSensors=4, pathPreface='data/test', labelPath="Test", label=0, getTraining=True):
         self.host = host
         self.port = port
+        self.ssid = "TheConductor"
         self.packetSize = packetSize
         self.numSensors = numSensors
         self.packetData = np.zeros([1, self.packetSize * self.numSensors * 3]) #one packet of data corresponding to a handPosition - 3 axis * number of sensors times the number of samples per handPosition
@@ -54,26 +55,29 @@ class GetData:
         connectTries = 0
         #Try the last connection
         cntList = self.getloggedCSV("networks.csv")
-    
-        if cntList[0][0] != '-1':
-            cntListLen = len(cntList)
-            print(f'cntListLen: {cntListLen}')
-            self.host = cntList[cntListLen-2][2]
-            self.port = int(cntList[cntListLen-2][3])
 
-        while connectTries < 1:
-            print("Trying to make a socket connection")
-            #disable connect on start up to test GUI
-            connectTries += 1
-            # if self.makeSockConnection(self.host, self.port) == -1:
-            #     connectTries += 1
-            #     time.sleep(1)
-            # else:
-            #     print("Connected to The Conductor!")
-            #     break
+
+########UNcomment below for live wifi connection...
+    
+        # if cntList[0][0] != '-1':
+        #     cntListLen = len(cntList)
+        #     print(f'cntListLen: {cntListLen}')
+        #     self.host = cntList[cntListLen-2][2]
+        #     self.port = int(cntList[cntListLen-2][3])
+
+        # while connectTries < 1:
+        #     print("Trying to make a socket connection")
+        #     #disable connect on start up to test GUI
+        #     connectTries += 1
+        #     if self.makeSockConnection(self.host, self.port) == -1:
+        #         connectTries += 1
+        #         time.sleep(1)
+        #     else:
+        #         print("Connected to The Conductor!")
+        #         break
         
-        if connectTries == 1:
-            print("Can't connect to the Conductor")
+        # if connectTries == 1:
+        #     print("Can't connect to the Conductor")
 
 
     def makeSockConnection(self, host, port):        #self.sock.close()
@@ -82,7 +86,7 @@ class GetData:
         print(f'dataTx: {self.dataTx}')
         print(f'host {host}')
         print(f'port: {port}')
-        
+
         self.sock = socket.socket()
         #self.sock.setblocking(False)
         try:
@@ -120,7 +124,7 @@ class GetData:
         #Get list of network from the air
         SSIDList = []
         networks = subprocess.check_output(["netsh", "wlan", "show", "network"])
-        networks = networks.decode("ascii")
+        networks = networks.decode("utf-8","ignore")
         networks = networks.replace("\r,","")
         ls = networks.split('\n')
         ls = ls[4:]
@@ -154,16 +158,16 @@ class GetData:
         else:
             mode = 'w'
         networkPath = self.pathPreface + '/' + pathSuffix #"/networks.csv"
-        print(f'networkPath: {networkPath}')
+        print(f'CSV writer path: {networkPath}')
         if os.path.exists(networkPath):
             print(f"network file exists")
-            with open(networkPath, mode) as csvfile:
+            with open(networkPath, mode, newline='') as csvfile:
                 csvWrite = csv.writer(csvfile)
                 csvWrite.writerow(csvRowList)
                 #[self.ssid, self.pswd, self.host, self.port]
         else:
              print(f"Creating new network file")
-             with open(networkPath, 'w') as csvfile:
+             with open(networkPath, 'w', newline='') as csvfile:
                 csvWrite = csv.writer(csvfile)
                 csvWrite.writerow(csvRowList)
 
@@ -174,6 +178,8 @@ class GetData:
         print(f'dataTx: {dataTx}')
         # print(f'host {host}')
         # print(f'port: {port}')            
+
+        print(f'Socket peer name: {self.sock.getpeername()}')
 
         #Check socket connection and send prompt to the server        
         try:   
@@ -217,7 +223,7 @@ class GetData:
                 self.sockRecursionCount = 0
                 return -1
 
-        #print(f"Sent Data after {rcount + 1} tries")
+        print(f"Sent Data after {rcount + 1} tries")
         self.host = host
         self.port = port
         return 1
@@ -246,9 +252,9 @@ class GetData:
             #XAcc = float(int(binaryData[0 + (sensorIndex * 3 * self.numSensors)]),0)
             print(f'XAcc Raw: {XAcc}')
             if self.getTraining is False:
-                self.packetData[0, (3 * sensorIndex)] = XAcc / 127
+                self.packetData[0, (3 * sensorIndex)] = XAcc / 127   #Scale to 0-127 for prediction
             else:
-                self.packetData[0, (3 * sensorIndex)] = XAcc
+                self.packetData[0, (3 * sensorIndex)] = XAcc         #Will scale values while compiling data for training
 
             #Y Axis
             YAccTuple = struct.unpack("=b", binaryData[1 + (sensorIndex * 3)])
@@ -282,53 +288,134 @@ class GetData:
             formatData(binaryData, i)
     
     def receiveBytes(self):
-        print()
-        print(f'receiveBytes(self)')
-        #Signals the server then receives a byte from the sample
+        #Checks the connection to the servers, sends the prompt and then receives numSensors * 3 bytes
+        #Collects one sample and returns the data as a byte array
+        count = 0
+        #sock = socket.socket()
+        print("receiveBytes()")
+        print(f'dataTx: {self.dataTx}')  
+        #dataTx = struct.pack("=B", 34)  
+        print("Sending prompt to server")
+        #print(f'dataTx: {dataTx}') 
+        if self.promptServer(self.dataTx, self.host, self.port, 0) == 1:
+            print("Prompt Success") 
+        else:       
+            print("Failed Prompt")
+            return -1   
         
-        sock = socket.socket()
-        sock.connect((self.host, self.port))
-        print()
-        print("Connected to server")
-        try:
-            sock.send(self.dataTx)
-            #print("Sent Data")
-        except:
-           sock.connect((self.host, self.port))
-           #print("Socket Reconnected")
-           sock.send(self.dataTx)
-        # print(f'sockname: {sock.getsockname()}')
-        # print(f'sockpeer: {sock.getpeername()}')
-        #y = []
-        #time.sleep(0.01)
-        #y = sock.recv(18)
+        #Now receive the response
+        #y = self.sock.recv(numSensors * 3)
+        print(f'y at the start: {self.y}')
+        self.y = [] #Reset y
         a = 0
         errorCount = 0
         #sampleRxStartMS = int(time.time() * 1000)
-        while a < ((self.numSensors * 3) + self.extraRxByte):                #iterate through the number of sensors * the number of bytes per sample
+        while a < ((self.numSensors * 3 + self.extraRxByte)):                #iterate through the number of sensors * the number of bytes per sample
             #print(f'while loop a')
             try:
-                self.y.append(sock.recv(1))
+                self.y.append(self.sock.recv(1))
                 #print(f'Received 1')
-            except ConnectionError:
-                print(f"Unable to reach client with socket: Retrying")
+            except socket.error as err:
+                print(f"TCP/IP Socket RX Error: {err}")
+                #print(f"Failed transmission: {self.dataTx}, length: {len(self.dataTx)}")
+                print(f"Unable to reach client with socket: Retrying...")
                 #Close and reopen the connection
-                if errorCount < 10:      #If you get ten connection errors in a row close and reopen the socket
-                    #Close and reopen the connection
-                    sock.close()
-                    sock = socket.socket()
-                    sock.connect((self.host, self.port))
-                    a -= 1     #Ask for a resend (decrement data index)
-                    errorCount += 1
-                    sock.send(self.dataTx)
-                else:
+    
+                # while errorCount < 2:      #If you get ten connection errors in a row close and reopen the socket
+                #     #Close and reopen the connection
+                #     # self.sock.close()
+                #     # self.sock.connect((self.host, self.port))
+                #     a -= 1     #Ask for a resend (decrement data index)
+                #     errorCount += 1
+                if self.promptServer(self.dataTx, self.host, self.port, 0) == -1:
                     print(f'Fatal Error: SocketBroken')
+                    #a -= 1
+                    #print(f"TCP/IP Socket Error: {err}")
+                    print(f"Failed transmission: {self.dataTx}, length: {len(self.dataTx)}")
                     return -1
             a += 1 
-        sock.close()
+        
+        #sock.close()
         self.dataGot = 1
-        #print(f"self.y: {self.y}")
+        print(f"self.y returned: {self.y}")
         return self.y
+    
+    def socketSendStr(self, message):
+        print()
+        print(f'socketSendStr()')
+        response0 = []
+
+        #Send the prompt to get ESP32 ready to receive text
+        self.dataTx = struct.pack("=B", 34)
+        #self.promptServer(self.dataTx, self.host, self.port)
+        print(f'self.dataTx (0x22): {self.dataTx}')
+        response0 = self.receiveBytes()
+        print(f"Got response0: {response0}")
+        print(f'response0[0]: {response0[0]}')
+        print(f'response0[1]: {response0[1]}')
+
+        first = struct.unpack("=B", response0[0]) 
+        second = struct.unpack("=B", response0[1]) 
+        first = first[0]
+        second = second[0]
+
+        if first == 0xFF and second == 0x0F:
+            print(f'Server is ready sending length of the message to server: {len(message)}')
+            self.dataTx = message.encode()
+            print(f"Encoded message: {self.dataTx}")
+            if self.promptServer(self.dataTx, self.host, self.port, 0):
+                return 1
+            else:
+                return -1     
+
+    # def receiveBytes(self):
+    #     print()
+    #     print(f'receiveBytes(self)')
+    #     #Signals the server then receives a byte from the sample
+        
+    #     sock = socket.socket()
+    #     sock.connect((self.host, self.port))
+    #     print()
+    #     print("Connected to server")
+    #     try:
+    #         sock.send(self.dataTx)
+    #         #print("Sent Data")
+    #     except:
+    #        sock.connect((self.host, self.port))
+    #        #print("Socket Reconnected")
+    #        sock.send(self.dataTx)
+    #     # print(f'sockname: {sock.getsockname()}')
+    #     # print(f'sockpeer: {sock.getpeername()}')
+    #     #y = []
+    #     #time.sleep(0.01)
+    #     #y = sock.recv(18)
+    #     a = 0
+    #     errorCount = 0
+    #     #sampleRxStartMS = int(time.time() * 1000)
+    #     while a < ((self.numSensors * 3) + self.extraRxByte):                #iterate through the number of sensors * the number of bytes per sample
+    #         #print(f'while loop a')
+    #         try:
+    #             self.y.append(sock.recv(1))
+    #             #print(f'Received 1')
+    #         except ConnectionError:
+    #             print(f"Unable to reach client with socket: Retrying")
+    #             #Close and reopen the connection
+    #             if errorCount < 10:      #If you get ten connection errors in a row close and reopen the socket
+    #                 #Close and reopen the connection
+    #                 sock.close()
+    #                 sock = socket.socket()
+    #                 sock.connect((self.host, self.port))
+    #                 a -= 1     #Ask for a resend (decrement data index)
+    #                 errorCount += 1
+    #                 sock.send(self.dataTx)
+    #             else:
+    #                 print(f'Fatal Error: SocketBroken')
+    #                 return -1
+    #         a += 1 
+    #     sock.close()
+    #     self.dataGot = 1
+    #     #print(f"self.y: {self.y}")
+    #     return self.y
     
     #print(f'Sample Received - One byte')
 
