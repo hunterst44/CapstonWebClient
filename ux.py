@@ -59,7 +59,7 @@ class UX:
         #self.packetSize = 1
         #self.numSensors = 4
         self.numHandPositions = 3   #How many handPositions trained by the model
-        #self.pathPreface = "data/test/"
+        #self.dataStream.pathPreface = "data/test/"
         #self.dataTx = 0xFF
         self.trainCountDown = 0 # Counter for training countdown
         self.sampleCount = 0 #counter for the number of samples collected per handPosition while training
@@ -72,7 +72,7 @@ class UX:
         self.dataStream = socketClientUx.GetData() # default values: host="192.168.4.1", port=80, packetSize=1, numSensors=4, pathPreface='data/test', labelPath="Test", label=0, getTraining=True
         self.IPAddress = ''
         self.SSIDList = []
-        self.positionPathList = ['pos1', 'pos2', 'pos3']
+        self.positionPathList = []  #Human readable filenames for position classes
         #self.controlList = [] #a List of controls from GUI or log file
         self.controlInitData = []
         #define a graph to make the double slider for max / min values
@@ -102,8 +102,9 @@ class UX:
         # self.dataStream.getTraining = True
         # self.dataStream.numSensors = numSensors
         # self.dataStream.pathPreface = pathPreface
-        self.dataStream.getSample()
+        #self.dataStream.getSample()
         self.dataStream.prepTraining()
+        print(f'self.dataStream.pathPreface: {self.dataStream.pathPreface}')
         
         #CSend all the handPositions to neural network
         NeuralNetwork.trainOrientation(self.dataStream.pathPreface, self.positionPathList, 1, self.dataStream.numSensors, self.numHandPositions)        
@@ -130,7 +131,7 @@ class UX:
         
         try:
             model.finalize()
-            print(f'Model USccessfully created at: {modelPath}') 
+            print(f'Model Successfully created at: {modelPath}') 
         except:
             print('Model file failure.')
             return -1 
@@ -373,6 +374,7 @@ class UX:
         else:
              Message00Text = "Let's map MiDi controls to hand positions."
              controlListStr = "First choose a MiDi port to send commands to:"
+             textHeight = 1
         
         layout = [
                     [
@@ -451,7 +453,8 @@ class UX:
         layout = [[sg.Text('The Conductor: Window 3'), sg.Text(size=(2,1), key='-OUTPUT-')],
                   [sg.pin(sg.Column([[sg.Text("Hit the 'GO!' button to begin training", visible=True, key='-GESTURE-'), sg.Text(size=(2,1))]], pad=(0,0)), shrink=False)],
                   [sg.pin(sg.Column([[sg.Text('', visible=True, key='-CountDown-'), sg.Text(size=(2,1))]], pad=(0,0)), shrink=False)],
-                  [sg.Button('GO!')]
+                  [sg.Button('GO!', key='-GOTRAIN-', visible=True)],
+                  [sg.Button('Predict', key='-TRGDONEPREDICT-', visible=False)]
         ]
         return sg.Window('THE CONDUCTOR: Step 3', layout, layout, size=(self.windowSizeX,self.windowSizeY), finalize=True)
 
@@ -485,7 +488,7 @@ class UX:
         stopPredict = 0
        
         ##Methods to collect run time data required for the GUI
-        modelPath = self.dataStream.pathPreface + 'model.model'
+        modelPath = self.dataStream.pathPreface + '/model.model'
         print(f'modelPath: {modelPath}')
         modelMessage = self.makeModelFileMessage(modelPath)
 
@@ -724,7 +727,15 @@ class UX:
                         window.refresh()
 
                 if event == '-ACCPTDEFAULT-':
+                    print()
+                    print(f'Window 1 -ACCPTDEFAULT-')
                     self.positionPathList = newPositionLabelList
+                    self.dataStream.pathPreface = newPathPreface
+                    self.numHandPositions = len(newPositionLabelList)
+                    print('Ready to TRAIN with these parameters:')
+                    print(f'self.numHandPositions: {self.numHandPositions}')
+                    print(f'self.positionPathList: {self.positionPathList}')
+                    print(f'self.dataStream.pathPreface: {self.dataStream.pathPreface}')
                     window['-MODELMESSAGE00-'].update('Model selected')
                     window['-MODELMESSAGE00-'].update(visible=True)
                     window['-MODELMESSAGE01-'].update(visible=False)
@@ -793,17 +804,22 @@ class UX:
                     print(f'self.numHandPositions: {self.numHandPositions}')
                     window['-NUMPOS-'].update(visible=False)
                     window['-USEDEFAULTBTN-'].update(visible=False)
+                    #Update pathPreface and numpositions with user's preference
                     if positionLabelCount == 0:
+                        print(f'self.dataStream.pathPreface: {self.dataStream.pathPreface}')
+                        print(f'newPathPreface: {newPathPreface}')
                         self.dataStream.pathPreface = newPathPreface
                         
                         window.refresh()
-                        numPositions = values['-NUMPOS-']
-                        numPositions = int(numPositions)
+                        
+                        #numPositions = values['-NUMPOS-']
+                        numPositions = int(values['-NUMPOS-'])
 
                         print(f'numPositions: {numPositions}')
                         print(f'type numPositions: {type(numPositions)}')
                         if numPositions < 16:
                             self.numHandPositions = numPositions
+                            print(f'self.numHandPositions: {self.numHandPositions}')
 
                         else: 
                             window.write_event_value("-CREATEMOEDLBTN-", '') #Back to create model option
@@ -1419,6 +1435,7 @@ class UX:
                 window['-DONELABEL-'].update(visible=False)
                 window['-ANOTHERBTN-'].update(visible=False)
                 window['-MAPPINGDONEBTN-'].update(visible=False)
+                window['-CNTRLOVERIDECOL-'].update(visible=True)
                 window['-DONECOL-'].set_size(size=(0,0))
                 window['-DONECOL-'].update(visible=False)
                 window.refresh()
@@ -1528,16 +1545,15 @@ class UX:
                 print()
                 print("window 3")
                 class0 = "baseStationaryC00"   #Class 0 is the reference orientation with no movement
-                self.positionPathList = ["class00", "class01", "class02"]
+                #self.positionPathList = ["class00", "class01", "class02"]
 
                 if event == sg.WIN_CLOSED or event == 'Exit':
                     break
                 
-                if event == "GO!":
+                if event == "-GOTRAIN-":
                     print()
-                    print("GO!")
+                    print("Window 3 -GOTRAIN-")
                     #self.goTrain = 1
-                    #handPositionIdx = self.numHandPositions #hard coded for now, will be provided by user with GUI
                     sampleCount = 0
                     testCount = 0
 
@@ -1546,7 +1562,7 @@ class UX:
                     self.dataStream.labelPath = self.positionPathList[self.handPositionCount] 
                     self.dataStream.getTraining = True
 
-                    window['GO!'].hide_row() 
+                    window['-GOTRAIN-'].hide_row() 
                     window['-GESTURE-'].update(f'Get ready to train Gesture {self.handPositionCount} in .....3')
                     window.refresh()
                     time.sleep(2)
@@ -1562,12 +1578,18 @@ class UX:
 
                     print("Start Training")
 
+                    #Gather samples for main training
+                    #Self.packetLimit is hard coded as 30 (should be exposed to the GUI...)
+                    self.dataStream.labelPath = self.positionPathList[self.handPositionCount] 
+                    print(f'self.positionPathList[self.handPositionCount]: {self.positionPathList[self.handPositionCount]}')
                     while sampleCount < self.packetLimit:
                         print(f'Collected sample {sampleCount + 1} of {self.packetLimit} samples for hand position {self.handPositionCount + 1} of {self.numHandPositions} hand positions')
-                        self.trainModel()
+                        self.dataStream.getSample()
+                        self.dataStream.prepTraining()
                         sampleCount += 1
                     sampleCount = 0
 
+                    #Gather samples for testing
                     self.dataStream.labelPath = self.positionPathList[self.handPositionCount] + '_test'  #collect test data to testing the network
                     if self.packetLimit /10 > 1:
                         testIdx = self.packetLimit /10
@@ -1576,23 +1598,36 @@ class UX:
 
                     while testCount < testIdx:
                         print(f'Collected sample {sampleCount + 1} of {self.packetLimit} samples for hand position {self.handPositionCount + 1} of {self.numHandPositions} hand positions')
-                        self.trainModel()
+                        self.dataStream.getSample()
+                        self.dataStream.prepTraining()
                         testCount += 1
                     testCount = 0
                     self.handPositionCount += 1
 
+                    #If handPositionCount is less than number of handpositions then move to then next one
                     if self.handPositionCount < self.numHandPositions:
                         #handPositionMessage = 'Training Gesture ' + str(self.handPositionCount + 1) + ' of ' + str(self.numHandPositions) +  ' handPositions'
                         # window['-GESTURE-'].update(handPositionMessage)
                         # window.refresh()
-                        window.write_event_value("GO!", '') 
+                        time.sleep(0.5)  #Slow the roll for humans
+                        window.write_event_value("-GOTRAIN-", '') 
                     else:
                         #trainOrientation(basePath, self.positionPathList, packetSize, numSensors, numClasses):
                         self.handPositionCount = 0
-                        NeuralNetwork.trainOrientation(self.pathPreface, self.positionPathList, self.packetSize, self.numSensors, self.numHandPositions)
+                        self.trainModel() 
+                        #NeuralNetwork.trainOrientation(self.dataStream.pathPreface, self.positionPathList, self.packetSize, self.numSensors, self.numHandPositions)
 
                         window['-GESTURE-'].update(f'Training Complete')
-                        window['-CountDown-'].update('')
+                        window['-GOTRAIN-'].update(visible=False)
+                        window['-TRGDONEPREDICT-'].update(visible=True)
+                        window.refresh()
+
+                if event == "-TRGDONEPREDICT-":
+                    print()
+                    print("Window 3 -TRGDONEPREDICT-")
+                    window3.hide()
+                    window3_1 =self.makeWindow3_1()
+
 
 ##############     Window3_1          #################
             if window == window3_1:
@@ -1605,7 +1640,7 @@ class UX:
                 self.dataStream.packetSize = 1
                 self.dataStream.getTraining = False
                 #self.dataStream.numSensors = self.numSensors
-                #self.dataStream.pathPreface = self.pathPreface
+                #self.dataStream.pathPreface = self.dataStream.pathPreface
 
                 if event == sg.WIN_CLOSED or event == 'Exit':
                     break

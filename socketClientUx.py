@@ -484,8 +484,8 @@ class GetData:
         print('writetoBinary()')
         print(f'trainingData for write: {trainingData}')
         #Write data to .npy file (binary) -- faster
-        dataPath = self.pathPreface + self.labelPath + '.npy'
-        truthPath = self.pathPreface + self.labelPath + '_truth.npy'
+        dataPath = self.pathPreface + '/' + self.labelPath + '.npy'
+        truthPath = self.pathPreface + '/' + self.labelPath + '_truth.npy'
 
         #Data
         if os.path.exists(dataPath):
@@ -519,8 +519,8 @@ class GetData:
         print(f'trainingData for write: {trainingData}')
         #Write data to .csv file (text) - human readable
         #print(f'CSV write training data')
-        dataPath = self.pathPreface + self.labelPath + '.csv'
-        truthPath = self.pathPreface + self.labelPath + '_truth.csv'
+        dataPath = self.pathPreface + '/' + self.labelPath + '.csv'
+        truthPath = self.pathPreface + '/' + self.labelPath + '_truth.csv'
         
         #Data - 2D array axis 0 (rows) are handPositions, axis 1 (cols) are features within a handPosition
         if os.path.exists(dataPath):

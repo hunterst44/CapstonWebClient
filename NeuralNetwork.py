@@ -502,9 +502,9 @@ class Loss_CategoricalCrossEntropy(Loss):
         #Number of sample in a batch
         samples = len(y_pred)
         
-        print(f'len(y_pred): {len(y_pred)}') 
-        print(f'len(y_pred): {len(y_pred)}') 
-        print(f'y_true: {y_true}') 
+        # print(f'len(y_pred): {len(y_pred)}') 
+        # print(f'len(y_pred): {len(y_pred)}') 
+        # print(f'y_true: {y_true}') 
         
         #Clip data to prevent division by 0
         #Clip both sidfes to not drag mean towards any value
@@ -515,9 +515,9 @@ class Loss_CategoricalCrossEntropy(Loss):
         #Probabilities for target values
         #Only if categorical labels
         if len(y_true.shape) == 1:
-            print(f'samples): {samples}') 
-            print(f'y_pred_clipped: {y_pred_clipped}')
-            print(f'len(y_pred_clipped): {len(y_pred_clipped)}')
+            # print(f'samples): {samples}') 
+            # print(f'y_pred_clipped: {y_pred_clipped}')
+            # print(f'len(y_pred_clipped): {len(y_pred_clipped)}')
             correct_confidences = y_pred_clipped[range(samples), y_true]
         
         #Mask values - only for one-hot encoded labels
@@ -1267,12 +1267,12 @@ def trainOrientation(pathPreface, pathList, packetSize, numSensors, numGestures)
     dataPathList = pathList.copy()
     truthPathList = pathList.copy()
     for i in range(len(dataPathList)):
-        dataPathList[i] = pathPreface + dataPathList[i] + ".npy"
+        dataPathList[i] = pathPreface + '/' + dataPathList[i] + ".npy"
 
     print(f'data Paths: {dataPathList}')  
     
     for i in range(len(truthPathList)):
-        truthPathList[i] = pathPreface + truthPathList[i] + "_truth.npy"
+        truthPathList[i] = pathPreface + '/' +  truthPathList[i] + "_truth.npy"
 
     print(f'truth Paths: {truthPathList}')  
     
@@ -1286,12 +1286,12 @@ def trainOrientation(pathPreface, pathList, packetSize, numSensors, numGestures)
     BATCH_SIZE = 1
     
     modelOk = 0
-    if os.path.exists(pathPreface + "model.model"):     #Use the existing model if it exists
-        model = Model.load(pathPreface + "model.model")
+    if os.path.exists(pathPreface +  "/model.model"):     #Use the existing model if it exists
+        model = Model.load(pathPreface + "/model.model")
 
         try:
             model.finalize()
-            print(f'Using exisiting model at: {pathPreface}model.model') 
+            print(f'Using exisiting model at: {pathPreface}/model.model') 
             modelOk = 1
         except:
             print('Model file not valid. Creating new model')
@@ -1323,7 +1323,7 @@ def trainOrientation(pathPreface, pathList, packetSize, numSensors, numGestures)
     #parameters = model.get_parameters()
     #print(f'parameters: {parameters}')
     
-    model.save(pathPreface + "model.model")
+    model.save(pathPreface + "/model.model")
 
 def createTestModel():
     model = Model()   #Instanstiate the model
