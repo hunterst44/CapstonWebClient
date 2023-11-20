@@ -483,6 +483,7 @@ class UX:
         usedPositions = [] #indexes of the positions in self.dataStream.
         usedChannels = {'m': 0, 'a':0, 'n': 0}
         controlPath = self.dataStream.pathPreface + "/controls.csv"
+        newPathPreface = -1
         #self.positonPathList = ['pos1', 'pos2', 'pos3']
 
         stopPredict = 0
@@ -730,7 +731,8 @@ class UX:
                     print()
                     print(f'Window 1 -ACCPTDEFAULT-')
                     self.positionPathList = newPositionLabelList
-                    self.dataStream.pathPreface = newPathPreface
+                    if newPathPreface != -1:
+                        self.dataStream.pathPreface = newPathPreface
                     self.numHandPositions = len(newPositionLabelList)
                     print('Ready to TRAIN with these parameters:')
                     print(f'self.numHandPositions: {self.numHandPositions}')
