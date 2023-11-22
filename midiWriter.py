@@ -56,13 +56,15 @@ class MiDiWriter:
         self.writerRate = rate
         self.midi_data_list = []
         self.busy = 0
-        #self.midiArp = MidiArp(midiIn_port_index = 3)
+        # self.midi_player = MidiPlayer()
+        # self.midi_player = MidiPlayer()
+        self.midiArp = MidiArp(midiIn_port_index = 3)
         
         #self.midiArp.start_processing_thread()
         
         
         # self.midiBuilder = buildMidi.MidiBuilder()
-        # # self.midi_player = MidiPlayer()
+        
 
         self.metro = Metronome(bpm = self.bpm)
         # builder1 = buildMidi.MidiBuilder(dataType=self.control00.controllerType, midiMessage=[60], ch=self.control00.channel, velocity=64, rate='w')
@@ -98,6 +100,7 @@ class MiDiWriter:
 
     def play_loop(self):
         non_zero_indices = 0
+        self.playControl = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         while self.metro.startFlag:
             self.refreshMidi()
             print("Indices where elements are not zero:", non_zero_indices)
@@ -116,14 +119,14 @@ class MiDiWriter:
                         if self.playControl[i] != 0:
                             non_zero_indices = i
 
-                    print(self.control00.startFlag)
-                    print(self.control01.startFlag)
-                    print(self.control02.startFlag)
+                    # print(self.control00.startFlag)
+                    # print(self.control01.startFlag)
+                    # print(self.control02.startFlag)
                 
                     # Update playControl based on conditions
                     for i, control in enumerate(self.controlList):
                         if control.startFlag != 0:
-                            self.playControl = [0, 0, 0]
+                            self.playControl = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
                             self.playControl[i] = 1
                             non_zero_indices = i
 
@@ -153,8 +156,8 @@ class MiDiWriter:
                 # control.midiBuilder.rate = 'w'
                 print(control.midiBuilder.rate)
                 control.midiResults = control.midiBuilder.build_midi()
-                self.midi_data_list = [self.control00.midiResults, self.control01.midiResults, self.control02.midiResults]
-                self.midi_players = [MidiPlayer(self.midiOut, self.metro.getTimeTick(midi_data), midi_data) for control, midi_data in zip(self.controlList, self.midi_data_list)]
+            self.midi_data_list = [control.midiResults for control in self.controlList]
+            self.midi_players = [MidiPlayer(self.midiOut, self.metro.getTimeTick(midi_data), midi_data) for control, midi_data in zip(self.controlList, self.midi_data_list)]
                 
     def reorder_held_notes(self, order):
         if order == 0:
@@ -357,7 +360,7 @@ class MiDiWriter:
             self.max_val = 127
             self.period = 1
             self.thread = None
-            #self.controllerType = controllerType
+            self.controllerType = controllerType
             self.threadToggle = 0 #toggle this within the thread to see what it is doing
             #self.max_duration = max_duration
             self.midiBuilder = buildMidi.MidiBuilder(dataType=self.controllerType, midiMessage=self.midiMessage, ch=self.channel, velocity=self.velocity, rate=self.beatLenStr)
