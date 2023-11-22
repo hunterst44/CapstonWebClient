@@ -1444,6 +1444,8 @@ class UX:
 
                 #if self.checkControlLog == 0: #Not using the logged data so we need a new log
                 for i in range(len(self.controlInitData)):
+                    print()
+                    # print(isinstance(self.controlInitData[i][1], int))
                     if self.controlLogCheck == 0: #Not using the logged data so we need a new log
                         self.dataStream.logCSVRow('controls.csv', self.controlInitData[i], append=True)
                     #tmpList.append(self.controlInitData[i])
@@ -1455,39 +1457,40 @@ class UX:
                 
 
                     #Create the writer.Control instances in controlList
-                    if self.controlInitData[i][1] == 0:  #Condition type = Hold
+                    print(self.controlInitData[i][1])
+                    if int(self.controlInitData[i][1]) == 0:  #Condition type = Hold
                         
                         conditionDataList = [[int(self.controlInitData[i][2]), int(self.controlInitData[i][2])], [int(self.controlInitData[i][3]), int(self.controlInitData[i][4])]]
                     
-                        if self.controlInitData[i][3] == 0:    #Control is Modulate
+                        if int(self.controlInitData[i][6]) == 0:    #Control is Modulate
 
                             self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][7], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], controlType=self.controlInitData[i][6], conditionData=conditionDataList, bpm = self.writer.bpm, controlNum=i, rate=self.controlInitData[i][8], waveform=self.controlInitData[i][9], minimum=self.controlInitData[i][10], maximum=self.controlInitData[i][11]))
                             #self.writer.controlList.append(newControl)   
-                            print(f'self.writer.controlList: {self.writer.controlList}')
-                            print(f'self.writer.controlList[i+1].controlLabel: {self.writer.controlList[i].controlLabel}')
-                            print(f'self.writer.controlList[0].controlLabel: {self.writer.controlList[0].controlLabel}')
-                            print(f'self.writer.controlList[1].controlLabel: {self.writer.controlList[1].controlLabel}')
-                        elif self.controlInitData[i][3] == 1:    #Control is Arpegio
+                            # print(f'self.writer.controlList: {self.writer.controlList}')
+                            # print(f'self.writer.controlList[i+1].controlLabel: {self.writer.controlList[i].controlLabel}')
+                            # print(f'self.writer.controlList[0].controlLabel: {self.writer.controlList[0].controlLabel}')
+                            # print(f'self.writer.controlList[1].controlLabel: {self.writer.controlList[1].controlLabel}')
+                        elif int(self.controlInitData[i][6]) == 1:    #Control is Arpegio
                             self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][7], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], controlType=self.controlInitData[i][6], conditionData=conditionDataList, bpm = self.writer.bpm, controlNum=i, rate=self.controlInitData[i][8], direction=self.controlInitData[i][9]))
                         #self.writer.controlList.append(newControl)   
                             print(f'self.writer.controlList: {self.writer.controlList}')
                             print(f'self.writer.controlList[i+1].controlLabel: {self.writer.controlList[i].controlLabel}')
                             print(f'self.writer.controlList[0].controlLabel: {self.writer.controlList[0].controlLabel}')
                             print(f'self.writer.controlList[1].controlLabel: {self.writer.controlList[1].controlLabel}')
-                    elif self.controlInitData[i][1] == 1:  #Condition type = Transition
+                    elif int(self.controlInitData[i][1]) == 1:  #Condition type = Transition
                         conditionDataList = [
                             [[int(self.controlInitData[i][2]), int(self.controlInitData[i][3])], [int(self.controlInitData[i][4]), int(self.controlInitData[i][5])]],
                             [[int(self.controlInitData[i][6]), int(self.controlInitData[i][7])], [int(self.controlInitData[i][8]), int(self.controlInitData[i][9])]]
                         ]
 
-                        if self.controlInitData[i][3] == 0:    #Control is Modulate
+                        if int(self.controlInitData[i][10]) == 0:    #Control is Modulate
                             self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][11], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], controlType=self.controlInitData[i][10], conditionData=conditionDataList, bpm = self.writer.bpm, controlNum=i, rate=self.controlInitData[i][12], waveform=self.controlInitData[i][13], minimum=self.controlInitData[i][14], maximum=self.controlInitData[i][15]))
                             #self.writer.controlList.append(newControl)   
                             print(f'self.writer.controlList: {self.writer.controlList}')
                             print(f'self.writer.controlList[i+1].controlLabel: {self.writer.controlList[i].controlLabel}')
                             print(f'self.writer.controlList[0].controlLabel: {self.writer.controlList[0].controlLabel}')
                             print(f'self.writer.controlList[1].controlLabel: {self.writer.controlList[1].controlLabel}')
-                        elif self.controlInitData[i][3] == 1:    #Control is Arpegio
+                        elif int(self.controlInitData[i][10]) == 1:    #Control is Arpegio
                             self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][11], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], controlType=self.controlInitData[i][10], conditionData=conditionDataList, bpm = self.writer.bpm, controlNum=i, rate=self.controlInitData[i][12], direction=self.controlInitData[i][13]))
                         #self.writer.controlList.append(newControl)   
                             print(f'self.writer.controlList: {self.writer.controlList}')

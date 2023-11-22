@@ -92,6 +92,19 @@ class MidiBuilder:
     def build_midi(self):
         midi_array = []
         if self.dataType == 0:  # for MIDI note data
+            if isinstance(self.midiMessage, int):
+                note = int(self.midiMessage)
+                note_on = self.MIDINoteMessage(ch=self.ch, note=note, velocity=self.velocity)
+                midi_array.append(note_on.get_midi())
+
+                    # Add a small delay between note-on and note-off (adjust as needed)
+                    # time.sleep(0.1)
+
+                    # Create MIDI note-off message
+                note_off = self.MIDINoteMessage(ch=self.ch, note=note, velocity=0)
+                midi_array.append(note_off.get_midi())
+
+            return midi_array
             for _ in range(self.multiply_rate(self.rate)):
                 for note in set(self.midiMessage):  # Create a copy of the set
                     # Create MIDI note-on message
@@ -138,8 +151,8 @@ class MidiBuilder:
             self.velocity = velocity
 
         def get_midi(self):
-            noteON = [self.ch + 0x90, self.note, self.velocity]
-            noteOFF = [self.ch + 0x80, self.note, self.velocity]
+            noteON = [int(self.ch) + 0x90, int(self.note), int(self.velocity)]
+            noteOFF = [int(self.ch) + 0x80, int(self.note), int(self.velocity)]
             return noteON
 
 # # Builder for MIDI note data
