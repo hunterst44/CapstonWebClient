@@ -95,11 +95,13 @@ class GetData:
         except socket.timeout as err:
             print(f"TCP/IP Socket Timeout Error {self.sockRecursionCount}: {err}")
             self.sockConnection = 0
+            self.sockRecursionCount += 1
             return -1
 
         except socket.error as err:
             print(f"TCP/IP Socket Error: {err}")
             self.sockConnection = 0
+            self.sockRecursionCount += 1
             return -1
             #self.sock.close()
             #self.socket.create_connection((self.host, self.port), timeout=2)
@@ -223,7 +225,7 @@ class GetData:
                 self.sockRecursionCount = 0
                 return -1
 
-        print(f"Sent Data after {rcount + 1} tries")
+        #print(f"Sent Data after {rcount + 1} tries")
         self.host = host
         self.port = port
         return 1
@@ -239,13 +241,14 @@ class GetData:
 
         def formatData(binaryData, sensorIndex):
             print(f'sensor: {sensorIndex}')
-            #print()
+            print()
             #print(f'binaryData: {binaryData}')
             #Parse binary data and recombine into ints
             #X Axis
 
-            # print(f'sensor: {sensorIndex}')
-            # print(f'XIndex: {0 + (sensorIndex * 3 * self.numSensors)}')
+            print(f'sensor: {sensorIndex}')
+            print(f'XIndex: {0 + (sensorIndex * 3 * self.numSensors)}')
+            print(f'self.sock.getpeername(): {self.sock.getpeername()}')
 
             XAccTuple = struct.unpack("=b", binaryData[0 + (sensorIndex * 3)])  ##MSB is second byte in axis RX; Just a nibble
             XAcc = XAccTuple[0]
@@ -295,7 +298,7 @@ class GetData:
         print("receiveBytes()")
         print(f'dataTx: {self.dataTx}')  
         #dataTx = struct.pack("=B", 34)  
-        print("Sending prompt to server")
+        #print("Sending prompt to server")
         #print(f'dataTx: {dataTx}') 
         if self.promptServer(self.dataTx, self.host, self.port, 0) == 1:
             print("Prompt Success") 
@@ -305,7 +308,7 @@ class GetData:
         
         #Now receive the response
         #y = self.sock.recv(numSensors * 3)
-        print(f'y at the start: {self.y}')
+        #print(f'y at the start: {self.y}')
         self.y = [] #Reset y
         a = 0
         errorCount = 0
@@ -443,8 +446,17 @@ class GetData:
         #print(f'self.y loop: {self.y}')
                 
         #print(f'Start preocessData() thread for sample: {recvCount}' )
-                
-        self.processData(self.y)
+        if len(self.y) == 0:
+            print("No data received reset socket connection")
+            while self.sockRecursionCount < 4:
+                self.sock.close()
+                if self.makeSockConnection(self.host, self.port) == -1:
+                    time.sleep(1)
+                else:
+                    print("Reconnected to The Conductor!")  
+        else:    
+            self.processData(self.y)
+        
         self.y = []  #Reset y so that it doesn't get too full...
 
         #Prediction mode      
