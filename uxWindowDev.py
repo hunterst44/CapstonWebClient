@@ -252,7 +252,7 @@ class UX:
         print()
         print('uxLoop Start')
         newIP = "192.168.4.1"
-        newSSID = "TheCOnductor"
+        newSSID = "TheConductor"
         newPSWD = "NoneShallPass"
         stopPredict = 0
        
@@ -270,7 +270,7 @@ class UX:
         newPositionLabelList = []
 
         # Set all windows to Noe except window 1 to start
-        window0 = self.window.makeWindow0(self.dataStream.sockConnection)
+        window0 = self.window.makeWindow0(self.dataStream.sockConnection, self.SSIDList)
         #window1 = self.window.makeWindow1(modelMessage)
         window1 = None
         window2 = None
@@ -345,6 +345,7 @@ class UX:
                     window['-IPIN-'].update(visible=False)
                     window['-SSIDIN-'].update(self.SSIDList)
                     window['-SSIDIN-'].update(visible=True)
+                    window['-SSIDLISTRFH-'].update(visible=True)
                     window['-PSWDIN-'].update(visible=True)
                     window['-RECNTBTN-'].update(visible=True)
                     window['-APCNTEBTN-'].update(visible=False)
@@ -416,7 +417,7 @@ class UX:
                             window.refresh()
                             self.dataStream.logCSVRow('networks.csv', [self.ssid, self.pswd, self.host, self.port])
                             time.sleep(2)
-                            window1 = self.window.makeWindow1(modelMessage)
+                            window1 = self.window.makeWindow1(self.dataStream.pathPreface)
                             window0.hide()
                         else:
                             print(f"Error Connecting to {newIP} at {newSSID}")
@@ -436,12 +437,12 @@ class UX:
                     print(f'Window 0 -CONTBTN-')
 
                     window0.hide()
-                    window1 = self.window.makeWindow1(modelMessage)
+                    window1 = self.window.makeWindow1(self.dataStream.pathPreface)
 
                 if event == '-NOCNTBTN-':
                     self.dataStream.sock.close()
                     window0.hide()
-                    window1 = self.window.makeWindow1(modelMessage)
+                    window1 = self.window.makeWindow1(self.dataStream.pathPreface)
            
 ##############     Window1          #################            
             if window == window1:
