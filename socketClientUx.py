@@ -435,9 +435,9 @@ class GetData:
                 #y = self.receiveBytes()
                 #print(f'Receive Bytes')
 
-        while threading.active_count() > 1:
+        #while threading.active_count() > 1:
             #print(f'threading.active_count(): {threading.active_count()}')
-            dataThread.join()
+        dataThread.join()
 
         sampleRxStopMS = int(time.time() * 1000)
         sampleRxTimeMS = sampleRxStopMS - sampleRxStartMS

@@ -58,7 +58,7 @@ class MiDiWriter:
         self.busy = 0
         # self.midi_player = MidiPlayer()
         # self.midi_player = MidiPlayer()
-        self.midiArp = MidiArp(midiIn_port_index = 3)
+        self.midiArp = MidiArp(midiIn_port_index = 0)
         
         #self.midiArp.start_processing_thread()
         
