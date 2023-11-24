@@ -525,11 +525,9 @@ class MiDiWriter:
             print('checkConditions(self)')
             match self.conditionType:
                 case 0:
-                     ## ConditionType 0: Threshold
+                     ## ConditionType 0: Hold
                         # gestureThreshold(gesture, threshold) 
-                        #       checks for a gesture (conditionData[0]) 
-                        #       held for a threshold (conditionData[1])
-                        #       writes conditionData[3] to self.value
+                        # [[ON POSITION, ON THRESHOLD], [OFF POSITION, OFFTHRESHOLD]]
                     if self.onNotOff == 1: #if on check if we need to turn it off
                         self.startFlag = 1
                         
@@ -554,16 +552,18 @@ class MiDiWriter:
                             self.startFlag = 0
                             
                 case 1:
-                     ## ConditionType 0: Threshold
+                     ## ConditionType 1: Transition
                         # gestureThreshold(gesture, threshold) 
-                        #       checks for a gesture (conditionData[0]) 
-                        #       held for a threshold (conditionData[1])
-                        #       writes conditionData[3] to self.value
+                        # [
+                        # [[BEGIN ON POSITION, BEGIN ON THRESHOLD], [END ON POSITION, END ON THRESHOLD]], 
+                        # [[BEGIN OFF POSITION, BEGIN OFF THRESHOLD], [END OFF POSITION, END OFF THRESHOLD]
+                        # ]
                     if self.onNotOff == 1: #if on check if we need to turn it off
                         self.startFlag = 1
-                        
+                        #gestureTransition(self, gesture1, threshold1, gesture2, threshold2, startIdx):
                         #When Control is ON it uses the second list in conditionData to set gesture and threshold
-                        if self.gestureThreshold(self.conditionData[1][0], self.conditionData[1][1], 0) == 0:
+                        if self.gestureThreshold(self.conditionData[1][0][0], self.conditionData[1][0][0], self.conditionData[1][1][0], self.conditionData[1][1][0], 0) == 0:
+                            
                         #self.controlValue = self.conditionData[2]
                             self.updateFlag = 1
                             self.startFlag = 1
@@ -573,7 +573,7 @@ class MiDiWriter:
                     else:
                         self.startFlag = 0
                          #When Control is OFF it uses the first list in conditionData to set gesture and threshold
-                        if self.gestureThreshold(self.conditionData[0][0], self.conditionData[0][1], 0) == 0:
+                        if self.gestureThreshold(self.conditionData[0][0][0], self.conditionData[0][0][0], self.conditionData[0][1][0], self.conditionData[0][1][0], 0) == 0:
                         #self.controlValue = self.conditionData[2]
                             self.updateFlag = 1
                             self.startFlag = 1
@@ -581,8 +581,8 @@ class MiDiWriter:
                             self.updateFlag = 0
                             self.startFlag = 0
                             
-                case 2:
-                    ## ConditionType 0: Threshold
+                case _:
+                    ## ConditionType 0: Hold 
                     # gestureThreshold(gesture, threshold) 
                     #       checks for a gesture (conditionData[0]) 
                     #       held for a threshold (conditionData[1])

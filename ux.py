@@ -23,7 +23,7 @@ import dill
 # [0] Control Name {STR}
 # [1] Condition Type {INT} 0 = Hold, 1 = Tranisiton, 2 = Pattern
 #Condition Type = Hold
-#[2] - [5] conditions data: [[ON POSITION], [ON THRESHOLD], [OFF POSITION], [OFFTHRESHOLD]]
+#[2] - [5] conditions data: [..., ON POSITION, ON THRESHOLD, OFF POSITION, OFFTHRESHOLD ..., ]
 # [6] Control Type {INT} 0 = modulate, 1 = Arpegiate, 2 = note
 # [7] Channel
 # [8] Rate [Float]
@@ -35,7 +35,7 @@ import dill
 # [9] Direction
 
 #Condition Type = Transition
-# [2] - [9] conditions data: [[[BEGIN ON POSITION], [BEGIN ON THRESHOLD], [END ON POSITION], [END ON THRESHOLD]], [[BEGIN OFF POSITION], [BEGIN OFF THRESHOLD], [END OFF POSITION], [END OFF THRESHOLD]]]
+# [2] - [9] conditions data: [..., BEGIN ON POSITION, BEGIN ON THRESHOLD, END ON POSITION, END ON THRESHOLD, BEGIN OFF POSITION, BEGIN OFF THRESHOLD, END OFF POSITION, END OFF THRESHOLD, ...]
 # [10] Control Type {INT} 0 = modulate, 1 = Arpegiate, 2 = note
 # [11] Channel
 # [12] Rate [Float]
@@ -196,7 +196,7 @@ class UX:
         for i in range(len(controlLogData)):
             print(f'i: {i}')
             print(f'controlLogData: {controlLogData}')            
-            self.controlInitData.append(controlLogData[i])
+            #self.controlInitData.append(controlLogData[i])
 
             controlListStr = controlListStr + "\nControl Name: " + controlLogData[i][0] + "\n"
             #ConditionType
@@ -670,6 +670,14 @@ class UX:
                     print()
                     print(f'Window 0 -CONTBTN-')
 
+                    #Check and log connection infos for next time
+                    print(f'self.dataStream.ssid: {self.dataStream.ssid}')
+                    print(f'self.dataStream.pswd: {self.dataStream.pswd}')
+                    print(f'self.dataStream.host: {self.dataStream.host}')
+                    print(f'self.dataStream.port: {self.dataStream.port}')
+
+                    self.dataStream.logCSVRow('networks.csv', [self.dataStream.ssid, self.dataStream.pswd, self.dataStream.host, self.dataStream.port])
+
                     window0.hide()
                     window1 = self.makeWindow1(modelMessage)
 
@@ -890,7 +898,7 @@ class UX:
 
                 if event == sg.WIN_CLOSED or event == 'Exit':
                     window2.hide()
-                    window1 =self.makeWindow1() 
+                    window1 =self.makeWindow0() 
 
                 if event == '-USELOGBTN-':
                     print()
@@ -1012,11 +1020,11 @@ class UX:
                     print(f'controlPath: {controlPath}')
                     #Write the midiport and bpm to the file - overwrite file
                     self.dataStream.logCSVRow('controls.csv', [self.writer.midiPortOut, self.writer.bpm], append=False)
-                    print(f'Write Port and Midi out - file does not exist')
+                    print(f'Write Port and Midi out')
                     
                     #Check the file contents
-                    with open(controlPath, 'r') as csvfile:
-                        print(f'{list(csv.reader(csvfile, delimiter=","))}')
+                    # with open(controlPath, 'r') as csvfile:
+                    #     print(f'{list(csv.reader(csvfile, delimiter=","))}')
                         
                     print(f'self.writer.bpm: {self.writer.bpm}')
 
@@ -1260,13 +1268,13 @@ class UX:
                     print()
                     print(f'Window 2 -SELCNTRLTYPEBTN-')
                     #print(f'')
-                    miDIMappath = self.dataStream.pathPreface + '\MiDIMap.csv'
+                    # miDIMappath = self.dataStream.pathPreface + '\MiDIMap.csv'
 
-                    if os.path.exists(miDIMappath):
-                        print('midiMap exists')
+                    # if os.path.exists(miDIMappath):
+                    #     print('midiMap exists')
                     
-                    else:
-                        print('No miDiMap')
+                    # else:
+                    #     print('No miDiMap')
                     
                     window['-CTRLLISTCOL-'].set_size(size=(0,0))
                     window['-CTRLLISTCOL-'].update(visible=False)
@@ -1428,7 +1436,7 @@ class UX:
                 #Append the control data to the file
                 controlListStr, textHeight = self.getControlListStr(self.controlInitData)
                 print(controlListStr)
-                print(f'textHeight: {textHeight}')
+                #print(f'textHeight: {textHeight}')
                 window['-TOPMESSAGE00-'].update(f'Controls Created! Click Continue to train or use the neural network.')
                 window['-TOPMESSAGE01-'].set_size(size=(50,textHeight))
                 window['-TOPMESSAGE01-'].update(controlListStr)
@@ -1443,21 +1451,24 @@ class UX:
                 window.refresh()
 
                 #if self.checkControlLog == 0: #Not using the logged data so we need a new log
+                print(f'len(self.controlInitData): {len(self.controlInitData)}')
+                print(f'self.controlInitData: {self.controlInitData}')
                 for i in range(len(self.controlInitData)):
                     print()
+                    
                     # print(isinstance(self.controlInitData[i][1], int))
                     if self.controlLogCheck == 0: #Not using the logged data so we need a new log
                         self.dataStream.logCSVRow('controls.csv', self.controlInitData[i], append=True)
                     #tmpList.append(self.controlInitData[i])
 
-                        # #Check the file has been logged properly
-                        # with open(controlPath, 'r') as csvfile:
-                        #     tmpList = list(csv.reader(csvfile, delimiter=","))
-                        #     print(f'controls.csv: {tmpList}')
+                        #Check the file has been logged properly
+                        with open(controlPath, 'r') as csvfile:
+                            tmpList = list(csv.reader(csvfile, delimiter=","))
+                            print(f'controls.csv: {tmpList}')
                 
 
                     #Create the writer.Control instances in controlList
-                    print(self.controlInitData[i][1])
+                    #print(self.controlInitData[i][1])
                     if int(self.controlInitData[i][1]) == 0:  #Condition type = Hold
                         
                         conditionDataList = [[int(self.controlInitData[i][2]), int(self.controlInitData[i][2])], [int(self.controlInitData[i][3]), int(self.controlInitData[i][4])]]
@@ -1524,7 +1535,7 @@ class UX:
                 
                 if event == sg.WIN_CLOSED or event == 'Exit':
                     window2_1.hide()
-                    window1 =self.makeWindow1()   
+                    window1 =self.makeWindow0()   
 
                 if event == "-TRAINBTN-":
                     print()

@@ -28,6 +28,7 @@ class GetData:
         self.host = host
         self.port = port
         self.ssid = "TheConductor"
+        self.pswd = "NoneShallPass"
         self.packetSize = packetSize
         self.numSensors = numSensors
         self.packetData = np.zeros([1, self.packetSize * self.numSensors * 3]) #one packet of data corresponding to a handPosition - 3 axis * number of sensors times the number of samples per handPosition
@@ -59,25 +60,25 @@ class GetData:
 
 ########UNcomment below for live wifi connection...
     
-        # if cntList[0][0] != '-1':
-        #     cntListLen = len(cntList)
-        #     print(f'cntListLen: {cntListLen}')
-        #     self.host = cntList[cntListLen-2][2]
-        #     self.port = int(cntList[cntListLen-2][3])
+        if cntList[0][0] != '-1':
+            cntListLen = len(cntList)
+            print(f'cntListLen: {cntListLen}')
+            self.host = cntList[cntListLen-2][2]
+            self.port = int(cntList[cntListLen-2][3])
 
-        # while connectTries < 1:
-        #     print("Trying to make a socket connection")
-        #     #disable connect on start up to test GUI
-        #     connectTries += 1
-        #     if self.makeSockConnection(self.host, self.port) == -1:
-        #         connectTries += 1
-        #         time.sleep(1)
-        #     else:
-        #         print("Connected to The Conductor!")
-        #         break
+        while connectTries < 1:
+            print("Trying to make a socket connection")
+            #disable connect on start up to test GUI
+            connectTries += 1
+            if self.makeSockConnection(self.host, self.port) == -1:
+                connectTries += 1
+                time.sleep(1)
+            else:
+                print("Connected to The Conductor!")
+                break
         
-        # if connectTries == 1:
-        #     print("Can't connect to the Conductor")
+        if connectTries == 1:
+            print("Can't connect to the Conductor")
 
 
     def makeSockConnection(self, host, port):        #self.sock.close()
