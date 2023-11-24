@@ -100,9 +100,9 @@ class MiDiWriter:
             
     def update_playControl(self):
         self.playControl = []
-        for control in self.controlList:
-            self.playControl.append(control.startFlag)
-        print(self.playControl)   
+        # for control in self.controlList:
+        #     self.playControl.append(control.startFlag)
+        # print(self.playControl)   
         
         # Extracting control.startFlag attribute for each object using list comprehension
         self.playControl = [control.startFlag for control in self.controlList]

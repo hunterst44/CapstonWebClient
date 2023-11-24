@@ -77,7 +77,8 @@ class UX:
         self.controlInitData = []
         #define a graph to make the double slider for max / min values
         #self.rateGraph=sg.Graph(canvas_size=(127,10), graph_bottom_left=(0, 0), graph_top_right=(100,10), background_color='blue', enable_events=True, drag_submits=True, key='-RATEGRAPH-', visible=False)
-        self.controlLogCheck = 0 #Change to 1 after the control log file has been checked  
+        self.controlLogCheck = 0 #Change to 1 after the control log file has been checked 
+        self.init_Loaded_Flag = 0 #useing to make sure controls are loaded once -JF
 
         ports = self.writer.midiOut.get_ports()
         print(f'ports {ports}')
@@ -193,10 +194,12 @@ class UX:
         controlListStr = "Logged Controls Found: \n MiDi Port: " + str(self.writer.midiPortOut) + " BPM: " + str(self.writer.bpm) + "\n"
         textHeight = 1
 
-        for i in range(len(controlLogData)):
-            print(f'i: {i}')
-            print(f'controlLogData: {controlLogData}')            
-            #self.controlInitData.append(controlLogData[i])
+        if(self.init_Loaded_Flag == 0):
+            for i in range(len(controlLogData)):
+                print(f'i: {i}')
+                print(f'controlLogData: {controlLogData}')            
+                self.controlInitData.append(controlLogData[i])
+            self.init_Loaded_Flag = 1
 
             controlListStr = controlListStr + "\nControl Name: " + controlLogData[i][0] + "\n"
             #ConditionType
@@ -913,7 +916,7 @@ class UX:
                     #Connect to stored MiDi port
                     if not self.writer.midiOut.is_port_open():
                         try:
-                            self.writer.midiOut.open_port(self.writer.midiPortOut) 
+                            self.writer.midiOut.open_port(int(self.writer.midiPortOut)) 
                         except:
                             print(f'Unable to connect to port {self.writer.midiPortOut}')  
                     else:

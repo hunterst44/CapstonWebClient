@@ -27,6 +27,7 @@ class MidiPlayer:
                 else:
                     for msg in midi_data:
                         print(f"Playing MIDI from control: {msg}")
+                        print(self.midiOut.get_ports())
                         self.midiOut.send_message(msg)
                         time.sleep(self.timeSlice / 1000)
 
