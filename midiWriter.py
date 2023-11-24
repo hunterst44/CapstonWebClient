@@ -155,6 +155,8 @@ class MiDiWriter:
                 print(f"refreshMidi notes {control.midiInput}")
                 # control.midiBuilder.rate = 'w'
                 print(control.midiBuilder.rate)
+                
+                control.controlType = 2
                 control.midiResults = control.midiBuilder.build_midi()
             self.midi_data_list = [control.midiResults for control in self.controlList]
             self.midi_players = [MidiPlayer(self.midiOut, self.metro.getTimeTick(midi_data), midi_data) for control, midi_data in zip(self.controlList, self.midi_data_list)]
