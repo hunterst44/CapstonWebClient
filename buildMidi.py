@@ -43,11 +43,11 @@ class MidiBuilder:
         if self.signal_invert:
             sig_invert = -1
 
-        if self.shape == 0:  # 'sine'
+        if self.shape == 'sine' or 0:  # 'sine'
             y = sig_invert * np.sin(2 * self.multiply_rate(self.rate) * np.pi * x)
-        elif self.shape == 1:  # 'saw'
+        elif self.shape == 'saw' or 1:  # 'saw'
             y = sig_invert * signal.sawtooth(2 * self.multiply_rate(self.rate) * np.pi * x)
-        elif self.shape == 2:  # 'square'
+        elif self.shape == 'square' or 2:  # 'square'
             y = sig_invert * signal.square(2 * self.multiply_rate(self.rate) * np.pi * x)
         else:
             print("That wave is not supported")
@@ -142,7 +142,7 @@ class MidiBuilder:
             self.channel = channel
 
         def get_midi_cc(self):
-            return [CONTROL_CHANGE |  self.channel, self.control_number, self.control_value]
+            return [CONTROL_CHANGE |  int(self.channel), int(self.control_number),  int(self.control_value)]
 
     class MIDINoteMessage:
         def __init__(self, ch=0, note=0, velocity=0):

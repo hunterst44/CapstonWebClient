@@ -34,7 +34,7 @@ BPM = 30
 
 class MiDiWriter:
 
-    def __init__(self, *, predictions=[], port_name=1, channel=0, cc_num=75, bpm=BPM, rate='w', ToFByte=-1, playControl = [0,0,0]):
+    def __init__(self, *, predictions=[], port_name=1, channel=0, cc_num=75, bpm=BPM, rate='w', ToFByte=-1, playControl = []):
         self.midiOut = rtmidi.MidiOut()
         self.midiIn = rtmidi.MidiIn()
         self.midiPortOut = port_name
@@ -97,15 +97,28 @@ class MiDiWriter:
             play_thread = threading.Thread(target=self.play_loop, args=())
             play_thread.start()
             self.play_loop_started = True
+            
+    def update_playControl(self):
+        self.playControl = []
+        for control in self.controlList:
+            self.playControl.append(control.startFlag)
+        print(self.playControl)   
+        
+        # Extracting control.startFlag attribute for each object using list comprehension
+        self.playControl = [control.startFlag for control in self.controlList]
+
+        # Printing the array of control.startFlag attributes
+        print(self.playControl)
 
     def play_loop(self):
-        non_zero_indices = 0
-        self.playControl = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        # non_zero_indices = 0
+        # self.playControl = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         while self.metro.startFlag:
             self.refreshMidi()
-            print("Indices where elements are not zero:", non_zero_indices)
+            # print("Indices where elements are not zero:", non_zero_indices)
             self.metro.startFlag = self.writerON
             if self.writerON:
+                self.update_playControl()
                 if self.metro.doneFlag == 1:
                     threads = []
                     for i, (midi_player, midi_data) in enumerate(zip(self.midi_players, self.midi_data_list)):
@@ -115,27 +128,27 @@ class MiDiWriter:
                     for thread in threads:
                         thread.join()
 
-                    for i in range(len(self.playControl)):
-                        if self.playControl[i] != 0:
-                            non_zero_indices = i
+                    # for i in range(len(self.playControl)):
+                    #     if self.playControl[i] != 0:
+                    #         non_zero_indices = i
 
-                    # print(self.control00.startFlag)
-                    # print(self.control01.startFlag)
-                    # print(self.control02.startFlag)
+                    # # print(self.control00.startFlag)
+                    # # print(self.control01.startFlag)
+                    # # print(self.control02.startFlag)
                 
-                    # Update playControl based on conditions
-                    for i, control in enumerate(self.controlList):
-                        if control.startFlag != 0:
-                            self.playControl = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-                            self.playControl[i] = 1
-                            non_zero_indices = i
+                    # # Update playControl based on conditions
+                    # for i, control in enumerate(self.controlList):
+                    #     if control.startFlag != 0:
+                    #         self.playControl = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+                    #         self.playControl[i] = 1
+                    #         non_zero_indices = i
 
-                    print("All elements in the array are 0." if all(element == 0 for element in self.playControl) else "Some elements in the array are not 0.")
-                    print("")
+                    # print("All elements in the array are 0." if all(element == 0 for element in self.playControl) else "Some elements in the array are not 0.")
+                    # print("")
 
-                    for i in range(len(self.playControl)):
-                        if self.playControl[i] != 0:
-                            non_zero_indices = i
+                    # for i in range(len(self.playControl)):
+                    #     if self.playControl[i] != 0:
+                    #         non_zero_indices = i
 
             
     def refreshMidi(self):
@@ -155,6 +168,8 @@ class MiDiWriter:
                 print(f"refreshMidi notes {control.midiInput}")
                 # control.midiBuilder.rate = 'w'
                 print(control.midiBuilder.rate)
+                
+                control.controlType = 2
                 control.midiResults = control.midiBuilder.build_midi()
             self.midi_data_list = [control.midiResults for control in self.controlList]
             self.midi_players = [MidiPlayer(self.midiOut, self.metro.getTimeTick(midi_data), midi_data) for control, midi_data in zip(self.controlList, self.midi_data_list)]
@@ -523,7 +538,7 @@ class MiDiWriter:
             ## Called once for each control in OSCWriter.conductor
             print()
             print('checkConditions(self)')
-            match self.conditionType:
+            match int(self.conditionType):
                 case 0:
                      ## ConditionType 0: Hold
                         # gestureThreshold(gesture, threshold) 
