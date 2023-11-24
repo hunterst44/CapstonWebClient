@@ -163,14 +163,18 @@ class UX:
         
 
     def makeModelFileMessage(self, modelPath):
+        existsVis = True
+        notVis = False
         if os.path.exists(modelPath):
             # figure out a way to elegantly make a new model
-            modelMessage = 'Model file exits at: ' + modelPath + ' Use this model?'
-            
+            modelMessage = 'Create a model.\nModel file exits at: ' + modelPath + ' Use this model?'
+            existsVis = True #model exists
+            notVis = False
         else:
-            modelMessage = ''
-
-        return modelMessage   
+            modelMessage = 'Create a model.\nNo model available at ' + modelPath + 'Click okay to create a new one.'
+            existsVis = False
+            notVis = True
+        return modelMessage, existsVis, notVis   
             
             # window['-MODELOK-'].update(visible=True)
             # window.write_event_value('-MESSAGE-', message)
@@ -268,6 +272,30 @@ class UX:
 ##############                  Window Definitions                            #################
 ###############################################################################################
 
+    def makeWindow00(self):
+
+    #Window zero welcome, set up wifi
+    #sg row builder... 
+                # [
+                #     sg.pin(
+                #         sg.Column(
+                #             [
+                #                 [sg.Listbox(self.SSIDList, size=(15, 4), key="-SSIDIN-", expand_y=True, enable_events=True, visible=False)
+                #                 ], 
+                #                 [sg.Button('Refresh', key='-SSIDLISTRFH-', visible=visibility)
+                #                 ]
+                #             ], 
+                #             pad=(0,0)), 
+                #         shrink=True)
+                # ],
+        layout = [[sg.Text('The Conductor: Window 00: Choose a working directory'), sg.Text(size=(2,1), key='-OUTPUT-')],
+                [sg.pin(sg.Column([[sg.Text(f"The Conductor will look in {os.path.abspath(os.getcwd()) + '/' + self.dataStream.pathPreface} for configuration files\n. Click 'Ok' to use this folder, or 'Browse' to choose a new working folder.", key="-MODELMESSAGE00-", visible=True)], [sg.Button('Ok', key='-CREATEMOEDLBTN-', visible=False)]], pad=(0,0)), shrink=True)], 
+                [sg.pin(sg.Column([[sg.Button('Ok', key='-USEDEFAULTDIRBTN-', visible=True)], [sg.FolderBrowse(size=(8,1), visible=True, key='-CHOOSEDIR-', enable_events=True)]], pad=(0,0)), shrink=True)],
+                [sg.pin(sg.Column([[sg.Button('Ok', key='-USESELDIRBTN-', visible=False)]], pad=(0,0)), shrink=True)]
+                ]
+        return sg.Window('THE CONDUCTOR: Step 00', layout, size=(self.windowSizeX,self.windowSizeY), finalize=True)
+    
+
     def makeWindow0(self, connected):
 
         if connected:
@@ -317,11 +345,15 @@ class UX:
     
 
     
-    def makeWindow1(self, modelMessage):
+    def makeWindow1(self):
+        modelPath = self.dataStream.pathPreface + '/model.model'
+        print(f'modelPath: {modelPath}')
+        modelMessage, existsVis, notVis = self.makeModelFileMessage(modelPath)
+
     #Window one welcome, load / create model
         layout = [[sg.Text('The Conductor: Window 1'), sg.Text(size=(2,1), key='-OUTPUT-')],
-                [sg.pin(sg.Column([[sg.Text(f"The Conductor will look in {os.path.abspath(os.getcwd()) + '/' + self.dataStream.pathPreface} for Neural Network model files\n. Click 'Ok' to use this folder.", key="-MODELMESSAGE00-", visible=True)], [sg.Button('Ok', key='-USEDEFAULTBTN-', visible=True)], [sg.Button('Ok', key='-CREATEMOEDLBTN-', visible=False)]], pad=(0,0)), shrink=True)], 
-                [sg.pin(sg.Column([[sg.FolderBrowse(size=(8,1), visible=True, key='-CHOOSEDIR-')],[sg.Text(f"Or Browse for a new folder and click 'New Folder.'", key="-MODELMESSAGE01-", visible=True)], [sg.Button('New Folder', key='-NEWFOLDER-', visible=True)], [sg.Button('Ok', key='-ACCPTDEFAULT-', visible=False)]], pad=(0,0)), shrink=True)],
+                [sg.pin(sg.Column([[sg.Text(modelMessage, key="-MODELMESSAGE00-", visible=True)], [sg.Button('Ok', key='-USEDEFAULTBTN-', visible=existsVis)], [sg.Button('Ok', key='-CREATEMOEDLBTN-', visible=notVis)], [sg.Button('Ok', key='-ACCPTDEFAULT-', visible=notVis)]], pad=(0,0)), shrink=True)], 
+                [sg.pin(sg.Column([[sg.Text(modelMessage, key="-MODELMESSAGE01-", visible=False)]], pad=(0,0)), shrink=True)],                #[sg.pin(sg.Column([[sg.FolderBrowse(size=(8,1), visible=True, key='-CHOOSEDIR-')],[sg.Text(f"Or Browse for a new folder and click 'New Folder.'", key="-MODELMESSAGE01-", visible=True)], [sg.Button('New Folder', key='-NEWFOLDER-', visible=True)], [sg.Button('Ok', key='-ACCPTDEFAULT-', visible=False)]], pad=(0,0)), shrink=True)],
                 [sg.pin(sg.Column([[sg.Input('How many hand positions will you train?', key="-NUMPOS-", visible=False, enable_events=True)]], pad=(0,0)), shrink=True)],
                 [sg.pin(sg.Column([[sg.Input('Position 1 label', key="-POSLABEL-", visible=False)], [sg.Button('SUBMIT', key='-SUBLABELBTN-', visible=False)]], pad=(0,0)), shrink=True)],
                 [sg.pin(sg.Column([[sg.Text('Train Model', key='-TRAIN-', visible=False), sg.Text(size=(2,1)), sg.Button('Train', key='-TRAINBTN-', visible=False)]]))],
@@ -489,9 +521,9 @@ class UX:
         stopPredict = 0
        
         ##Methods to collect run time data required for the GUI
-        modelPath = self.dataStream.pathPreface + '/model.model'
-        print(f'modelPath: {modelPath}')
-        modelMessage = self.makeModelFileMessage(modelPath)
+        # modelPath = self.dataStream.pathPreface + '/model.model'
+        # print(f'modelPath: {modelPath}')
+        # modelMessage = self.makeModelFileMessage(modelPath)
 
         sg.theme(self.theme)
         #connector = self.ConductorConnector()
@@ -502,8 +534,9 @@ class UX:
         newPositionLabelList = []
 
         # Set all windows to Noe except window 1 to start
-        window0 = self.makeWindow0(self.dataStream.sockConnection)
-        #window0 = None #self.makeWindow0(self.dataStream.sockConnection)
+        window00 = self.makeWindow00()
+        #window0 = self.makeWindow0(self.dataStream.sockConnection)
+        window0 = None #self.makeWindow0(self.dataStream.sockConnection)
         #window1 = self.makeWindow1(modelMessage)
         window1 = None
         #window2 = self.makeWindow2()
@@ -516,6 +549,52 @@ class UX:
             window, event, values = sg.read_all_windows()
             print(f'event: {event}')
             print(f'values: {values}')
+
+
+##############     Window00          #################
+            #events for window00 (Setup user directory)
+            #TODO Add option to choose from previous connections
+            #Add option to select from detected networks
+            if window == window00: 
+                print()
+                print('Window 00')
+
+                if event == sg.WIN_CLOSED or event == 'Exit':
+                    break
+
+                if event == '-USEDEFAULTDIRBTN-':
+                    print()
+                    print(f'Window 00 -USEDEFAULTDIRBTN-')
+                    #Just use the default directory and carry on
+                    window00.hide()
+                    window1 = self.makeWindow0(self.dataStream.sockConnection)
+
+                if event == '-CHOOSEDIR-':
+                    print()
+                    print(f'Window 00 -CHOOSEDIR-')
+                    #Use the directory provided by the user, if it exists
+                    newPathPreface = values["-CHOOSEDIR-"]
+                    #newModelPath = newPathPreface + '/model.model'
+                    #newModelLogPath = newPathPreface + '/modelLog.csv'
+
+                    if os.path.exists(newPathPreface):
+                        positionLabelMessage00 = newPathPreface + " exists.\n Click 'Ok' to use this directory, or 'Browse' for another."
+                        
+                        window['-MODELMESSAGE00-'].update(positionLabelMessage00)
+                        window['-USEDEFAULTDIRBTN-'].update(visible=False)
+                        window['-USESELDIRBTN-'].update(visible=True)
+                        window.refresh()
+
+                if event == '-USESELDIRBTN-':
+                    self.dataStream.pathPreface = newPathPreface
+                    #update model message with new path
+                    # modelPath = self.dataStream.pathPreface + '/model.model'
+                    # print(f'modelPath: {modelPath}')
+                    # modelMessage = self.makeModelFileMessage(modelPath)
+
+                    window00.hide()
+                    window0 = self.makeWindow0(self.dataStream.sockConnection)
+                
 
 
 ##############     Window0          #################
@@ -651,7 +730,7 @@ class UX:
                             window.refresh()
                             self.dataStream.logCSVRow('networks.csv', [self.ssid, self.pswd, self.host, self.port])
                             time.sleep(2)
-                            window1 = self.makeWindow1(modelMessage)
+                            window1 = self.makeWindow1()
                             window0.hide()
                         else:
                             print(f"Error Connecting to {newIP} at {newSSID}")
@@ -678,13 +757,13 @@ class UX:
 
                     self.dataStream.logCSVRow('networks.csv', [self.dataStream.ssid, self.dataStream.pswd, self.dataStream.host, self.dataStream.port])
 
+                    window1 = self.makeWindow1()
                     window0.hide()
-                    window1 = self.makeWindow1(modelMessage)
 
                 if event == '-NOCNTBTN-':
                     self.dataStream.sock.close()
                     window0.hide()
-                    window1 = self.makeWindow1(modelMessage)
+                    window1 = self.makeWindow1()
            
 ##############     Window1          #################            
             if window == window1:
@@ -719,8 +798,8 @@ class UX:
                             window['-ACCPTDEFAULT-'].update(visible=True)
                             window['-USEDEFAULTBTN-'].update(visible=False)
                             window['-CREATEMOEDLBTN-'].update(visible=False)
-                            window['-CHOOSEDIR-'].update(visible=False)
-                            window['-NEWFOLDER-'].update(visible=False)
+                            #window['-CHOOSEDIR-'].update(visible=False)
+                            #window['-NEWFOLDER-'].update(visible=False)
                             window.refresh()
 
                         #TODO write the positions to the GUI and let the user select
@@ -1475,7 +1554,7 @@ class UX:
                     
                         if int(self.controlInitData[i][6]) == 0:    #Control is Modulate
 
-                            self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][7], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], controlType=self.controlInitData[i][6], conditionData=conditionDataList, bpm = self.writer.bpm, controlNum=i, rate=self.controlInitData[i][8], waveform=self.controlInitData[i][9], minimum=self.controlInitData[i][10], maximum=self.controlInitData[i][11], controllerType=1))
+                            self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][7], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], controlType=self.controlInitData[i][6], conditionData=conditionDataList, bpm = self.writer.bpm, controlNum=i, rate=self.controlInitData[i][8], waveform=self.controlInitData[i][9], minimum=self.controlInitData[i][10], maximum=self.controlInitData[i][11]))
                             #self.writer.controlList.append(newControl)   
                             # print(f'self.writer.controlList: {self.writer.controlList}')
                             # print(f'self.writer.controlList[i+1].controlLabel: {self.writer.controlList[i].controlLabel}')
@@ -1495,7 +1574,7 @@ class UX:
                         ]
 
                         if int(self.controlInitData[i][10]) == 0:    #Control is Modulate
-                            self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][11], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], controlType=self.controlInitData[i][10], conditionData=conditionDataList, bpm = self.writer.bpm, controlNum=i, rate=self.controlInitData[i][12], waveform=self.controlInitData[i][13], minimum=self.controlInitData[i][14], maximum=self.controlInitData[i][15], controllerType=1))
+                            self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][11], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], controlType=self.controlInitData[i][10], conditionData=conditionDataList, bpm = self.writer.bpm, controlNum=i, rate=self.controlInitData[i][12], waveform=self.controlInitData[i][13], minimum=self.controlInitData[i][14], maximum=self.controlInitData[i][15]))
                             #self.writer.controlList.append(newControl)   
                             print(f'self.writer.controlList: {self.writer.controlList}')
                             print(f'self.writer.controlList[i+1].controlLabel: {self.writer.controlList[i].controlLabel}')
