@@ -41,7 +41,7 @@ class MiDiWriter:
         self.bpm = bpm
         self.predictions = predictions
         self.ToFEnable = 0
-        self.memorySize = 10000 #How many samples to save before purging
+        self.memorySize = 1000 #How many samples to save before purging
         self.memorySizeMin = 100 #How many predictions to keep on purge
         self.ToFByte = ToFByte
         #self.channelCounters = []  #Use this to count each channels loops outside the loop
