@@ -41,7 +41,7 @@ class MiDiWriter:
         self.bpm = bpm
         self.predictions = predictions
         self.ToFEnable = 0
-        self.memorySize = 10000 #How many samples to save before purging
+        self.memorySize = 1000 #How many samples to save before purging
         self.memorySizeMin = 100 #How many predictions to keep on purge
         self.ToFByte = ToFByte
         #self.channelCounters = []  #Use this to count each channels loops outside the loop
@@ -100,9 +100,9 @@ class MiDiWriter:
             
     def update_playControl(self):
         self.playControl = []
-        for control in self.controlList:
-            self.playControl.append(control.startFlag)
-        print(self.playControl)   
+        # for control in self.controlList:
+        #     self.playControl.append(control.startFlag)
+        # print(self.playControl)   
         
         # Extracting control.startFlag attribute for each object using list comprehension
         self.playControl = [control.startFlag for control in self.controlList]

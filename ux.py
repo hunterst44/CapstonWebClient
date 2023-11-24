@@ -77,7 +77,8 @@ class UX:
         self.controlInitData = []
         #define a graph to make the double slider for max / min values
         #self.rateGraph=sg.Graph(canvas_size=(127,10), graph_bottom_left=(0, 0), graph_top_right=(100,10), background_color='blue', enable_events=True, drag_submits=True, key='-RATEGRAPH-', visible=False)
-        self.controlLogCheck = 0 #Change to 1 after the control log file has been checked  
+        self.controlLogCheck = 0 #Change to 1 after the control log file has been checked 
+        self.init_Loaded_Flag = 0 #useing to make sure controls are loaded once -JF
 
         ports = self.writer.midiOut.get_ports()
         print(f'ports {ports}')
@@ -197,10 +198,12 @@ class UX:
         controlListStr = "Logged Controls Found: \n MiDi Port: " + str(self.writer.midiPortOut) + " BPM: " + str(self.writer.bpm) + "\n"
         textHeight = 1
 
-        for i in range(len(controlLogData)):
-            print(f'i: {i}')
-            print(f'controlLogData: {controlLogData}')            
-            #self.controlInitData.append(controlLogData[i])
+        if(self.init_Loaded_Flag == 0):
+            for i in range(len(controlLogData)):
+                print(f'i: {i}')
+                print(f'controlLogData: {controlLogData}')            
+                self.controlInitData.append(controlLogData[i])
+            self.init_Loaded_Flag = 1
 
             controlListStr = controlListStr + "\nControl Name: " + controlLogData[i][0] + "\n"
             #ConditionType
@@ -274,20 +277,6 @@ class UX:
 
     def makeWindow00(self):
 
-    #Window zero welcome, set up wifi
-    #sg row builder... 
-                # [
-                #     sg.pin(
-                #         sg.Column(
-                #             [
-                #                 [sg.Listbox(self.SSIDList, size=(15, 4), key="-SSIDIN-", expand_y=True, enable_events=True, visible=False)
-                #                 ], 
-                #                 [sg.Button('Refresh', key='-SSIDLISTRFH-', visible=visibility)
-                #                 ]
-                #             ], 
-                #             pad=(0,0)), 
-                #         shrink=True)
-                # ],
         layout = [[sg.Text('The Conductor: Window 00: Choose a working directory'), sg.Text(size=(2,1), key='-OUTPUT-')],
                 [sg.pin(sg.Column([[sg.Text(f"The Conductor will look in {os.path.abspath(os.getcwd()) + '/' + self.dataStream.pathPreface} for configuration files\n. Click 'Ok' to use this folder, or 'Browse' to choose a new working folder.", key="-MODELMESSAGE00-", visible=True)], [sg.Button('Ok', key='-CREATEMOEDLBTN-', visible=False)]], pad=(0,0)), shrink=True)], 
                 [sg.pin(sg.Column([[sg.Button('Ok', key='-USEDEFAULTDIRBTN-', visible=True)], [sg.FolderBrowse(size=(8,1), visible=True, key='-CHOOSEDIR-', enable_events=True)]], pad=(0,0)), shrink=True)],
@@ -359,13 +348,6 @@ class UX:
                 [sg.pin(sg.Column([[sg.Text('Train Model', key='-TRAIN-', visible=False), sg.Text(size=(2,1)), sg.Button('Train', key='-TRAINBTN-', visible=False)]]))],
                 [sg.pin(sg.Column([[sg.Text('Predict hand positions', key='-PREDICT-', visible=False), sg.Text(size=(2,1)), sg.Button('Predict', key='-PREDICTBTN-',visible=False)]]))]
                   
-                #[sg.Text(f'The Conductor will look in {os.path.abspath(os.getcwd()) + self.dataStream.pathPreface} for Neural Network model files.'), sg.Text(size=(5,1), key='-OUTPUT-')],
-                # [sg.pin(sg.Column([[sg.Text(modelMessage), sg.Text(size=(2,1), key='-MODELMESSAGE-'), sg.Button('Ok', key='-MODELMESAGEBTN-')]]))],
-                # [sg.pin(sg.Column([[sg.Text('Upload a model'), sg.Text(size=(2,1), key='-UPLOADMODEL-'), sg.Input(), sg.FileBrowse(), sg.Button('Upload', key='-UPLOADMODELBTN-')]]))],
-                # [sg.Text('Create a New Model'), sg.Text(size=(2,1), key='-OUTPUT-'), sg.Button('Ok', key='-CREATE-')],
-                # [sg.pin(sg.Column([[sg.Text('', visible=True, key='-MESSAGE-'), sg.Text(size=(2,1))]], pad=(0,0)), shrink=False)],
-                #[sg.pin(sg.Column([[sg.Button('-MODELOK-', visible=False)]], pad=(0,0)), shrink=False)]
-                        #sg.Text('Not a valid model file. Please try again.', size=(2,1), key='-invalidModel-', visible=True, pad=(0,0)), sg.Text(size=(2,1))]
                 ]
 
         return sg.Window('THE CONDUCTOR: Step 1', layout, size=(self.windowSizeX,self.windowSizeY), finalize=True)
@@ -992,7 +974,7 @@ class UX:
                     #Connect to stored MiDi port
                     if not self.writer.midiOut.is_port_open():
                         try:
-                            self.writer.midiOut.open_port(self.writer.midiPortOut) 
+                            self.writer.midiOut.open_port(int(self.writer.midiPortOut)) 
                         except:
                             print(f'Unable to connect to port {self.writer.midiPortOut}')  
                     else:
@@ -1550,7 +1532,7 @@ class UX:
                     #print(self.controlInitData[i][1])
                     if int(self.controlInitData[i][1]) == 0:  #Condition type = Hold
                         
-                        conditionDataList = [[int(self.controlInitData[i][2]), int(self.controlInitData[i][2])], [int(self.controlInitData[i][3]), int(self.controlInitData[i][4])]]
+                        conditionDataList = [[int(self.controlInitData[i][2]), int(self.controlInitData[i][3])], [int(self.controlInitData[i][4]), int(self.controlInitData[i][5])]]
                     
                         if int(self.controlInitData[i][6]) == 0:    #Control is Modulate
 
