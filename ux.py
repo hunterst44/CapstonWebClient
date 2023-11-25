@@ -195,17 +195,18 @@ class UX:
         #Parses the logged controls into human readable format for the GUI
         #Also returns the height in lines of text
         print('getControlListStr(self, controlLogData)')
-        controlListStr = "Logged Controls Found: \n MiDi Port: " + str(self.writer.midiPortOut) + " BPM: " + str(self.writer.bpm) + "\n"
+        controlListStr = "Logged Controls Found: \nMiDi Port: " + str(self.writer.midiPortOut) + " BPM: " + str(self.writer.bpm) + "\n"
         textHeight = 1
 
-        if(self.init_Loaded_Flag == 0):
-            for i in range(len(controlLogData)):
-                print(f'i: {i}')
-                print(f'controlLogData: {controlLogData}')            
-                self.controlInitData.append(controlLogData[i])
-            self.init_Loaded_Flag = 1
+        #self.controlInitData is the input to this function so we don't want to append it to itself
+        # if(self.init_Loaded_Flag == 0):
+        for i in range(len(controlLogData)):
+        #         print(f'i: {i}')
+        #         print(f'controlLogData: {controlLogData}')            
+        #         self.controlInitData.append(controlLogData[i])
+        #     self.init_Loaded_Flag = 1
 
-            controlListStr = controlListStr + "\nControl Name: " + controlLogData[i][0] + "\n"
+            controlListStr = controlListStr + "Control Name: " + controlLogData[i][0] + "\n"
             #ConditionType
             textHeight = textHeight + 4 
             if controlLogData[i][1] == '0' or controlLogData[i][1] == 0:  #Condition type = Hold
@@ -266,6 +267,8 @@ class UX:
                     controlListStr = controlListStr + "Rate:  " + str(controlLogData[i][12]) + "\n"
                     controlListStr = controlListStr + "Direction:  " + controlLogData[i][13] + "\n"
                     textHeight = textHeight + 4
+        
+        print(f'controlListStr: {controlListStr}')
         
         return controlListStr, textHeight
             
@@ -379,6 +382,12 @@ class UX:
 
             newControlList = controlLogData[1:]  #Take the first item off the list
             controlListStr, textHeight = self.getControlListStr(newControlList)
+            #Add the controls from the log to self.controlInitData
+            for i in range(len(controlLogData)):
+                if i > 0:
+                    print(f'i: {i}')
+                    print(f'controlLogData[{i}]: {controlLogData[i]}')            
+                    self.controlInitData.append(controlLogData[i])
 
             print(f'controlListStr: {controlListStr} textHeight: {textHeight}')
             Message00Text = "A log file exists with premapped controls.\n Click Ok to use these controls, or Overwrite to create new controls"
@@ -517,9 +526,10 @@ class UX:
 
         # Set all windows to Noe except window 1 to start
         window00 = self.makeWindow00()
+        #window00 = None
         #window0 = self.makeWindow0(self.dataStream.sockConnection)
         window0 = None #self.makeWindow0(self.dataStream.sockConnection)
-        #window1 = self.makeWindow1(modelMessage)
+        #window1 = self.makeWindow1()
         window1 = None
         #window2 = self.makeWindow2()
         window2=None
@@ -549,7 +559,7 @@ class UX:
                     print(f'Window 00 -USEDEFAULTDIRBTN-')
                     #Just use the default directory and carry on
                     window00.hide()
-                    window1 = self.makeWindow0(self.dataStream.sockConnection)
+                    window0 = self.makeWindow0(self.dataStream.sockConnection)
 
                 if event == '-CHOOSEDIR-':
                     print()
@@ -739,13 +749,17 @@ class UX:
 
                     self.dataStream.logCSVRow('networks.csv', [self.dataStream.ssid, self.dataStream.pswd, self.dataStream.host, self.dataStream.port])
 
-                    window1 = self.makeWindow1()
                     window0.hide()
+                    window1 = self.makeWindow1()
 
                 if event == '-NOCNTBTN-':
+                    print()
+                    print(f'Window 0 -NOCNTBTN-')
                     self.dataStream.sock.close()
                     window0.hide()
                     window1 = self.makeWindow1()
+                    
+                    
            
 ##############     Window1          #################            
             if window == window1:
