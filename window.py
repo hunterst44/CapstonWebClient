@@ -5,7 +5,7 @@ class Window:
     def __init__ (self, ASSETS_PATH = r"./assets"):
         self.ASSETS_PATH = ASSETS_PATH
         self.windowSizeX = 850 #Width of the window
-        self.windowSizeY = 800 #Height of the window
+        self.windowSizeY = 670 #Height of the window
         self.font = ("Calibri", 12)
         self.fontB = ("Calibri", 12, 'bold')
         self.colors = ("", "#FFFFFF")
@@ -95,22 +95,20 @@ class Window:
     #Window one welcome, load / create model
         windowtitlemsg = 'THE CONDUCTOR: Step 1'
         content_layout =([sg.Push(),sg.Text('The Conductor: Window 1',key='-OUTPUT-',font = ("Calibri", 16, "bold",), pad=((LEFTMARGIN,0),(0,25))),sg.Push()],
-                [sg.pin(sg.Column([[sg.Text(f"The Conductor will look in\n {os.path.abspath(os.getcwd()) + '/' + pathPreface} \nfor Neural Network model files. \nClick 'Ok' to use this folder.", key="-MODELMESSAGE00-", visible=True)], [sg.Button('Ok',**self.button2_properties(), key='-USEDEFAULTBTN-', visible=True)], [sg.Button('Ok', key='-CREATEMOEDLBTN-', visible=False)]], pad=(LEFTMARGIN,0)), shrink=True)], 
-                [sg.pin(sg.Column([[sg.FolderBrowse(size=(8,1), visible=True, key='-CHOOSEDIR-')],[sg.Text(f"Or Browse for a new folder and click 'New Folder.'", key="-MODELMESSAGE01-", visible=True)], [sg.Button('New Folder',**self.button1_properties(), key='-NEWFOLDER-', visible=True)], [sg.Button('Ok', key='-ACCPTDEFAULT-', visible=False)]], pad=(LEFTMARGIN,0)), shrink=True)],
+                [sg.pin(sg.Column([[sg.Text(f"The Conductor will look in\n {os.path.abspath(os.getcwd()) + '/' + pathPreface} \nfor Neural Network model files. \nClick 'Ok' to use this folder.", key="-MODELMESSAGE00-", visible=True)],
+                    [sg.Button('Ok',**self.button2_properties(), key='-USEDEFAULTBTN-', visible=True)],
+                    [sg.Button('Ok',**self.button2_properties(), key='-CREATEMOEDLBTN-', visible=False)]], pad=(LEFTMARGIN,0)), shrink=True)], 
+                [sg.pin(sg.Column([[sg.FolderBrowse(size=(8,1), visible=True, key='-CHOOSEDIR-')],[sg.Text(f"Or Browse for a new folder and click 'New Folder.'", key="-MODELMESSAGE01-", visible=True)], 
+                    [sg.Button('New Folder',**self.button1_properties(), key='-NEWFOLDER-', visible=True)],
+                    [sg.Button('Ok',**self.button1_properties(), key='-ACCPTDEFAULT-', visible=False)]], pad=(LEFTMARGIN,0)), shrink=True)],
                 [sg.pin(sg.Column([[sg.Input('How many hand positions will you train?', key="-NUMPOS-", visible=False, enable_events=True)]], pad=(LEFTMARGIN,0)), shrink=True)],
-                [sg.pin(sg.Column([[sg.Input('Position 1 label', key="-POSLABEL-", visible=False)], [sg.Button('SUBMIT', key='-SUBLABELBTN-', visible=False)]], pad=(LEFTMARGIN,0)), shrink=True)],
-                [sg.pin(sg.Column([[sg.Text('Train Model', key='-TRAIN-', visible=False), sg.Text(size=(2,1)), sg.Button('Train', key='-TRAINBTN-', visible=False)]]))],
-                [sg.pin(sg.Column([[sg.Text('Predict hand positions', key='-PREDICT-', visible=False), sg.Text(size=(2,1)), sg.Button('Predict', key='-PREDICTBTN-',visible=False)]]))]
-        
-                # [sg.pin(sg.Column([[sg.Text('Upload an existing neural network model or create a new one.', key='-OUTPUT-')]], pad=(LEFTMARGIN,0)))], 
-                # [sg.pin(sg.Column([[sg.Text(modelMessage, key='-MODELMESSAGE-'), sg.Btn('Ok',button_color=self.colors, border_width=0, image_source=self.button2, font = self.fontB, key='-MODELMESAGEBTN-')]], pad=(50,0)))],
-                # [sg.pin(sg.Column([[sg.Text('Upload a model', key='-UPLOADMODEL-'), sg.Input(), sg.FileBrowse(), sg.Btn('Upload',button_color=self.colors, border_width=0, image_source=self.button1, font = self.fontB, key='-UPLOADMODELBTN-')]], pad=(50,0)))],
-                # [sg.pin(sg.Column([[sg.Text('Create a New Model', key='-OUTPUT-'), sg.Btn('Ok',button_color=self.colors, border_width=0, image_source=self.button2, font = self.fontB, key='-CREATE-')]], pad=(50,0)))],
-                # [sg.pin(sg.Column([[sg.Text('', visible=True, key='-MESSAGE-')]], pad=(LEFTMARGIN,0)), shrink=True)],
-                #[sg.pin(sg.Column([[sg.Btn('-MODELOK-', visible=False)]], pad=(LEFTMARGIN,0)), shrink=True)]
-                        #sg.Text('Not a valid model file. Please try again.', size=(2,1), key='-invalidModel-', visible=True, pad=(LEFTMARGIN,0)), sg.Text(size=(2,1))]
+                [sg.pin(sg.Column([[sg.Input('Position 1 label', key="-POSLABEL-", visible=False)], 
+                    [sg.Button('SUBMIT',**self.button1_properties(), key='-SUBLABELBTN-', visible=False)]], pad=(LEFTMARGIN,0)), shrink=True)],
+                [sg.pin(sg.Column([[sg.Text('Train Model', key='-TRAIN-', visible=False),sg.Button('Train', key='-TRAINBTN-', visible=False)]]))],
+                [sg.pin(sg.Column([[sg.Text('Predict hand positions', key='-PREDICT-', visible=False),
+                    sg.Button('Predict',**self.button1_properties(), key='-PREDICTBTN-',visible=False)]]))]
         )
-
+        
         window1=self.create_window(content_layout,windowtitlemsg)
         return window1
 
