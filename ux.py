@@ -722,7 +722,7 @@ class UX:
                             window['-MESSAGE-'].update(f"Connected to server at {self.dataStream.host} on {self.dataStream.ssid}")
                         
                             window.refresh()
-                            self.dataStream.logCSVRow('networks.csv', [self.ssid, self.pswd, self.host, self.port])
+                            self.dataStream.logCSVRow('networks.csv', [self.dataStream.ssid, self.dataStream.pswd, self.dataStream.host, self.dataStream.port])
                             time.sleep(2)
                             window1 = self.makeWindow1()
                             window0.hide()
