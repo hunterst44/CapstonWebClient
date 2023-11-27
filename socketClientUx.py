@@ -87,7 +87,12 @@ class GetData:
         print(f'dataTx: {self.dataTx}')
         print(f'host {host}')
         print(f'port: {port}')
-        returnValue = -1
+       
+        hostLen = len(host)
+        if not host[hostLen-1].isdigit():
+            print('Please enter a valid IP address')
+            return -1
+
         self.sock = socket.socket()
         #self.sock.setblocking(False)
         try:
@@ -97,21 +102,20 @@ class GetData:
             print(f"TCP/IP Socket Timeout Error {self.sockRecursionCount}: {err}")
             self.sockConnection = 0
             self.sockRecursionCount += 1
-            return returnValue
+            return -1
 
         except socket.error as err:
             print(f"TCP/IP Socket Error: {err}")
             self.sockConnection = 0
             self.sockRecursionCount += 1
-            return returnValue
+            return -1
             #self.sock.close()
             #self.socket.create_connection((self.host, self.port), timeout=2)
             #self.sock.connect((host, port), timeout=2)
 
         self.sockRecursionCount = 0
         self.sockConnection = 1
-        returnValue = 1
-        return returnValue
+        return 1
     
     def checkPriorConnection(self, network):
         priorNetworks = self.getloggedCSV("networks.csv")

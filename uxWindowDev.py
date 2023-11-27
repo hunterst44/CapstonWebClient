@@ -39,7 +39,19 @@ class UX:
         self.IPAddress = ''
         self.SSIDList = []
         self.positionPathList = []
+        self.controlInitData = []
+        self.controlLogCheck = 0 #Change to 1 after the control log file has been checked 
+        self.init_Loaded_Flag = 0 #useing to make sure controls are loaded once -JF
         self.window = window.Window()
+
+        
+        ports = self.writer.midiOut.get_ports()
+        print(f'ports {ports}')
+        
+        print(f'available_MiDiPortsOut {self.writer.available_MiDiPortsOut}')
+        ports = self.writer.midiOut.get_ports()
+        print(f'ports {ports}')
+
 
 
 ###############################################################################################
@@ -340,6 +352,8 @@ class UX:
                         window['-TOPMESSAGE01-'].update(f'To connect to another network enter the network info below and click Reconnect')
                         window['-CONTBTN-'].update(visible=False)
                         window['-MESSAGE-'].update(visible=True)
+                        window['-NOCNTBTN-'].update(visible=False)
+                        window['-NOCNTBTN2-'].update(visible=True)
                     
                     self.SSIDList = self.dataStream.getNetworks()
                     window['-IPIN-'].update(visible=False)
@@ -439,7 +453,7 @@ class UX:
                     window0.hide()
                     window1 = self.window.makeWindow1(self.dataStream.pathPreface)
 
-                if event == '-NOCNTBTN-':
+                if event == '-NOCNTBTN-' or event == '-NOCNTBTN2-':
                     self.dataStream.sock.close()
                     window0.hide()
                     window1 = self.window.makeWindow1(self.dataStream.pathPreface)

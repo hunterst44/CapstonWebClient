@@ -19,6 +19,13 @@ class Window:
             'image_source': self.ASSETS_PATH + "/button1.png",
             'font': self.fontB
         }
+    def button2_properties(self):
+        return {
+            'button_color': self.colors,
+            'border_width': 0,
+            'image_source': self.ASSETS_PATH + "/button2.png",
+            'font': self.fontB
+        }
 
     def create_window(self,content_layout, windowtitlemsg):
 
@@ -57,23 +64,29 @@ class Window:
 
             windowtitlemsg = 'THE CONDUCTOR: Step 0'
             content_layout = ([sg.Push(),sg.Text(f'Connect to The Conductor.',key='-OUTPUT-',font = ("Calibri", 16, "bold",), pad=((0,0),(0,25))),sg.Push()], 
-                    [sg.pin(sg.Column([[sg.Text(topMessage, pad=(LEFTMARGIN,4), key='-TOPMESSAGE-')]]))],
-                    [sg.pin(sg.Column([[sg.Text(f"To use this network click 'Continue.' To connect to another network enter the network info below and click 'Reconnect'. Click 'Don't Connect' to continue without connecting", key='-TOPMESSAGE01-', size=(100,2), visible=connectVis)]],pad=(LEFTMARGIN,0)), shrink=True)],
-                    [sg.pin(sg.Column([[sg.Input('192.168.XX.XXX', key="-IPIN-", visible=disconnectVis, pad=((5),(0,5)), do_not_clear=True)]], pad=(LEFTMARGIN,0)))],
-                    [sg.pin(sg.Column([[sg.Input('192.168.XX.XXX', key="-IPNEW-", visible=False)]]), shrink=True)],
-                    [sg.Column([[sg.Btn('Connect',**self.button1_properties(), key='-APCNTEBTN-', visible=disconnectVis, pad=((70,70 ),(5,0)))]]),
+                    [sg.Push(),sg.pin(sg.Column([[sg.Text(topMessage, pad=(LEFTMARGIN,4), key='-TOPMESSAGE-')]]),shrink=True),sg.Push()],
+                    [sg.Push(),sg.pin(sg.Column([[sg.Text(f"To use this network click 'Continue.' To connect to another network enter the network info below and click 'Reconnect'. Click 'Don't Connect' to continue without connecting", key='-TOPMESSAGE01-', pad=(LEFTMARGIN,0), visible=connectVis)]]), shrink=True),sg.Push()],
+                    [sg.Push(),sg.pin(sg.Column([[sg.Input('192.168.XX.XXX', key="-IPIN-", visible=disconnectVis, pad=((5),(0,5)), do_not_clear=True)]], pad=(LEFTMARGIN,0)),shrink=True),sg.Push()],
+                    [sg.Push(),sg.pin(sg.Column([[sg.Input('192.168.XX.XXX', key="-IPNEW-", visible=False)]]), shrink=True),sg.Push()],
+                    [sg.Push(),sg.pin(sg.Column([[sg.Btn('Connect',**self.button1_properties(), key='-APCNTEBTN-', visible=disconnectVis, pad=((0,70 ),(5,0)))]]),shrink=True),
                     #[sg.Column([[sg.Btn('Connect',**self.button1_properties(), key='-STNCNTEBTN-', visible=False, pad=((70,70 ),(5,0)))]]),
-                     sg.Column([[sg.Btn("Don't Connect",**self.button1_properties(), key='-NOCNTBTN-', visible=disconnectVis )]],pad=((LEFTMARGIN,0),(5,0)))],
-                    [sg.pin(sg.Column([[sg.Listbox(self.SSIDList, size=(15, 8), key="-SSIDIN-", expand_y=True, enable_events=True, visible=connectVis)],
-                    [sg.Button('Refresh', **self.button1_properties(), key='-SSIDLISTRFH-', visible=connectVis)]], pad=(LEFTMARGIN,0)), shrink=True)],
-                    [sg.pin(sg.Column([[sg.Input('Password', key="-PSWDIN-", visible=connectVis,pad=(LEFTMARGIN,0))]]), shrink=True)],
+                     sg.Column([[sg.Btn("Don't Connect",**self.button1_properties(), key='-NOCNTBTN-', visible=disconnectVis )]],pad=((LEFTMARGIN,0),(5,0))),sg.Push()],
+                
+                    sg.Push(),sg.pin(sg.Column([
+                        [sg.Listbox(self.SSIDList, size=(15, 8), key="-SSIDIN-", expand_y=True, enable_events=True, visible=connectVis)],
+                        [sg.Button('Refresh', **self.button1_properties(), key='-SSIDLISTRFH-', visible=connectVis)]], pad=(LEFTMARGIN+50, 0),element_justification='c')),
+                    sg.Push(),sg.pin(sg.Column([
+                        [sg.Input('Password', key="-PSWDIN-", visible=connectVis,size = 15, pad=(0, 0))],
+                        [sg.Btn('Reconnect', **self.button1_properties(), key='-RECNTBTN-', visible=connectVis)],
+                        [sg.Btn("Don't Connect",**self.button1_properties(), key='-NOCNTBTN2-', visible=False )]], pad=(LEFTMARGIN, 0), element_justification='c')),
+                    sg.Push(),[sg.Btn('Continue',**self.button1_properties(), key='-CONTBTN-', visible=connectVis)],sg.Push(),
+
                     #[sg.pin(sg.Column([[sg.Btn('Connect', key='-APCNTEBTN-', visible=True)]], pad=(LEFTMARGIN,0)), shrink=True)],
-                    [sg.pin(sg.Column([[sg.Btn('Continue',**self.button1_properties(), key='-CONTBTN-', visible=connectVis)]], pad=(LEFTMARGIN,0)), shrink=True)],
-                    [sg.pin(sg.Column([[sg.Btn('Reconnect',**self.button1_properties(), key='-RECNTBTN-', visible=connectVis)]], pad=(LEFTMARGIN,0)), shrink=True)],
-                    [sg.pin(sg.Column([[sg.Text("If your network doesn't show up in the list open Windows network manager before clicking Refresh", visible=True, key='-MESSAGE-')]], pad=(LEFTMARGIN,0)), shrink=True)]
+                    [sg.Push(),sg.pin(sg.Column([[sg.Btn('Continue',**self.button1_properties(), key='-CONTBTN-', visible=connectVis)]], pad=(LEFTMARGIN,0)), shrink=True),sg.Push()],
+                    [sg.Push(),sg.pin(sg.Column([[sg.Text("If your network doesn't show up in the list open Windows network manager before clicking Refresh", visible=True, key='-MESSAGE-')]], pad=(LEFTMARGIN,0)), shrink=True),sg.Push()]
                     )
         
-            window0=self.create_window(content_layout,windowtitlemsg)
+            window0=self.create_window(content_layout, windowtitlemsg)
             self.update_top_message(window0, topMessage)
             return window0
         
@@ -82,8 +95,8 @@ class Window:
     #Window one welcome, load / create model
         windowtitlemsg = 'THE CONDUCTOR: Step 1'
         content_layout =([sg.Push(),sg.Text('The Conductor: Window 1',key='-OUTPUT-',font = ("Calibri", 16, "bold",), pad=((LEFTMARGIN,0),(0,25))),sg.Push()],
-                [sg.pin(sg.Column([[sg.Text(f"The Conductor will look in {os.path.abspath(os.getcwd()) + '/' + pathPreface} for Neural Network model files\n. Click 'Ok' to use this folder.", key="-MODELMESSAGE00-", visible=True)], [sg.Button('Ok', key='-USEDEFAULTBTN-', visible=True)], [sg.Button('Ok', key='-CREATEMOEDLBTN-', visible=False)]], pad=(LEFTMARGIN,0)), shrink=True)], 
-                [sg.pin(sg.Column([[sg.FolderBrowse(size=(8,1), visible=True, key='-CHOOSEDIR-')],[sg.Text(f"Or Browse for a new folder and click 'New Folder.'", key="-MODELMESSAGE01-", visible=True)], [sg.Button('New Folder', key='-NEWFOLDER-', visible=True)], [sg.Button('Ok', key='-ACCPTDEFAULT-', visible=False)]], pad=(LEFTMARGIN,0)), shrink=True)],
+                [sg.pin(sg.Column([[sg.Text(f"The Conductor will look in\n {os.path.abspath(os.getcwd()) + '/' + pathPreface} \nfor Neural Network model files. \nClick 'Ok' to use this folder.", key="-MODELMESSAGE00-", visible=True)], [sg.Button('Ok',**self.button2_properties(), key='-USEDEFAULTBTN-', visible=True)], [sg.Button('Ok', key='-CREATEMOEDLBTN-', visible=False)]], pad=(LEFTMARGIN,0)), shrink=True)], 
+                [sg.pin(sg.Column([[sg.FolderBrowse(size=(8,1), visible=True, key='-CHOOSEDIR-')],[sg.Text(f"Or Browse for a new folder and click 'New Folder.'", key="-MODELMESSAGE01-", visible=True)], [sg.Button('New Folder',**self.button1_properties(), key='-NEWFOLDER-', visible=True)], [sg.Button('Ok', key='-ACCPTDEFAULT-', visible=False)]], pad=(LEFTMARGIN,0)), shrink=True)],
                 [sg.pin(sg.Column([[sg.Input('How many hand positions will you train?', key="-NUMPOS-", visible=False, enable_events=True)]], pad=(LEFTMARGIN,0)), shrink=True)],
                 [sg.pin(sg.Column([[sg.Input('Position 1 label', key="-POSLABEL-", visible=False)], [sg.Button('SUBMIT', key='-SUBLABELBTN-', visible=False)]], pad=(LEFTMARGIN,0)), shrink=True)],
                 [sg.pin(sg.Column([[sg.Text('Train Model', key='-TRAIN-', visible=False), sg.Text(size=(2,1)), sg.Button('Train', key='-TRAINBTN-', visible=False)]]))],
