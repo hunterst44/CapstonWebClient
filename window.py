@@ -20,7 +20,6 @@ class Window:
             'font': self.fontB
         }
 
-
     def create_window(self,content_layout, windowtitlemsg):
 
         #sg.theme("LightGrey1")  # Change the theme to your preferred one
@@ -33,7 +32,6 @@ class Window:
                 [sg.Image(filename= self.ASSETS_PATH +"/image_2.png",pad=(0,0)),sg.Push(),sg.VPush(),sg.Image(filename= self.ASSETS_PATH +"/image_1_s.png",pad=(0,0))]
                ]
 
-
         windowname = sg.Window(windowtitlemsg, layout, size=(self.windowSizeX,self.windowSizeY), resizable=True, finalize=True)
         return windowname
 
@@ -42,14 +40,13 @@ class Window:
         window.refresh()
         return window
 
-
-    def makeWindow0(self, connected, ssidlist):
+    def makeWindow0(self, connected, ssidlist, ssid, host):
             
             self.SSIDList = ssidlist  #Get the network list from the air so user can reconnect
             LEFTMARGIN = 50
 
             if connected:
-                topMessage = 'The Conductor is connected on ' + self.dataStream.ssid + ' at ' + self.dataStream.host
+                topMessage = 'The Conductor is connected on ' + ssid + ' at ' + host
                 connectVis = True   #Use to set visibility of an item when The Conductor is connected
                 disconnectVis = False  #Use to unset visibility of an item when The Conductor is not connected
                 
@@ -64,7 +61,8 @@ class Window:
                     [sg.pin(sg.Column([[sg.Text(f"To use this network click 'Continue.' To connect to another network enter the network info below and click 'Reconnect'. Click 'Don't Connect' to continue without connecting", key='-TOPMESSAGE01-', size=(100,2), visible=connectVis)]],pad=(LEFTMARGIN,0)), shrink=True)],
                     [sg.pin(sg.Column([[sg.Input('192.168.XX.XXX', key="-IPIN-", visible=disconnectVis, pad=((5),(0,5)), do_not_clear=True)]], pad=(LEFTMARGIN,0)))],
                     [sg.pin(sg.Column([[sg.Input('192.168.XX.XXX', key="-IPNEW-", visible=False)]]), shrink=True)],
-                    [sg.Column([[sg.Btn('Connect',**self.button1_properties(), key='-STNCNTEBTN-', visible=disconnectVis,pad=((70,70 ),(5,0)))]]),
+                    [sg.Column([[sg.Btn('Connect',**self.button1_properties(), key='-APCNTEBTN-', visible=disconnectVis, pad=((70,70 ),(5,0)))]]),
+                    #[sg.Column([[sg.Btn('Connect',**self.button1_properties(), key='-STNCNTEBTN-', visible=False, pad=((70,70 ),(5,0)))]]),
                      sg.Column([[sg.Btn("Don't Connect",**self.button1_properties(), key='-NOCNTBTN-', visible=disconnectVis )]],pad=((LEFTMARGIN,0),(5,0)))],
                     [sg.pin(sg.Column([[sg.Listbox(self.SSIDList, size=(15, 8), key="-SSIDIN-", expand_y=True, enable_events=True, visible=connectVis)],
                     [sg.Button('Refresh', **self.button1_properties(), key='-SSIDLISTRFH-', visible=connectVis)]], pad=(LEFTMARGIN,0)), shrink=True)],

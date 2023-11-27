@@ -60,25 +60,25 @@ class GetData:
 
 ########UNcomment below for live wifi connection...
     
-        if cntList[0][0] != '-1':
-            cntListLen = len(cntList)
-            print(f'cntListLen: {cntListLen}')
-            self.host = cntList[cntListLen-2][2]
-            self.port = int(cntList[cntListLen-2][3])
+        # if cntList[0][0] != '-1':
+        #     cntListLen = len(cntList)
+        #     print(f'cntListLen: {cntListLen}')
+        #     self.host = cntList[cntListLen-2][2]
+        #     self.port = int(cntList[cntListLen-2][3])
 
-        while connectTries < 1:
-            print("Trying to make a socket connection")
-            #disable connect on start up to test GUI
-            connectTries += 1
-            if self.makeSockConnection(self.host, self.port) == -1:
-                connectTries += 1
-                time.sleep(1)
-            else:
-                print("Connected to The Conductor!")
-                break
+        # while connectTries < 1:
+        #     print("Trying to make a socket connection")
+        #     #disable connect on start up to test GUI
+        #     connectTries += 1
+        #     if self.makeSockConnection(self.host, self.port) == -1:
+        #         connectTries += 1
+        #         time.sleep(1)
+        #     else:
+        #         print("Connected to The Conductor!")
+        #         break
         
-        if connectTries == 1:
-            print("Can't connect to the Conductor")
+        # if connectTries == 1:
+        #     print("Can't connect to the Conductor")
 
 
     def makeSockConnection(self, host, port):        #self.sock.close()
@@ -87,7 +87,7 @@ class GetData:
         print(f'dataTx: {self.dataTx}')
         print(f'host {host}')
         print(f'port: {port}')
-
+        returnValue = -1
         self.sock = socket.socket()
         #self.sock.setblocking(False)
         try:
@@ -97,20 +97,21 @@ class GetData:
             print(f"TCP/IP Socket Timeout Error {self.sockRecursionCount}: {err}")
             self.sockConnection = 0
             self.sockRecursionCount += 1
-            return -1
+            return returnValue
 
         except socket.error as err:
             print(f"TCP/IP Socket Error: {err}")
             self.sockConnection = 0
             self.sockRecursionCount += 1
-            return -1
+            return returnValue
             #self.sock.close()
             #self.socket.create_connection((self.host, self.port), timeout=2)
             #self.sock.connect((host, port), timeout=2)
 
         self.sockRecursionCount = 0
         self.sockConnection = 1
-        return 1
+        returnValue = 1
+        return returnValue
     
     def checkPriorConnection(self, network):
         priorNetworks = self.getloggedCSV("networks.csv")
@@ -162,15 +163,16 @@ class GetData:
             mode = 'w'
         networkPath = self.pathPreface + '/' + pathSuffix #"/networks.csv"
         print(f'CSV writer path: {networkPath}')
-        if os.path.exists(networkPath):
-            print(f"network file exists")
-            with open(networkPath, mode, newline='') as csvfile:
-                csvWrite = csv.writer(csvfile)
-                csvWrite.writerow(csvRowList)
-                #[self.ssid, self.pswd, self.host, self.port]
+        if networkPath != -1:
+            if os.path.exists(networkPath):
+                print(f"network file exists")
+                with open(networkPath, mode, newline='') as csvfile:
+                    csvWrite = csv.writer(csvfile)
+                    csvWrite.writerow(csvRowList)
+                    #[self.ssid, self.pswd, self.host, self.port]
         else:
-             print(f"Creating new network file")
-             with open(networkPath, 'w', newline='') as csvfile:
+            print(f"Creating new network file")
+            with open(networkPath, 'w', newline='') as csvfile:
                 csvWrite = csv.writer(csvfile)
                 csvWrite.writerow(csvRowList)
 

@@ -270,7 +270,7 @@ class UX:
         newPositionLabelList = []
 
         # Set all windows to Noe except window 1 to start
-        window0 = self.window.makeWindow0(self.dataStream.sockConnection, self.SSIDList)
+        window0 = self.window.makeWindow0(self.dataStream.sockConnection, self.SSIDList, self.dataStream.ssid, self.dataStream.host)
         #window1 = self.window.makeWindow1(modelMessage)
         window1 = None
         window2 = None
@@ -415,7 +415,7 @@ class UX:
                             window['-MESSAGE-'].update(f"Connected to server at {self.dataStream.host} on {self.dataStream.ssid}")
                         
                             window.refresh()
-                            self.dataStream.logCSVRow('networks.csv', [self.ssid, self.pswd, self.host, self.port])
+                            self.dataStream.logCSVRow('networks.csv', [self.dataStream.ssid, self.dataStream.pswd, self.dataStream.host, self.dataStream.port])
                             time.sleep(2)
                             window1 = self.window.makeWindow1(self.dataStream.pathPreface)
                             window0.hide()
