@@ -4,7 +4,7 @@ from rtmidi.midiconstants import CONTROL_CHANGE
 import matplotlib.pylab as plt
 import time
 
-BPM = 30
+BPM = 120
 
 class Rate:
     whole = 'w'
@@ -103,6 +103,19 @@ class MidiBuilder:
                     # Create MIDI note-off message
                 note_off = self.MIDINoteMessage(ch=self.ch, note=note, velocity=0)
                 midi_array.append(note_off.get_midi())
+            else:
+                for note in self.midiMessage:
+                    # note = self.midiMessage
+                    note_on = self.MIDINoteMessage(ch=self.ch, note=note, velocity=self.velocity)
+                    midi_array.append(note_on.get_midi())
+
+                        # Add a small delay between note-on and note-off (adjust as needed)
+                        # time.sleep(0.1)
+
+                        # Create MIDI note-off message
+                    note_off = self.MIDINoteMessage(ch=self.ch, note=note, velocity=0)
+                    midi_array.append(note_off.get_midi())
+            
 
             return midi_array
             for _ in range(self.multiply_rate(self.rate)):

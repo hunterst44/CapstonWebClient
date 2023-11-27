@@ -111,6 +111,8 @@ class UX:
         NeuralNetwork.trainOrientation(self.dataStream.pathPreface, self.positionPathList, 1, self.dataStream.numSensors, self.numHandPositions)        
 
     def createNeuralModel(self):
+        #if self.dataStream.pathPreface == -1:
+         #   self.dataStream.pathPreface = 'data\test'
         modelPath = self.dataStream.pathPreface + '\model.model'
         #Add layers
         #Input is 15 features (3 Axis * 5 samples)
@@ -182,7 +184,7 @@ class UX:
             # #window['-MESSAGE-'].update(f'message')
 
     def checkControlLog(self):
-        controlPath = self.dataStream.pathPreface + "/controls.csv"
+        controlPath = "data/test" + "/controls.csv"
         newControlData = [-1]
         if os.path.exists(controlPath):
             with open(controlPath, 'r') as csvfile:
@@ -344,7 +346,7 @@ class UX:
 
     #Window one welcome, load / create model
         layout = [[sg.Text('The Conductor: Window 1'), sg.Text(size=(2,1), key='-OUTPUT-')],
-                [sg.pin(sg.Column([[sg.Text(modelMessage, key="-MODELMESSAGE00-", visible=True)], [sg.Button('Ok', key='-USEDEFAULTBTN-', visible=existsVis)], [sg.Button('Ok', key='-CREATEMOEDLBTN-', visible=notVis)], [sg.Button('Ok', key='-ACCPTDEFAULT-', visible=notVis)]], pad=(0,0)), shrink=True)], 
+                [sg.pin(sg.Column([[sg.Text(modelMessage, key="-MODELMESSAGE00-", visible=True)], [sg.Button('Ok', key='-USEDEFAULTBTN-', visible=existsVis)], [sg.Button('Create New', key='-CREATEMOEDLBTN-', visible=True)], [sg.Button('Ok', key='-ACCPTDEFAULT-', visible=notVis)]], pad=(0,0)), shrink=True)], 
                 [sg.pin(sg.Column([[sg.Text(modelMessage, key="-MODELMESSAGE01-", visible=False)]], pad=(0,0)), shrink=True)],                #[sg.pin(sg.Column([[sg.FolderBrowse(size=(8,1), visible=True, key='-CHOOSEDIR-')],[sg.Text(f"Or Browse for a new folder and click 'New Folder.'", key="-MODELMESSAGE01-", visible=True)], [sg.Button('New Folder', key='-NEWFOLDER-', visible=True)], [sg.Button('Ok', key='-ACCPTDEFAULT-', visible=False)]], pad=(0,0)), shrink=True)],
                 [sg.pin(sg.Column([[sg.Input('How many hand positions will you train?', key="-NUMPOS-", visible=False, enable_events=True)]], pad=(0,0)), shrink=True)],
                 [sg.pin(sg.Column([[sg.Input('Position 1 label', key="-POSLABEL-", visible=False)], [sg.Button('SUBMIT', key='-SUBLABELBTN-', visible=False)]], pad=(0,0)), shrink=True)],
@@ -891,9 +893,9 @@ class UX:
                     window['-USEDEFAULTBTN-'].update(visible=False)
                     #Update pathPreface and numpositions with user's preference
                     if positionLabelCount == 0:
-                        print(f'self.dataStream.pathPreface: {self.dataStream.pathPreface}')
-                        print(f'newPathPreface: {newPathPreface}')
-                        self.dataStream.pathPreface = newPathPreface
+                        #print(f'self.dataStream.pathPreface: {self.dataStream.pathPreface}')
+                        #print(f'newPathPreface: {newPathPreface}')
+                        #self.dataStream.pathPreface = newPathPreface
                         
                         window.refresh()
                         
@@ -1559,10 +1561,10 @@ class UX:
                         elif int(self.controlInitData[i][6]) == 1:    #Control is Arpegio
                             self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][7], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], controlType=self.controlInitData[i][6], conditionData=conditionDataList, bpm = self.writer.bpm, controlNum=i, rate=self.controlInitData[i][8], direction=self.controlInitData[i][9]))
                         #self.writer.controlList.append(newControl)   
-                            print(f'self.writer.controlList: {self.writer.controlList}')
-                            print(f'self.writer.controlList[i+1].controlLabel: {self.writer.controlList[i].controlLabel}')
-                            print(f'self.writer.controlList[0].controlLabel: {self.writer.controlList[0].controlLabel}')
-                            print(f'self.writer.controlList[1].controlLabel: {self.writer.controlList[1].controlLabel}')
+                            # print(f'self.writer.controlList: {self.writer.controlList}')
+                            # print(f'self.writer.controlList[i+1].controlLabel: {self.writer.controlList[i].controlLabel}')
+                            # print(f'self.writer.controlList[0].controlLabel: {self.writer.controlList[0].controlLabel}')
+                            # print(f'self.writer.controlList[1].controlLabel: {self.writer.controlList[1].controlLabel}')
                     elif int(self.controlInitData[i][1]) == 1:  #Condition type = Transition
                         conditionDataList = [
                             [[int(self.controlInitData[i][2]), int(self.controlInitData[i][3])], [int(self.controlInitData[i][4]), int(self.controlInitData[i][5])]],
@@ -1773,6 +1775,7 @@ class UX:
                         window.refresh()
                         self.stopPredict = 0
                     self.writer.writerON = 1
+                    self.writer.midiArp.start_processing_thread()
                 # if self.writer.midiArp.is_running == False:
                 #     self.writer.midiArp.start_processing_thread()
 
@@ -1788,7 +1791,7 @@ class UX:
                     self.writer.writerON = 0
                     self.writer.play_loop_started = False
                     self.writer.metro.startFlag = 0
-                    self.writer.midiArp.stop_processing_thread()
+                    # self.writer.midiArp.stop_processing_thread()
                     # self.writer.midiArp.thread.join()
                     self.writer.midiArp.is_running = False
         window.close()
