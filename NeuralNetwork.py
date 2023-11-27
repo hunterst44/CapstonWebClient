@@ -1191,7 +1191,7 @@ def realTimePrediction(packetData, pathPreface):
     
     confidences = model.predict(packetData)
     
-    confidencesPath = pathPreface + "confidences.npy"
+    confidencesPath = pathPreface + "/confidences.npy"
     #Write Confidences to binary
     if os.path.exists(confidencesPath):
         tmpArr = np.load(confidencesPath,allow_pickle=False)
@@ -1207,7 +1207,7 @@ def realTimePrediction(packetData, pathPreface):
 
     #print(f'Confidences: {confidences}') 
 
-    predictionsPath = pathPreface + "predictions.npy"
+    predictionsPath = pathPreface + "/predictions.npy"
     predictions = model.output_layer_activation.predictions(confidences)
     #print(f'Current Prediction: {predictions}')
     #print(f'Current Prediction: {predictions[0]}')

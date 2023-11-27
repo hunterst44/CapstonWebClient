@@ -165,7 +165,7 @@ class GetData:
             mode = 'a'
         else:
             mode = 'w'
-        networkPath = self.pathPreface + '/' + pathSuffix #"/networks.csv"
+        networkPath = str(self.pathPreface) + '/' + pathSuffix #"/networks.csv"
         print(f'CSV writer path: {networkPath}')
         if networkPath != -1:
             if os.path.exists(networkPath):

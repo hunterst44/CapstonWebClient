@@ -14,7 +14,7 @@ class MidiPlayer:
         self.midiOut = midi_out
         self.onFlag = on_flag
 
-    def play_beat(self, midi_data=None, on_flag=1):
+    def play_beat(self, midi_data=None, on_flag=0):
         # on_flag = 1
         a = np.asarray(midi_data)
         if a.size == 0:
