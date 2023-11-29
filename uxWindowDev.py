@@ -460,7 +460,8 @@ class UX:
                     #Use the directory provided by the user, if it exists
                     foldername = sg.popup_get_folder('Select a folder', no_window=True, initial_folder=os.getcwd())
                     print('Selected folder:', foldername)
-                    newPathPreface = foldername
+                    print('Selected folder:', '-CHOOSEDIR-')
+                    newPathPreface = values[foldername]
                     #newPathPreface = values["-CHOOSEDIR-"]
                     #newModelPath = newPathPreface + '/model.model'
                     #newModelLogPath = newPathPreface + '/modelLog.csv'

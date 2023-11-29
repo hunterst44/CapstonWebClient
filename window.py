@@ -58,8 +58,8 @@ class Window:
                     [sg.Button('Ok', key='-CREATEMOEDLBTN-', visible=False)]], pad=(LEFTMARGIN,0)), shrink=True),sg.Push()], 
                 [sg.Push(),sg.pin(sg.Column([
                     [sg.Button('Ok',**self.button2_properties(), key='-USEDEFAULTDIRBTN-', visible=True),
-                    sg.Button('Browse',**self.button1_properties(), key='-CHOOSEDIR-', enable_events=True)]], pad=(LEFTMARGIN,0)), shrink=True),sg.Push()],
-                    #sg.FolderBrowse(size=(8,1), visible=True, key='-CHOOSEDIR-', enable_events=True)]], pad=(LEFTMARGIN,0)), shrink=True),sg.Push()],
+                    sg.Button('Browse',**self.button1_properties(), key='-CHOOSEDIR-', enable_events=True),
+                    sg.FolderBrowse(size=(8,1), visible=True, key='-CHOOSEDIR-', enable_events=True)]], pad=(LEFTMARGIN,0)), shrink=True),sg.Push()],
                 [sg.Push(),sg.pin(sg.Column([[sg.Button('Ok',**self.button2_properties(), key='-USESELDIRBTN-', visible=False)]], pad=(LEFTMARGIN,0)), shrink=True),sg.Push()]
                 ]
         
