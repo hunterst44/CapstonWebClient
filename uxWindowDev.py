@@ -416,8 +416,8 @@ class UX:
         newPositionLabelList = []
 
         # Set all windows to Noe except window 1 to start
-        window00 = None
-        window0 = self.window.makeWindow0(self.dataStream.sockConnection, self.SSIDList, self.dataStream.ssid, self.dataStream.host)
+        window00 = self.window.makeWindow00(self.dataStream.pathPreface)
+        window0 = None #self.window.makeWindow0(self.dataStream.sockConnection, self.SSIDList, self.dataStream.ssid, self.dataStream.host)
         #window1 = self.window.makeWindow1(modelMessage)
         window1 = None
         window2 = None
@@ -446,7 +446,7 @@ class UX:
                     print(f'Window 00 -USEDEFAULTDIRBTN-')
                     #Just use the default directory and carry on
                     window00.hide()
-                    window0 = self.makeWindow0(self.dataStream.sockConnection)
+                    window0 = self.window.makeWindow0(self.dataStream.sockConnection, self.SSIDList, self.dataStream.ssid, self.dataStream.host)
 
                 if event == '-CHOOSEDIR-':
                     print()
@@ -472,7 +472,7 @@ class UX:
                     # modelMessage = self.makeModelFileMessage(modelPath)
 
                     window00.hide()
-                    window0 = self.makeWindow0(self.dataStream.sockConnection)
+                    window0 = self.window.makeWindow0(self.dataStream.sockConnection, self.SSIDList, self.dataStream.ssid, self.dataStream.host)
                 
 ##############     Window0          #################
             #events for window0 (Create connection)
@@ -1496,7 +1496,7 @@ class UX:
                 
                 if event == sg.WIN_CLOSED or event == 'Exit':
                     window2_1.hide()
-                    window1 =self.makeWindow0()   
+                    window1 = self.window.makeWindow0(self.dataStream.sockConnection, self.SSIDList, self.dataStream.ssid, self.dataStream.host)   
 
                 if event == "-TRAINBTN-":
                     print()

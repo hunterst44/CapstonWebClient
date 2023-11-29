@@ -47,6 +47,25 @@ class Window:
         window.refresh()
         return window
 
+    def makeWindow00(self, pathPreface):
+        LEFTMARGIN = 50
+
+        windowtitlemsg = 'The Conductor: STEP 00'
+
+        content_layout = [[sg.Push(),sg.Text('Choose a working directory', key='-OUTPUT-',font = ("Calibri", 16, "bold",), pad=((0,0),(0,25))),sg.Push()],
+                [sg.Push(),sg.pin(sg.Column([
+                    [sg.Text(f"The Conductor will look in\n{os.path.abspath(os.getcwd()) + '/' + pathPreface}\nfor configuration files. Click 'Ok' to use this folder, or 'Browse' to choose a new working folder.", key="-MODELMESSAGE00-", visible=True)],
+                    [sg.Button('Ok', key='-CREATEMOEDLBTN-', visible=False)]], pad=(LEFTMARGIN,0)), shrink=True),sg.Push()], 
+                [sg.Push(),sg.pin(sg.Column([
+                    [sg.Button('Ok',**self.button2_properties(), key='-USEDEFAULTDIRBTN-', visible=True),
+                    sg.FolderBrowse(size=(8,1), visible=True, key='-CHOOSEDIR-', enable_events=True)]], pad=(LEFTMARGIN,0)), shrink=True),sg.Push()],
+                [sg.Push(),sg.pin(sg.Column([[sg.Button('Ok',**self.button2_properties(), key='-USESELDIRBTN-', visible=False)]], pad=(LEFTMARGIN,0)), shrink=True),sg.Push()]
+                ]
+        
+        window00 = self.create_window(content_layout, windowtitlemsg)
+        return window00
+        return sg.Window('THE CONDUCTOR: Step 00', layout, size=(self.windowSizeX,self.windowSizeY), finalize=True)
+
     def makeWindow0(self, connected, ssidlist, ssid, host):
             
             self.SSIDList = ssidlist  #Get the network list from the air so user can reconnect
