@@ -440,6 +440,11 @@ class UX:
 
                 if event == sg.WIN_CLOSED or event == 'Exit':
                     break
+                
+                
+                if  event == '-CHOOSEDIR-':
+                    foldername = sg.popup_get_folder('Select a folder', no_window=True, initial_folder=os.getcwd())
+                    print('Selected folder:', foldername)
 
                 if event == '-USEDEFAULTDIRBTN-':
                     print()
@@ -448,11 +453,15 @@ class UX:
                     window00.hide()
                     window0 = self.window.makeWindow0(self.dataStream.sockConnection, self.SSIDList, self.dataStream.ssid, self.dataStream.host)
 
+                event, values = window00.read()
                 if event == '-CHOOSEDIR-':
                     print()
                     print(f'Window 00 -CHOOSEDIR-')
                     #Use the directory provided by the user, if it exists
-                    newPathPreface = values["-CHOOSEDIR-"]
+                    foldername = sg.popup_get_folder('Select a folder', no_window=True, initial_folder=os.getcwd())
+                    print('Selected folder:', foldername)
+                    newPathPreface = foldername
+                    #newPathPreface = values["-CHOOSEDIR-"]
                     #newModelPath = newPathPreface + '/model.model'
                     #newModelLogPath = newPathPreface + '/modelLog.csv'
 
