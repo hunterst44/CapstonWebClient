@@ -1,11 +1,12 @@
 import PySimpleGUI as sg
 import os.path
+import utils
 
 class Window:
     def __init__ (self, ASSETS_PATH = r"./assets"):
         self.ASSETS_PATH = ASSETS_PATH
         self.windowSizeX = 850 #Width of the window
-        self.windowSizeY = 670 #Height of the window
+        self.windowSizeY = 660 #Height of the window
         self.font = ("Calibri", 12)
         self.fontB = ("Calibri", 12, 'bold')
         self.colors = ("", "#FFFFFF")
@@ -58,14 +59,13 @@ class Window:
                     [sg.Button('Ok', key='-CREATEMOEDLBTN-', visible=False)]], pad=(LEFTMARGIN,0)), shrink=True),sg.Push()], 
                 [sg.Push(),sg.pin(sg.Column([
                     [sg.Button('Ok',**self.button2_properties(), key='-USEDEFAULTDIRBTN-', visible=True),
-                    sg.Button('Browse',**self.button1_properties(), key='-CHOOSEDIR-', enable_events=True),
-                    sg.FolderBrowse(size=(8,1), visible=True, key='-CHOOSEDIR-', enable_events=True)]], pad=(LEFTMARGIN,0)), shrink=True),sg.Push()],
+                    sg.Button('Browse',**self.button1_properties(), key='-CHOOSEDIR-', enable_events=True)]], pad=(LEFTMARGIN,0)), shrink=True),sg.Push()],
+                    #sg.FolderBrowse(size=(8,1), visible=True, key='-CHOOSEDIR-', enable_events=True)]], pad=(LEFTMARGIN,0)), shrink=True),sg.Push()],
                 [sg.Push(),sg.pin(sg.Column([[sg.Button('Ok',**self.button2_properties(), key='-USESELDIRBTN-', visible=False)]], pad=(LEFTMARGIN,0)), shrink=True),sg.Push()]
                 ]
         
         window00 = self.create_window(content_layout, windowtitlemsg)
         return window00
-        return sg.Window('THE CONDUCTOR: Step 00', layout, size=(self.windowSizeX,self.windowSizeY), finalize=True)
 
     def makeWindow0(self, connected, ssidlist, ssid, host):
             
@@ -90,8 +90,7 @@ class Window:
                     [sg.Push(),sg.pin(sg.Column([[sg.Input('192.168.XX.XXX', key="-IPNEW-", visible=False)]]), shrink=True),sg.Push()],
                     [sg.Push(),sg.pin(sg.Column([[sg.Btn('Connect',**self.button1_properties(), key='-APCNTEBTN-', visible=disconnectVis, pad=((0,70 ),(5,0)))]]),shrink=True),
                     #[sg.Column([[sg.Btn('Connect',**self.button1_properties(), key='-STNCNTEBTN-', visible=False, pad=((70,70 ),(5,0)))]]),
-                     sg.Column([[sg.Btn("Don't Connect",**self.button1_properties(), key='-NOCNTBTN-', visible=disconnectVis )]],pad=((LEFTMARGIN,0),(5,0))),sg.Push()],
-                
+                    sg.Column([[sg.Btn("Don't Connect",**self.button1_properties(), key='-NOCNTBTN-', visible=disconnectVis )]],pad=((LEFTMARGIN,0),(5,0))),sg.Push()],                
                     sg.Push(),sg.pin(sg.Column([
                         [sg.Listbox(self.SSIDList, size=(15, 8), key="-SSIDIN-", expand_y=True, enable_events=True, visible=connectVis)],
                         [sg.Button('Refresh', **self.button1_properties(), key='-SSIDLISTRFH-', visible=connectVis)]], pad=(LEFTMARGIN+50, 0),element_justification='c')),
@@ -100,7 +99,6 @@ class Window:
                         [sg.Btn('Reconnect', **self.button1_properties(), key='-RECNTBTN-', visible=connectVis)],
                         [sg.Btn("Don't Connect",**self.button1_properties(), key='-NOCNTBTN2-', visible=False )]], pad=(LEFTMARGIN, 0), element_justification='c')),
                     sg.Push(),[sg.Btn('Continue',**self.button1_properties(), key='-CONTBTN-', visible=connectVis)],sg.Push(),
-
                     #[sg.pin(sg.Column([[sg.Btn('Connect', key='-APCNTEBTN-', visible=True)]], pad=(LEFTMARGIN,0)), shrink=True)],
                     [sg.Push(),sg.pin(sg.Column([[sg.Btn('Continue',**self.button1_properties(), key='-CONTBTN-', visible=connectVis)]], pad=(LEFTMARGIN,0)), shrink=True),sg.Push()],
                     [sg.Push(),sg.pin(sg.Column([[sg.Text("If your network doesn't show up in the list open Windows network manager before clicking Refresh", visible=True, key='-MESSAGE-')]], pad=(LEFTMARGIN,0)), shrink=True),sg.Push()]
@@ -110,23 +108,25 @@ class Window:
             self.update_top_message(window0, topMessage)
             return window0
         
-    def makeWindow1(self, pathPreface):
+    def makeWindow1(self, modelPath,):
         LEFTMARGIN = 50
+        modelMessage, existsVis, notVis = utils.makeModelFileMessage(modelPath)
     #Window one welcome, load / create model
         windowtitlemsg = 'THE CONDUCTOR: Step 1'
         content_layout =([sg.Push(),sg.Text('The Conductor: Window 1',key='-OUTPUT-',font = ("Calibri", 16, "bold",), pad=((LEFTMARGIN,0),(0,25))),sg.Push()],
-                [sg.pin(sg.Column([[sg.Text(f"The Conductor will look in\n {os.path.abspath(os.getcwd()) + '/' + pathPreface} \nfor Neural Network model files. \nClick 'Ok' to use this folder.", key="-MODELMESSAGE00-", visible=True)],
-                    [sg.Button('Ok',**self.button2_properties(), key='-USEDEFAULTBTN-', visible=True)],
-                    [sg.Button('Ok',**self.button2_properties(), key='-CREATEMOEDLBTN-', visible=False)]], pad=(LEFTMARGIN,0)), shrink=True)], 
-                [sg.pin(sg.Column([[sg.FolderBrowse(size=(8,1), visible=True, key='-CHOOSEDIR-')],[sg.Text(f"Or Browse for a new folder and click 'New Folder.'", key="-MODELMESSAGE01-", visible=True)], 
-                    [sg.Button('New Folder',**self.button1_properties(), key='-NEWFOLDER-', visible=True)],
-                    [sg.Button('Ok',**self.button1_properties(), key='-ACCPTDEFAULT-', visible=False)]], pad=(LEFTMARGIN,0)), shrink=True)],
-                [sg.pin(sg.Column([[sg.Input('How many hand positions will you train?', key="-NUMPOS-", visible=False, enable_events=True)]], pad=(LEFTMARGIN,0)), shrink=True)],
-                [sg.pin(sg.Column([[sg.Input('Position 1 label', key="-POSLABEL-", visible=False)], 
-                    [sg.Button('SUBMIT',**self.button1_properties(), key='-SUBLABELBTN-', visible=False)]], pad=(LEFTMARGIN,0)), shrink=True)],
-                [sg.pin(sg.Column([[sg.Text('Train Model', key='-TRAIN-', visible=False),sg.Button('Train', key='-TRAINBTN-', visible=False)]]))],
-                [sg.pin(sg.Column([[sg.Text('Predict hand positions', key='-PREDICT-', visible=False),
-                    sg.Button('Predict',**self.button1_properties(), key='-PREDICTBTN-',visible=False)]]))]
+                [sg.Push(),sg.pin(sg.Column([
+                    [sg.Text(modelMessage, key="-MODELMESSAGE00-", visible=True)], 
+                    [sg.Button('Ok',**self.button2_properties(), key='-USEDEFAULTBTN-', visible=existsVis),
+                    sg.Button('Create New',**self.button1_properties(), key='-CREATEMOEDLBTN-', visible=True),
+                    sg.Button('Ok',**self.button2_properties(), key='-ACCPTDEFAULT-', visible=notVis)]], pad=(LEFTMARGIN, 0)), shrink=True),sg.Push()], 
+                [sg.Push(),sg.pin(sg.Column([[sg.Text(modelMessage, key="-MODELMESSAGE01-", visible=False)]], pad=(LEFTMARGIN, 0)), shrink=True),sg.Push()],
+                [sg.Push(),sg.pin(sg.Column([[sg.Input('How many hand positions will you train?', key="-NUMPOS-", visible=False, enable_events=True)]], pad=(LEFTMARGIN,0)), shrink=True),sg.Push()],
+                [sg.Push(),sg.pin(sg.Column([[sg.Input('Position 1 label', key="-POSLABEL-", visible=False)], 
+                    [sg.Button('SUBMIT',**self.button1_properties(), key='-SUBLABELBTN-', visible=False)]], pad=(LEFTMARGIN,0)), shrink=True),sg.Push()],
+                [sg.Push(),sg.pin(sg.Column([[sg.Text('Train Model', key='-TRAIN-', visible=False),sg.Button('Train',**self.button1_properties(), key='-TRAINBTN-', visible=False)]], pad=(LEFTMARGIN, 0)), shrink=True),sg.Push()],
+                [sg.Push(),sg.pin(sg.Column([
+                    [sg.Text('Predict hand positions', key='-PREDICT-', visible=False),
+                    sg.Button('Predict',**self.button1_properties(), key='-PREDICTBTN-',visible=False)]], pad=(LEFTMARGIN, 0)), shrink=True),sg.Push()]
         )
         
         window1=self.create_window(content_layout,windowtitlemsg)

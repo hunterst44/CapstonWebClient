@@ -1,5 +1,5 @@
 # utils.py
-import os
+import os.path
 
 def makeModelFileMessage(modelPath):
         existsVis = True
@@ -13,4 +13,4 @@ def makeModelFileMessage(modelPath):
             modelMessage = 'Create a model.\nNo model available at ' + modelPath + 'Click okay to create a new one.'
             existsVis = False
             notVis = True
-        return modelMessage, existsVis, notVis   
+        return modelMessage, existsVis, notVis 

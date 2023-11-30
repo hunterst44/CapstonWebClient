@@ -453,16 +453,16 @@ class UX:
                     window00.hide()
                     window0 = self.window.makeWindow0(self.dataStream.sockConnection, self.SSIDList, self.dataStream.ssid, self.dataStream.host)
 
-                event, values = window00.read()
                 if event == '-CHOOSEDIR-':
                     print()
                     print(f'Window 00 -CHOOSEDIR-')
                     #Use the directory provided by the user, if it exists
                     foldername = sg.popup_get_folder('Select a folder', no_window=True, initial_folder=os.getcwd())
-                    print('Selected folder:', foldername)
+                    values['-CHOOSEDIR-'] = foldername  # Save the selected folder path to the values dictionary
+                    # print('Selected folder:', foldername)
                     print('Selected folder:', '-CHOOSEDIR-')
-                    newPathPreface = values[foldername]
-                    #newPathPreface = values["-CHOOSEDIR-"]
+                    #newPathPreface = values[foldername]
+                    newPathPreface = values["-CHOOSEDIR-"]
                     #newModelPath = newPathPreface + '/model.model'
                     #newModelLogPath = newPathPreface + '/modelLog.csv'
 
@@ -869,7 +869,7 @@ class UX:
                 
                 if event == sg.WIN_CLOSED or event == 'Exit':
                     window2.hide()
-                    window1 =self.window.makeWindow1()   
+                    window1 =self.window.makeWindow1(self.dataStream.pathPreface)   
 
                 if event == '-USELOGBTN-':
                     print()
