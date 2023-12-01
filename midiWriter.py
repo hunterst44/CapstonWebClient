@@ -16,7 +16,7 @@ import buildMidi
 from midiPlayer import MidiPlayer
 from midiArp import MidiArp
 
-BPM = 120
+BPM = 30
 # import sys
 
 """ 
@@ -152,7 +152,7 @@ class MiDiWriter:
                     #         non_zero_indices = i
 
     def refreshMidi(self):
-        # self.midiArp.update_Midi()  # Update MIDI information from midiArp just once for all controls
+        self.midiArp.update_Midi()  # Update MIDI information from midiArp just once for all controls
         
         time.sleep(0.03)
         self.midiArp.update_Midi()
@@ -170,7 +170,7 @@ class MiDiWriter:
             control.midiBuilder.newTof = control.controlValue
 
             # Update midiInput for each control from midiArp
-            control.midiInput = arpNote
+            control.midiInput = self.midiArp.current_Midi
             control.midiBuilder.midiMessage = control.midiInput
             print(f"refreshMidi notes {control.midiInput}")
             
