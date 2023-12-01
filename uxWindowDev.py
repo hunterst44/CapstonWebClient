@@ -344,7 +344,60 @@ class UX:
 
     #     return sg.Window('THE CONDUCTOR: Step 1', layout, size=(self.windowSizeX,self.windowSizeY), finalize=True)
     
-    # def makeWindow2(self):
+    def pre_makeWindow2(self):
+        """
+        Creates a window and initializes the MIDI ports and control lists.
+
+        This function finds the available MIDI ports to connect to and initializes the control lists.
+        It also checks if a control log file exists and sets the MIDI port and BPM based on the log data.
+        If a control log file exists, it adds the controls from the log to self.controlInitData.
+
+        Returns:
+            None
+        """
+        # Find MIDI ports to connect to
+        self.writer.available_MIDIPortsOut = self.writer.midiOut.get_ports()
+        self.writer.available_MIDIPortsIn = self.writer.midiIn.get_ports()
+
+        numOutPorts = len(self.writer.available_MIDIPortsOut)
+        midiOutList = []
+        for i in range(numOutPorts):
+            midiOutList.append(self.writer.available_MIDIPortsOut[i])
+
+        controlList = ['Modulate', 'Arpeggiate']
+        waveList = ['sine', 'square', 'saw']
+        conditionTypeList = ['Hold', 'Transition']
+        currentPositionList = []
+        arpegDirList = ['Up', 'Down', 'Random']
+
+        controlLogData = self.checkControlLog()
+        logVisibility = False
+        logInvisibility = True
+
+        if controlLogData[0] != -1:
+            self.writer.midiPortOut = controlLogData[0][0]  # MIDI Port Name
+            self.writer.bpm = controlLogData[0][1]
+
+            newControlList = controlLogData[1:]  # Take the first item off the list
+            controlListStr, textHeight = self.getControlListStr(newControlList)
+            # Add the controls from the log to self.controlInitData
+            for i in range(len(controlLogData)):
+                if i > 0:
+                    print(f'i: {i}')
+                    print(f'controlLogData[{i}]: {controlLogData[i]}')
+                    self.controlInitData.append(controlLogData[i])
+
+            print(f'controlListStr: {controlListStr} textHeight: {textHeight}')
+            Message00Text = "A log file exists with pre-mapped controls.\n Click Ok to use these controls, or Overwrite to create new controls"
+            logVisibility = True
+            logInvisibility = False
+
+        else:
+            Message00Text = "Let's map MIDI controls to hand positions."
+            controlListStr = "First choose a MIDI port to send commands to:"
+            textHeight = 1
+
+        self.window.makeWindow2(controlList,waveList,conditionTypeList,currentPositionList,arpegDirList,midiOutList,controlListStr,textHeight,Message00Text,logVisibility,logInvisibility)
     #     #Window3 Training or prediction select
     #     layout = [[sg.Text('The Conductor: Window 2'), sg.Text(size=(2,1), key='-OUTPUT-')],
     #               [sg.pin(sg.Column([[sg.Text('Train Model'), sg.Text(size=(2,1), key='-TRAIN-'), sg.Button('Train', key='-TRAINBTN-')]]))],
@@ -721,7 +774,7 @@ class UX:
                     window['-MODELMESSAGE01-'].update(visible=False)
                     window['-ACCPTDEFAULT-'].update(visible=False)
                     window1.hide()
-                    window2 = self.makeWindow2()
+                    window2 = self.pre_makeWindow2()
                     # window['-TRAIN-'].update(visible=True)
                     # window['-PREDICT-'].update(visible=True)
                     # window['-TRAINBTN-'].update(visible=True)
@@ -825,7 +878,7 @@ class UX:
 
                         window['-MODELMESSAGE01-'].update(visible=True)
                         window1.hide()
-                        window2 = self.window.makeWindow2()  #model complete go to window two - map positions
+                        window2 = self.pre_makeWindow2()  #model complete go to window two - map positions
                         # window['-TRAIN-'].update(visible=True)
                         # window['-PREDICT-'].update(visible=True)
                         # window['-TRAINBTN-'].update(visible=True)
