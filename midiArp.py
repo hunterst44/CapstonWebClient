@@ -4,7 +4,7 @@ import time
 import random
 
 class MidiArp:
-    def __init__(self, midiIn_port_index=3, octave=2, order=0):
+    def __init__(self, midiIn_port_index=3, octave=0, order=0):
         self.midi_in = rtmidi.MidiIn()
         self.midi_in.open_port(midiIn_port_index)
         self.held_notes = set()
@@ -13,6 +13,8 @@ class MidiArp:
         self.octave = octave
         self.order = order
         self.current_Midi = []
+        self.midi_Index = 0
+        self.indexed_Note = 0
 
     def process_messages(self):
         try:
@@ -60,9 +62,22 @@ class MidiArp:
             self.current_Midi = sorted(self.held_notes)
             self.reorder_Midi()
             self.change_octave()
-            
+            print(f'length of current held notes: {len(self.current_Midi)}')
+            print(f'current index: {self.midi_Index}')
+            if self.midi_Index > len(self.current_Midi)-1:
+                print("Legth of midi notes is less than index, set index to 0")
+                self.midi_Index = 0
+            else:
+                print("Length of held notes is greater than index, return midi note and increment index")
+                print(f'midi index: {self.midi_Index}')
+                note = self.current_Midi[self.midi_Index - 1]
+                self.midi_Index += 1
+                return note
+                
         else:
             self.current_Midi = []
+            
+
 
     def reorder_Midi(self):
         if self.order == 0 or self.order == 'Up':

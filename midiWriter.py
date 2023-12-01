@@ -59,7 +59,7 @@ class MiDiWriter:
         self.busy = 0
         # self.midi_player = MidiPlayer()
         # self.midi_player = MidiPlayer()
-        self.midiArp = MidiArp(midiIn_port_index = 3) #Need to add this to GUI
+        self.midiArp = MidiArp(midiIn_port_index = 2) #Need to add this to GUI
         
         #self.midiArp.start_processing_thread()
         
@@ -152,7 +152,7 @@ class MiDiWriter:
                     #         non_zero_indices = i
 
     def refreshMidi(self):
-        self.midiArp.update_Midi()  # Update MIDI information from midiArp just once for all controls
+        # self.midiArp.update_Midi()  # Update MIDI information from midiArp just once for all controls
         
         time.sleep(0.03)
         self.midiArp.update_Midi()
@@ -161,6 +161,7 @@ class MiDiWriter:
             if control.startFlag == 1:
                 self.midiArp.order = control.direction
                 self.midiArp.octave = control.octave
+            arpNote = self.midiArp.update_Midi()  # Update MIDI information from midiArp just once for all controls
 
             control.changeRate(self.writerRate)
             control.midiBuilder.rate = control.beatLenStr
@@ -169,7 +170,7 @@ class MiDiWriter:
             control.midiBuilder.newTof = control.controlValue
 
             # Update midiInput for each control from midiArp
-            control.midiInput = self.midiArp.current_Midi
+            control.midiInput = arpNote
             control.midiBuilder.midiMessage = control.midiInput
             print(f"refreshMidi notes {control.midiInput}")
             

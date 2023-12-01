@@ -92,20 +92,11 @@ class MidiBuilder:
     def build_midi(self):
         midi_array = []
         if self.dataType == 0:  # for MIDI note data
-            if isinstance(self.midiMessage, int):
-                note = int(self.midiMessage)
-                note_on = self.MIDINoteMessage(ch=self.ch, note=note, velocity=self.velocity)
-                midi_array.append(note_on.get_midi())
-
-                    # Add a small delay between note-on and note-off (adjust as needed)
-                    # time.sleep(0.1)
-
-                    # Create MIDI note-off message
-                note_off = self.MIDINoteMessage(ch=self.ch, note=note, velocity=0)
-                midi_array.append(note_off.get_midi())
-            else:
-                for note in self.midiMessage:
-                    # note = self.midiMessage
+            if self.midiMessage == None:
+                midi_array = []
+            elif isinstance(self.midiMessage, int):
+                for _ in range(self.multiply_rate(self.rate)):    
+                    note = int(self.midiMessage)
                     note_on = self.MIDINoteMessage(ch=self.ch, note=note, velocity=self.velocity)
                     midi_array.append(note_on.get_midi())
 
@@ -115,6 +106,19 @@ class MidiBuilder:
                         # Create MIDI note-off message
                     note_off = self.MIDINoteMessage(ch=self.ch, note=note, velocity=0)
                     midi_array.append(note_off.get_midi())
+            else:
+                for _ in range(self.multiply_rate(self.rate)):
+                    for note in self.midiMessage:
+                        # note = self.midiMessage
+                        note_on = self.MIDINoteMessage(ch=self.ch, note=note, velocity=self.velocity)
+                        midi_array.append(note_on.get_midi())
+
+                            # Add a small delay between note-on and note-off (adjust as needed)
+                            # time.sleep(0.1)
+
+                            # Create MIDI note-off message
+                        note_off = self.MIDINoteMessage(ch=self.ch, note=note, velocity=0)
+                        midi_array.append(note_off.get_midi())
             
 
             return midi_array
