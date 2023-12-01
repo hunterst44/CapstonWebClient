@@ -33,6 +33,7 @@ import dill
 # [11] Maximum   {FLOAT} Modulate only
 #Control Type Arpegiate
 # [9] Direction
+# [10] Octave
 
 #Condition Type = Transition
 # [2] - [9] conditions data: [..., BEGIN ON POSITION, BEGIN ON THRESHOLD, END ON POSITION, END ON THRESHOLD, BEGIN OFF POSITION, BEGIN OFF THRESHOLD, END OFF POSITION, END OFF THRESHOLD, ...]
@@ -225,7 +226,7 @@ class UX:
         #         self.controlInitData.append(controlLogData[i])
         #     self.init_Loaded_Flag = 1
 
-            controlListStr = controlListStr + "Control Name: " + controlLogData[i][0] + "\n"
+            controlListStr = controlListStr + "\nControl Name: " + controlLogData[i][0] + "\n"
             #ConditionType
             textHeight = textHeight + 4 
             if controlLogData[i][1] == '0' or controlLogData[i][1] == 0:  #Condition type = Hold
@@ -254,7 +255,8 @@ class UX:
                     controlListStr = controlListStr + "Channel:  " + str(controlLogData[i][7]) + "\n"
                     controlListStr = controlListStr + "Rate:  " + str(controlLogData[i][8]) + "\n"
                     controlListStr = controlListStr + "Direction:  " + controlLogData[i][9] + "\n"
-                    textHeight = textHeight + 4
+                    controlListStr = controlListStr + "Octave:  " + str(controlLogData[i][10]) + "\n"
+                    textHeight = textHeight + 5
 
             elif controlLogData[i][1] == '1' or controlLogData[i][1] == 1:  #Condition type = Transition
                 controlListStr = controlListStr + "Condition Type:  Transition\n"
@@ -285,7 +287,8 @@ class UX:
                     controlListStr = controlListStr + "Channel:  " + str(controlLogData[i][11]) + "\n"
                     controlListStr = controlListStr + "Rate:  " + str(controlLogData[i][12]) + "\n"
                     controlListStr = controlListStr + "Direction:  " + controlLogData[i][13] + "\n"
-                    textHeight = textHeight + 4
+                    controlListStr = controlListStr + "Octave:  " + str(controlLogData[i][14]) + "\n"
+                    textHeight = textHeight + 5
         
         print(f'controlListStr: {controlListStr}')
         
@@ -478,8 +481,8 @@ class UX:
                         
                         sg.Column([[sg.Text(f"Position, threshold control OFF.", key='-CURRPOSOFFLABEL-', size=(15,2), visible=False)], [sg.Listbox(currentPositionList, size=(10, 3), key="-CURRPOSLISTOFF-", expand_y=True, enable_events=True, visible=False)], [sg.Slider(range=(1, 25), default_value=3, expand_x=True,orientation='horizontal', key='-CURRPOSOFFSLIDE-', visible=False)], [sg.Button('Ok', key='-CONDBTN-', visible=False)]], key='-CURRPOSLISTOFFCOL-', background_color = 'Red', vertical_alignment='t', pad=(0,0), visible=False),
                         sg.Column([[sg.Text(f"Position, threshold at END OFF.", key='-CURRPOSOFFTRANSLABEL-', size=(15,2), visible=False)], [sg.Listbox(currentPositionList, size=(10, 3), key="-CURRPOSLISTTRANSOFF-", expand_y=True, enable_events=True, visible=False)], [sg.Slider(range=(1, 25), default_value=3, expand_x=True,orientation='horizontal', key='-CURRPOSOFFTRANSSLIDE-', visible=False)], [sg.Button('Ok', key='-CONDTRANSBTN-', visible=False)]], key='-CURRPOSLISTTRANSOFFCOL-', background_color = 'Red', vertical_alignment='t', pad=(0,0), visible=False),
-                        sg.Column([[sg.Listbox(arpegDirList, size=(10, 3), key="-ARPEGDIR-", expand_y=True, enable_events=True, visible=False)], [sg.Button('Ok', key='-ARPEGBTN-', visible=False)]], key='-ARPEGDIRCOL-', background_color = 'Red', vertical_alignment='t', pad=(0,0), visible=False),
-                        
+                        sg.Column([[sg.Text("Octave", key='-OCTLABEL-', visible=False)], [sg.Listbox([-2, 1, 0, 1, -2], size=(10, 5), key="-OCTLIST-", expand_y=True, enable_events=True, visible=False)]], key='-OCTCOL-', background_color = 'Red', vertical_alignment='t', pad=(0,0), visible=False),
+                        sg.Column([[sg.Text("Direction", key='-DIRLABEL-', visible=False)], [sg.Listbox(arpegDirList, size=(10, 3), key="-ARPEGDIR-", expand_y=True, enable_events=True, visible=False)], [sg.Button('Ok', key='-ARPEGBTN-', visible=False)]], key='-ARPEGDIRCOL-', background_color = 'Red', vertical_alignment='t', pad=(0,0), visible=False),
                         sg.Column([[sg.Listbox(controlList, size=(10, 3), key="-CTRLLIST-", expand_y=True, enable_events=True, visible=False)], [sg.Button('Select', key='-SELCNTRLTYPEBTN-', visible=False)]], key='-CTRLLISTCOL-', background_color = 'Red', vertical_alignment='t', pad=(0,0)),
                         sg.Column([[sg.Text(f"Rate", key='-RATELABEL-', size=(15,2), visible=False)], [sg.Slider(range=(0, 127), default_value=30, expand_x=True,orientation='horizontal', key='-RATESLIDE-', visible=False)]], key='-RATECOL-', background_color = 'Red', vertical_alignment='t', pad=(0,0)),
                         sg.Column([[sg.Text(f"Waveform", key='-WAVELABEL-', size=(15,2), visible=False)], [sg.Listbox(waveList, size=(50, 3), key="-WAVELIST-", enable_events=True, visible=False)]], key='-WAVECOL-', background_color = 'Blue', vertical_alignment='t', pad=(0,0)),
@@ -1413,6 +1416,7 @@ class UX:
                         window['-MAXSLIDE-'].update(visible=True)
                         window['-MODDATABTN-'].update(visible=True)
                         window.refresh()
+                    
                     elif values['-CTRLLIST-'][0] == 'Arrpegiate':
                         print(f'Arrpegiate')
                         newControl.append(1)
@@ -1427,9 +1431,13 @@ class UX:
                         window['-RATECOL-'].update(visible=True)
                         window['-RATELABEL-'].update(visible=True)
                         window['-RATESLIDE-'].update(visible=True)
+                        window['-OCTCOL-'].update(visible=True)
+                        window['-OCTLIST-'].update(visible=True)
+                        window['-OCTLABEL-'].update(visible=True)
                         window['-ARPEGDIRCOL-'].update(visible=True)
                         window['-ARPEGDIR-'].update(visible=True)
-                        window['-ARPEGBTN-'].update(visible=True)       
+                        window['-ARPEGBTN-'].update(visible=True)
+                        window['-DIRLABEL-'].update(visible=True)       
                         
                     elif values['-CTRLLIST-'][0] == 'ToF Control':
                         print(f'Play Note')
@@ -1503,11 +1511,15 @@ class UX:
                 window['-RATECOL-'].update(visible=False)
                 window['-ARPEGDIRCOL-'].set_size(size=(0,0))
                 window['-ARPEGDIRCOL-'].update(visible=False)
+                window['-OCTCOL-'].set_size(size=(0,0))
+                window['-OCTCOL-'].update(visible=False)
                 newRate = int(values['-RATESLIDE-'])
                 newOrder = values['-ARPEGDIR-'][0]
+                newOct = values['-OCTLIST-'][0]
 
                 newControl.append(newRate)
                 newControl.append(newOrder)
+                newControl.append(newOct)
 
                 if newControl[1] == 0:
                     positionMessage = "On Position: " + str(newControl[2]) + ", On Threshold: " + str(newControl[3]) + "/n"
@@ -1627,7 +1639,7 @@ class UX:
                             # print(f'self.writer.controlList[1].controlLabel: {self.writer.controlList[1].controlLabel}')
                         
                         elif int(self.controlInitData[i][6]) == 1:    #Control is Arpegio
-                            self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][7], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], controlType=self.controlInitData[i][6], conditionData=conditionDataList, bpm = self.writer.bpm, controlNum=i, rate=self.controlInitData[i][8], direction=self.controlInitData[i][9]))
+                            self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][7], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], controlType=self.controlInitData[i][6], conditionData=conditionDataList, bpm = self.writer.bpm, controlNum=i, rate=self.controlInitData[i][8], direction=self.controlInitData[i][9], octave=self.controlInitData[i][10]))
                         #self.writer.controlList.append(newControl)   
                             # print(f'self.writer.controlList: {self.writer.controlList}')
                             # print(f'self.writer.controlList[i+1].controlLabel: {self.writer.controlList[i].controlLabel}')
@@ -1647,7 +1659,7 @@ class UX:
                             # print(f'self.writer.controlList[0].controlLabel: {self.writer.controlList[0].controlLabel}')
                             # print(f'self.writer.controlList[1].controlLabel: {self.writer.controlList[1].controlLabel}')
                         elif int(self.controlInitData[i][10]) == 1:    #Control is Arpegio
-                            self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][11], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], controlType=self.controlInitData[i][10], conditionData=conditionDataList, bpm = self.writer.bpm, controlNum=i, rate=self.controlInitData[i][12], direction=self.controlInitData[i][13]))
+                            self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][11], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], controlType=self.controlInitData[i][10], conditionData=conditionDataList, bpm = self.writer.bpm, controlNum=i, rate=self.controlInitData[i][12], direction=self.controlInitData[i][13], octave=self.controlInitData[i][14]))
                         #self.writer.controlList.append(newControl)   
                             # print(f'self.writer.controlList: {self.writer.controlList}')
                             # print(f'self.writer.controlList[i+1].controlLabel: {self.writer.controlList[i].controlLabel}')
