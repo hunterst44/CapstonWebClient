@@ -87,6 +87,11 @@ class GetData:
         print(f'dataTx: {self.dataTx}')
         print(f'host {host}')
         print(f'port: {port}')
+       
+        hostLen = len(host)
+        if not host[hostLen-1].isdigit():
+            print('Please enter a valid IP address')
+            return -1
 
         self.sock = socket.socket()
         #self.sock.setblocking(False)
@@ -154,26 +159,26 @@ class GetData:
             return [['-1']]
 
     def logCSVRow(self, pathSuffix, csvRowList, *, append=True):
-        print()
-        print(f'logCSVRow()')
-        if append == True:
-            mode = 'a'
-        else:
-            mode = 'w'
-        networkPath = str(self.pathPreface) + '/' + pathSuffix #"/networks.csv"
-        print(f'CSV writer path: {networkPath}')
-        if networkPath != -1:
-            if os.path.exists(networkPath):
-                print(f"network file exists")
-                with open(networkPath, mode, newline='') as csvfile:
-                    csvWrite = csv.writer(csvfile)
-                    csvWrite.writerow(csvRowList)
-                    #[self.ssid, self.pswd, self.host, self.port]
-        else:
-            print(f"Creating new network file")
-            with open(networkPath, 'w', newline='') as csvfile:
-                csvWrite = csv.writer(csvfile)
-                csvWrite.writerow(csvRowList)
+            print()
+            print(f'logCSVRow()')
+            if append == True:
+                mode = 'a'
+            else:
+                mode = 'w'
+            if pathSuffix != -1:
+                networkPath = self.pathPreface + '/' + pathSuffix #"/networks.csv"
+                print(f'CSV writer path: {networkPath}')
+                if os.path.exists(networkPath):
+                    print(f"file exists")
+                    with open(networkPath, mode, newline='') as csvfile:
+                        csvWrite = csv.writer(csvfile)
+                        csvWrite.writerow(csvRowList)
+                        #[self.ssid, self.pswd, self.host, self.port]
+                else:
+                    print(f"Creating new file")
+                    with open(networkPath, 'w', newline='') as csvfile:
+                        csvWrite = csv.writer(csvfile)
+                        csvWrite.writerow(csvRowList)
 
 
     def promptServer(self, dataTx, host, port, rcount):
