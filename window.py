@@ -140,7 +140,7 @@ class Window:
                 #[sg.Input('How many hand positions will you train?', key="-NUMPOS-", visible=False, enable_events=True)]
             ],
             [sg.Push(),sg.Column([
-                [sg.Text(Message00Text, key='-TOPMESSAGE00-', visible=True)], 
+                [sg.T(Message00Text, key='-TOPMESSAGE00-', visible=True)], 
                 [sg.T(controlListStr, key='-TOPMESSAGE01-', visible=True)]
                 ], key='-TOPMESSAGE00COL-', element_justification='left', expand_x = True, vertical_alignment='t', pad=(LEFTMARGIN,0)), sg.Push(),
             sg.Push(),sg.Column([
@@ -148,33 +148,77 @@ class Window:
                 [sg.Btn('Overwrite', **self.button1_properties(), key='-NEWCONTROLBTN-', visible=logVisibility)],
                 [sg.Btn('Continue', **self.button1_properties(), key='-CONTUBTN-', visible=False)] 
                 ], key='-CNTRLOVERIDECOL-', element_justification='left', expand_x = True, vertical_alignment='t', pad=(LEFTMARGIN,0), visible=logVisibility), sg.Push(),
-
-                            
             sg.Push(), sg.Column([
                 [sg.Listbox(midiOutList, size=(50, 8), key="-MIDIPORTOUT-", expand_x=True, expand_y=True,enable_events=True, visible=logInvisibility)], 
                 [sg.Btn('Refresh', **self.button1_properties(), key='-MIDIOUTLISTRFH-', visible=logInvisibility)], 
                 [sg.Btn('Connect', **self.button1_properties(), key='-MIDIOUTCNTBTN-', visible=logInvisibility)]
-                ], 
-                key='-MIDIPORTOUTCOL-',  element_justification='left', expand_x = True, vertical_alignment='t', pad=(LEFTMARGIN,0)),sg.Push(),
+                ], key='-MIDIPORTOUTCOL-',  element_justification='left', expand_x = True, vertical_alignment='t', pad=(LEFTMARGIN,0)),sg.Push(),
             ],
-            [
-                sg.pin(sg.Column([[sg.T("BPM", key='-BPMLABEL-', visible=False)],[sg.Slider(range=(30, 300), default_value=120, expand_x=True,orientation='horizontal', key='-BPMSLIDE-', visible=False)], [sg.Btn('Ok', **self.button2_properties(), key='-BPMBTN-', visible=False)]], key='-BPMCOL-',  vertical_alignment='t', pad=(0,0)), shrink=True),
-                sg.Column([[sg.Input('Control Name', size=(15,10), key="-CTRLNAME-", visible=False)], [sg.Btn('Ok', **self.button2_properties(), key='-CTRLNAMEBTN-', visible=False)]], key='-CTRLNAMECOL-',  vertical_alignment='t', visible=False, pad=(0,0)),
-                sg.Column([[sg.Listbox(conditionTypeList, size=(10, 3), key="-CONDTYPE-", expand_y=True, enable_events=True, visible=False)]], key='-CONDTYPECOL-',  vertical_alignment='t', pad=(0,0), visible=False),
-                sg.Column([[sg.T(f"Position, threshold Control ON.", key='-CURRPOSONLABEL-', size=(15,2), visible=False)], [sg.Listbox(currentPositionList, size=(10, 3), key="-CURRPOSLISTON-", expand_y=True, enable_events=True, visible=False)], [sg.Slider(range=(1, 25), default_value=3, expand_x=True,orientation='horizontal', key='-CURRPOSONSLIDE-', visible=False)]], key='-CURRPOSLISTONCOL-',  vertical_alignment='t', pad=(0,0), visible=False),
-                sg.Column([[sg.T(f"Position, threshold at END ON.", key='-CURRPOSTRANSONLABEL-', size=(15,2), visible=False)], [sg.Listbox(currentPositionList, size=(10, 3), key="-CURRPOSLISTTRANSON-", expand_y=True, enable_events=True, visible=False)], [sg.Slider(range=(1, 25), default_value=3, expand_x=True,orientation='horizontal', key='-CURRPOSTRANSONSLIDE-', visible=False)]], key='-CURRPOSLISTTRANSONCOL-',  vertical_alignment='t', pad=(0,0), visible=False),
-                
-                sg.Column([[sg.T(f"Position, threshold control OFF.", key='-CURRPOSOFFLABEL-', size=(15,2), visible=False)], [sg.Listbox(currentPositionList, size=(10, 3), key="-CURRPOSLISTOFF-", expand_y=True, enable_events=True, visible=False)], [sg.Slider(range=(1, 25), default_value=3, expand_x=True,orientation='horizontal', key='-CURRPOSOFFSLIDE-', visible=False)], [sg.Btn('Ok', key='-CONDBTN-', visible=False)]], key='-CURRPOSLISTOFFCOL-', vertical_alignment='t', pad=(0,0), visible=False),
-                sg.Column([[sg.T(f"Position, threshold at END OFF.", key='-CURRPOSOFFTRANSLABEL-', size=(15,2), visible=False)], [sg.Listbox(currentPositionList, size=(10, 3), key="-CURRPOSLISTTRANSOFF-", expand_y=True, enable_events=True, visible=False)], [sg.Slider(range=(1, 25), default_value=3, expand_x=True,orientation='horizontal', key='-CURRPOSOFFTRANSSLIDE-', visible=False)], [sg.Btn('Ok', key='-CONDTRANSBTN-', visible=False)]], key='-CURRPOSLISTTRANSOFFCOL-',  vertical_alignment='t', pad=(0,0), visible=False),
-                sg.Column([[sg.Listbox(arpegDirList, size=(10, 3), key="-ARPEGDIR-", expand_y=True, enable_events=True, visible=False)], [sg.Btn('Ok', **self.button2_properties(), key='-ARPEGBTN-', visible=False)]], key='-ARPEGDIRCOL-',  vertical_alignment='t', pad=(0,0), visible=False),
-                
-                sg.Column([[sg.Listbox(controlList, size=(10, 3), key="-CTRLLIST-", expand_y=True, enable_events=True, visible=False)], [sg.Btn('Select', **self.button1_properties(), key='-SELCNTRLTYPEBTN-', visible=False)]], key='-CTRLLISTCOL-',  vertical_alignment='t', pad=(0,0)),
-                sg.Column([[sg.T(f"Rate", key='-RATELABEL-', size=(15,2), visible=False)], [sg.Slider(range=(0, 127), default_value=30, expand_x=True,orientation='horizontal', key='-RATESLIDE-', visible=False)]], key='-RATECOL-', vertical_alignment='t', pad=(0,0)),
-                sg.Column([[sg.T(f"Waveform", key='-WAVELABEL-', size=(15,2), visible=False)], [sg.Listbox(waveList, size=(50, 3), key="-WAVELIST-", enable_events=True, visible=False)]], key='-WAVECOL-',  vertical_alignment='t', pad=(0,0)),
-                sg.Column([[sg.T(f"Minimum", key='-MINLABEL-', size=(15,2), visible=False)], [sg.Slider(range=(0, 127), default_value=30, expand_x=True,orientation='horizontal', key='-MINSLIDE-', visible=False)]], key='-MINCOL-',  vertical_alignment='t', pad=(0,0)),
-                sg.Column([[sg.T(f"Maximum", key='-MAXLABEL-', size=(15,2), visible=False)], [sg.Slider(range=(0, 127), default_value=30, expand_x=True,orientation='horizontal', key='-MAXSLIDE-', visible=False)], [sg.Btn('Ok', **self.button2_properties(), key='-MODDATABTN-', visible=False)]], key='-MAXCOL-',  vertical_alignment='t', pad=(0,0)),
-                sg.Column([[sg.T(f"Click 'Another' to setup another control, or click 'Done' to continue.", key='-DONELABEL-', size=(15,2), visible=False)], [sg.Btn('Another', **self.button1_properties(), key='-ANOTHERBTN-', visible=False)], [sg.Btn('Done', **self.button1_properties(), key='-MAPPINGDONEBTN-', visible=False)] ], key='-DONECOL-',  vertical_alignment='t', pad=(0,0), visible=False),
-                #sg.Column([[sg.T(f"Min / Max", key='-MINMAXLABEL-', size=(15,2), visible=False)], [sg.Listbox(waveList, size=(50, 15), key="-WAVELIST-", expand_y=True, enable_events=True, visible=False)]], key='-MINCOL-',  vertical_alignment='t', pad=(0,0))
+            [sg.pin(sg.Column([
+                [sg.T("BPM", key='-BPMLABEL-', visible=False)],
+                [sg.Slider(range=(30, 300), default_value=120, expand_x=True,orientation='horizontal', key='-BPMSLIDE-', visible=False)],
+                [sg.Btn('Ok', **self.button2_properties(), key='-BPMBTN-', visible=False)]
+                ], key='-BPMCOL-',  vertical_alignment='t', pad=(LEFTMARGIN,0)), shrink=True),
+            sg.Column([
+                [sg.Input('Control Name', size=(15,10), key="-CTRLNAME-", visible=False)],
+                [sg.Btn('Ok', **self.button2_properties(), key='-CTRLNAMEBTN-', visible=False)]
+                ], key='-CTRLNAMECOL-',  vertical_alignment='t', visible=False, pad=(LEFTMARGIN,0)),
+            sg.Column([
+                [sg.Listbox(conditionTypeList, size=(10, 3), key="-CONDTYPE-", expand_y=True, enable_events=True, visible=False)]
+                ], key='-CONDTYPECOL-',  vertical_alignment='t', pad=(LEFTMARGIN,0), visible=False),
+            sg.Column([
+                [sg.T(f"Position, threshold Control ON.", key='-CURRPOSONLABEL-', size=(15,2), visible=False)],
+                [sg.Listbox(currentPositionList, size=(10, 3), key="-CURRPOSLISTON-", expand_y=True, enable_events=True, visible=False)],
+                [sg.Slider(range=(1, 25), default_value=3, expand_x=True,orientation='horizontal', key='-CURRPOSONSLIDE-', visible=False)]
+                ], key='-CURRPOSLISTONCOL-',  vertical_alignment='t', pad=(LEFTMARGIN,0), visible=False),
+            sg.Column([
+                [sg.T(f"Position, threshold at END ON.", key='-CURRPOSTRANSONLABEL-', size=(15,2), visible=False)],
+                [sg.Listbox(currentPositionList, size=(10, 3), key="-CURRPOSLISTTRANSON-", expand_y=True, enable_events=True, visible=False)],
+                [sg.Slider(range=(1, 25), default_value=3, expand_x=True,orientation='horizontal', key='-CURRPOSTRANSONSLIDE-', visible=False)]
+                ], key='-CURRPOSLISTTRANSONCOL-',  vertical_alignment='t', pad=(LEFTMARGIN,0), visible=False),
+            sg.Column([
+                [sg.T(f"Position, threshold control OFF.", key='-CURRPOSOFFLABEL-', size=(15,2), visible=False)],
+                [sg.Listbox(currentPositionList, size=(10, 3), key="-CURRPOSLISTOFF-", expand_y=True, enable_events=True, visible=False)],
+                [sg.Slider(range=(1, 25), default_value=3, expand_x=True,orientation='horizontal', key='-CURRPOSOFFSLIDE-', visible=False)],
+                [sg.Btn('Ok', **self.button2_properties(), key='-CONDBTN-', visible=False)]
+                ], key='-CURRPOSLISTOFFCOL-', vertical_alignment='t', pad=(LEFTMARGIN,0), visible=False),
+            sg.Column([
+                [sg.T(f"Position, threshold at END OFF.", key='-CURRPOSOFFTRANSLABEL-', size=(15,2), visible=False)],
+                [sg.Listbox(currentPositionList, size=(10, 3), key="-CURRPOSLISTTRANSOFF-", expand_y=True, enable_events=True, visible=False)],
+                [sg.Slider(range=(1, 25), default_value=3, expand_x=True,orientation='horizontal', key='-CURRPOSOFFTRANSSLIDE-', visible=False)],
+                [sg.Btn('Ok', key='-CONDTRANSBTN-', visible=False)]
+                ], key='-CURRPOSLISTTRANSOFFCOL-',  vertical_alignment='t', pad=(LEFTMARGIN,0), visible=False),
+            sg.Column([
+                [sg.Listbox(arpegDirList, size=(10, 3), key="-ARPEGDIR-", expand_y=True, enable_events=True, visible=False)],
+                [sg.Btn('Ok', **self.button2_properties(), key='-ARPEGBTN-', visible=False)]
+                ], key='-ARPEGDIRCOL-',  vertical_alignment='t', pad=(LEFTMARGIN,0), visible=False),
+            sg.Column([
+                [sg.Listbox(controlList, size=(10, 3), key="-CTRLLIST-", expand_y=True, enable_events=True, visible=False)],
+                [sg.Btn('Select', **self.button1_properties(), key='-SELCNTRLTYPEBTN-', visible=False)]
+                ], key='-CTRLLISTCOL-',  vertical_alignment='t', pad=(LEFTMARGIN,0)),
+            sg.Column([
+                [sg.T(f"Rate", key='-RATELABEL-', size=(15,2), visible=False)],
+                [sg.Slider(range=(0, 127), default_value=30, expand_x=True,orientation='horizontal',key='-RATESLIDE-', visible=False)]
+                ], key='-RATECOL-', vertical_alignment='t', pad=(LEFTMARGIN,0)),
+            sg.Column([
+                [sg.T(f"Waveform", key='-WAVELABEL-', size=(15,2), visible=False)],
+                [sg.Listbox(waveList, size=(50, 3), key="-WAVELIST-", enable_events=True, visible=False)]
+                ], key='-WAVECOL-',  vertical_alignment='t', pad=(LEFTMARGIN,0)),
+            sg.Column([
+                [sg.T(f"Minimum", key='-MINLABEL-', size=(15,2), visible=False)],
+                [sg.Slider(range=(0, 127), default_value=30, expand_x=True,orientation='horizontal', key='-MINSLIDE-', visible=False)]
+                ], key='-MINCOL-',  vertical_alignment='t', pad=(LEFTMARGIN,0)),
+            sg.Column([
+                [sg.T(f"Maximum", key='-MAXLABEL-', size=(15,2), visible=False)],
+                [sg.Slider(range=(0, 127), default_value=30, expand_x=True,orientation='horizontal', key='-MAXSLIDE-', visible=False)],
+                [sg.Btn('Ok', **self.button2_properties(), key='-MODDATABTN-', visible=False)]
+                ], key='-MAXCOL-',  vertical_alignment='t', pad=(LEFTMARGIN,0)),
+            sg.Column([
+                [sg.T(f"Click 'Another' to setup another control, or click 'Done' to continue.", key='-DONELABEL-', size=(15,2), visible=False)],
+                [sg.Btn('Another', **self.button1_properties(), key='-ANOTHERBTN-', visible=False)],
+                [sg.Btn('Done', **self.button1_properties(), key='-MAPPINGDONEBTN-', visible=False)]
+                ], key='-DONECOL-',  vertical_alignment='t', pad=(0,0), visible=False),
+            #sg.Column([[sg.T(f"Min / Max", key='-MINMAXLABEL-', size=(15,2), visible=False)], [sg.Listbox(waveList, size=(50, 15), key="-WAVELIST-", expand_y=True, enable_events=True, visible=False)]], key='-MINCOL-',  vertical_alignment='t', pad=(0,0))
             ]
         ]
         window2=self.create_window(content_layout,windowtitlemsg)
