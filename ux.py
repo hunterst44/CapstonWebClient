@@ -67,7 +67,7 @@ class UX:
         self.goTrain = 0
         self.Test = 0 # A variable to test things
         self.windowSizeX = 900
-        self.windowSizeY = 700
+        self.windowSizeY = 500
         self.stopPredict = 0
         self.dataStream = socketClientUx.GetData() # default values: host="192.168.4.1", port=80, packetSize=1, numSensors=4, pathPreface='data/test', labelPath="Test", label=0, getTraining=True
         self.IPAddress = ''
@@ -92,6 +92,22 @@ class UX:
 ##############                  Control Methods                               #################
 ###############################################################################################
 
+    def trainLoggedData(self, dir):
+        print()
+        print(f'trainLoggedData(self)')
+
+        oldPath = self.dataStream.pathPreface
+        self.dataStream.pathPreface = dir
+        oldPathList = self.positionPathList
+      
+        gestureList = self.getloggedCSV('modelLog.csv')
+        self.positionPathList = gestureList[0]
+        print(f'self.positionPathList: {self.positionPathList}' )
+        self.trainModel()
+
+        self.dataStream.pathPreface = oldPath
+        self.positionPathList = oldPathList
+    
     def trainModel(self):
         #iterate through all the handPositions and collect packetLimit samples of each
         #Called in window 2 and 2.1 where user provides data to set up model and data
@@ -273,7 +289,7 @@ class UX:
         return controlListStr, textHeight
     
     def getloggedCSV(self, pathSuffix):
-        networkPath = self.pathPreface + '/' + pathSuffix #"/networks.csv"
+        networkPath = self.dataStream.pathPreface + '/' + pathSuffix #"/networks.csv"
         if os.path.exists(networkPath):
             with open(networkPath, 'r') as csvfile:
                 networkList = list(csv.reader(csvfile, delimiter=","))
@@ -398,7 +414,7 @@ class UX:
         for i in range(numOutPOrts):
             midiOutList.append(self.writer.available_MiDiPortsOut[i])
 
-        controlList = ['Modulate', 'Arrpegiate']
+        controlList = ['Modulate', 'Arrpegiate', 'ToF Control']
         waveList = ['sine', 'square', 'saw']
         conditionTypeList = ['Hold', 'Transition']
         currentPositionList = []
@@ -1414,9 +1430,19 @@ class UX:
                         window['-ARPEGDIR-'].update(visible=True)
                         window['-ARPEGBTN-'].update(visible=True)       
                         
-                    elif values['-CTRLLIST-'][0] == 'Play Note':
+                    elif values['-CTRLLIST-'][0] == 'ToF Control':
                         print(f'Play Note')
-                        #newControl.append(2)
+                        newControl.append(2)
+                        if (usedChannels['n'] < 17):
+                            newControl.append(usedChannels['n']) #newControl[3]
+                            usedChannels['n'] += 1
+                            print(f'newControl: {newControl}')
+                        else:
+                            print('Used up all channels')
+                            window2.hide()
+                            window3_1 =self.makeWindow3_1()
+
+                        window.write_event_value("-TOFBTN-", '') 
 
                 if event == '-MODDATABTN-':
                     print()
@@ -1498,7 +1524,7 @@ class UX:
                 
                 print(f'self.controlInitData: {self.controlInitData}')
                 
-                controlTypeStr = 'Arpegiator'
+                #controlTypeStr = 'Arpegiator'
                 window['-TOPMESSAGE01-'].update(f'Control Created!')
                 window['-TOPMESSAGE01-'].update(visible=True)
                 window['-DONELABEL-'].update(visible=True)
@@ -1507,7 +1533,37 @@ class UX:
                 window['-DONECOL-'].update(visible=True)
                 window.refresh()
                     #window['-MESSAGE01-'].update(f'Control Created! /n Name:{newControl[0]} /n Condition Type:{newControl[1]} /n {positionMessage} Control Type: {controlTypeStr} /n Rate: {newControl[5]} /n Waveform: {newControl[6]} /n Minimum: {newControl[7]} Maximum: {newControl[8]}')
-                        
+
+            if event == '-TOFBTN-':
+                print()
+                print(f'Window 2 -TOFBTN-')
+                
+                if newControl[1] == 0:
+                    positionMessage = "On Position: " + str(newControl[2]) + ", On Threshold: " + str(newControl[3]) + "/n"
+                    positionMessage = positionMessage + "Off Position: " + str(newControl[4]) + ", Off Threshold: " + str(newControl[5])
+                elif newControl[1] == 1:
+                    positionMessage = "Start /n On Position: " + str(newControl[2]) + ", Threshold: " + str(newControl[3]) + "/n"
+                    positionMessage = positionMessage + "End /n On Position: " + str(newControl[4]) + ", Threshold: " + str(newControl[5]) + "/n"
+                    positionMessage = positionMessage + "Start /n off Position: " + str(newControl[6]) + ", Threshold: " + str(newControl[7]) + "/n"
+                    positionMessage = positionMessage + "End /n Off Position: " + str(newControl[8]) + ", Threshold: " + str(newControl[9]) + "/n"
+                else:
+                    positionMessage = "[[XX,XX],[XX,XX]]"
+
+                self.controlInitData.append(newControl)
+                print(f'newControl: {newControl}')
+                
+                print(f'self.controlInitData: {self.controlInitData}')
+                
+                #controlTypeStr = 'Arpegiator'
+                window['-TOPMESSAGE01-'].update(f'Control Created!')
+                window['-TOPMESSAGE01-'].update(visible=True)
+                window['-DONELABEL-'].update(visible=True)
+                window['-ANOTHERBTN-'].update(visible=True)
+                window['-MAPPINGDONEBTN-'].update(visible=True)
+                window['-DONECOL-'].update(visible=True)
+                window.refresh()
+
+
             if event == '-MAPPINGDONEBTN-':
                 print()
                 print(f'Window 2 -MAPPINGDONEBTN-')
@@ -1568,6 +1624,7 @@ class UX:
                             # print(f'self.writer.controlList[i+1].controlLabel: {self.writer.controlList[i].controlLabel}')
                             # print(f'self.writer.controlList[0].controlLabel: {self.writer.controlList[0].controlLabel}')
                             # print(f'self.writer.controlList[1].controlLabel: {self.writer.controlList[1].controlLabel}')
+                        
                         elif int(self.controlInitData[i][6]) == 1:    #Control is Arpegio
                             self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][7], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], controlType=self.controlInitData[i][6], conditionData=conditionDataList, bpm = self.writer.bpm, controlNum=i, rate=self.controlInitData[i][8], direction=self.controlInitData[i][9]))
                         #self.writer.controlList.append(newControl)   
@@ -1575,6 +1632,12 @@ class UX:
                             # print(f'self.writer.controlList[i+1].controlLabel: {self.writer.controlList[i].controlLabel}')
                             # print(f'self.writer.controlList[0].controlLabel: {self.writer.controlList[0].controlLabel}')
                             #print(f'self.writer.controlList[1].controlLabel: {self.writer.controlList[1].controlLabel}')
+                   
+                        elif int(self.controlInitData[i][6]) == 2:    #Control is ToF data
+                            self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][7], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], controlType=self.controlInitData[i][6], conditionData=conditionDataList, bpm = self.writer.bpm, controlNum=i))
+                        
+                   
+                   
                     elif int(self.controlInitData[i][1]) == 1:  #Condition type = Transition
                         conditionDataList = [
                             [[int(self.controlInitData[i][2]), int(self.controlInitData[i][3])], [int(self.controlInitData[i][4]), int(self.controlInitData[i][5])]],
@@ -1595,6 +1658,10 @@ class UX:
                             # print(f'self.writer.controlList[i+1].controlLabel: {self.writer.controlList[i].controlLabel}')
                             # print(f'self.writer.controlList[0].controlLabel: {self.writer.controlList[0].controlLabel}')
                             # print(f'self.writer.controlList[1].controlLabel: {self.writer.controlList[1].controlLabel}')
+
+                        elif int(self.controlInitData[i][6]) == 2:    #Control is ToF data
+                            self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][7], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], controlType=self.controlInitData[i][6], conditionData=conditionDataList, bpm = self.writer.bpm, controlNum=i))
+                        
 
             if event == '-ANOTHERBTN-':
                 print()
