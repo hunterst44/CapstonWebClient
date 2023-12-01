@@ -271,6 +271,38 @@ class UX:
         print(f'controlListStr: {controlListStr}')
         
         return controlListStr, textHeight
+    
+    def getloggedCSV(self, pathSuffix):
+        networkPath = self.pathPreface + '/' + pathSuffix #"/networks.csv"
+        if os.path.exists(networkPath):
+            with open(networkPath, 'r') as csvfile:
+                networkList = list(csv.reader(csvfile, delimiter=","))
+                print(f'networkList; {networkList}')
+            return networkList
+        else:
+            return [['-1']]
+
+    def logCSVRow(self, pathSuffix, csvRowList, *, append=True):
+        print()
+        print(f'logCSVRow()')
+        if append == True:
+            mode = 'a'
+        else:
+            mode = 'w'
+        if pathSuffix != -1:
+            networkPath = self.dataStream.pathPreface + '/' + pathSuffix #"/networks.csv"
+            print(f'CSV writer path: {networkPath}')
+            if os.path.exists(networkPath):
+                print(f"file exists")
+                with open(networkPath, mode, newline='') as csvfile:
+                    csvWrite = csv.writer(csvfile)
+                    csvWrite.writerow(csvRowList)
+                    #[self.ssid, self.pswd, self.host, self.port]
+            else:
+                print(f"Creating new file")
+                with open(networkPath, 'w', newline='') as csvfile:
+                    csvWrite = csv.writer(csvfile)
+                    csvWrite.writerow(csvRowList)
             
 
     
@@ -344,7 +376,7 @@ class UX:
 
     #Window one welcome, load / create model
         layout = [[sg.Text('The Conductor: Window 1'), sg.Text(size=(2,1), key='-OUTPUT-')],
-                [sg.pin(sg.Column([[sg.Text(modelMessage, key="-MODELMESSAGE00-", visible=True)], [sg.Button('Ok', key='-USEDEFAULTBTN-', visible=existsVis)], [sg.Button('Ok', key='-CREATEMOEDLBTN-', visible=notVis)], [sg.Button('Ok', key='-ACCPTDEFAULT-', visible=notVis)]], pad=(0,0)), shrink=True)], 
+                [sg.pin(sg.Column([[sg.Text(modelMessage, key="-MODELMESSAGE00-", visible=True)], [sg.Button('Ok', key='-USEDEFAULTBTN-', visible=existsVis)], [sg.Button('Create New', key='-CREATEMOEDLBTN-', visible=True)], [sg.Button('Ok', key='-ACCPTDEFAULT-', visible=False)]], pad=(0,0)), shrink=True)], 
                 [sg.pin(sg.Column([[sg.Text(modelMessage, key="-MODELMESSAGE01-", visible=False)]], pad=(0,0)), shrink=True)],                #[sg.pin(sg.Column([[sg.FolderBrowse(size=(8,1), visible=True, key='-CHOOSEDIR-')],[sg.Text(f"Or Browse for a new folder and click 'New Folder.'", key="-MODELMESSAGE01-", visible=True)], [sg.Button('New Folder', key='-NEWFOLDER-', visible=True)], [sg.Button('Ok', key='-ACCPTDEFAULT-', visible=False)]], pad=(0,0)), shrink=True)],
                 [sg.pin(sg.Column([[sg.Input('How many hand positions will you train?', key="-NUMPOS-", visible=False, enable_events=True)]], pad=(0,0)), shrink=True)],
                 [sg.pin(sg.Column([[sg.Input('Position 1 label', key="-POSLABEL-", visible=False)], [sg.Button('SUBMIT', key='-SUBLABELBTN-', visible=False)]], pad=(0,0)), shrink=True)],
@@ -439,24 +471,6 @@ class UX:
                         sg.Column([[sg.Text(f"Click 'Another' to setup another control, or click 'Done' to continue.", key='-DONELABEL-', size=(15,2), visible=False)], [sg.Button('Another', key='-ANOTHERBTN-', visible=False)], [sg.Button('Done', key='-MAPPINGDONEBTN-', visible=False)] ], key='-DONECOL-', background_color = 'Green', vertical_alignment='t', pad=(0,0), visible=False),
                         #sg.Column([[sg.Text(f"Min / Max", key='-MINMAXLABEL-', size=(15,2), visible=False)], [sg.Listbox(waveList, size=(50, 15), key="-WAVELIST-", expand_y=True, enable_events=True, visible=False)]], key='-MINCOL-', background_color = 'Orange', vertical_alignment='t', pad=(0,0))
                     ]
-        #          [[sg.pin(sg.Column([[sg.Text(f"Let's map MiDi controls to hand positions.", key='-TOPMESSAGE00-', size=(100,2), visible=True)]], key='-TOPMESSAGE00COL-', background_color = 'Green'), shrink=True, expand_x = True, expand_y = True)],
-        #           [sg.pin(sg.Column([[sg.Text(f"First choose a MiDi port to send commands to:", key='-TOPMESSAGE01-', size=(100,2), visible=True)]], key='-MIDIPORTOUTCOL-', background_color = 'Blue'), shrink=True, expand_x = True, expand_y = True)]],
-        #           [sg.pin(sg.Column([[sg.Listbox(midiOutList, size=(50, 8), key="-MIDIPORTOUT-", expand_y=True, expand_x=True, enable_events=True, visible=True)], [sg.Button('Refresh', key='-MIDIOUTLISTRFH-', visible=True)], [sg.Button('Connect', key='-MIDIOUTCNTBTN-', visible=True)]], size=(250,220), expand_x = True, expand_y = True, pad=(0,0), key='-BPMCOL-', background_color = 'Red'), expand_x = True, expand_y = True, shrink=True)],
-        #           [sg.pin(sg.Column([[sg.Text(f"BPM", key='-BPMLABEL-', size=(15,2), visible=False)], [sg.Slider(range=(30, 300), default_value=120, expand_x=True,orientation='horizontal', key='-BPMSLIDE-', visible=False)],  [sg.Button('Ok', key='-BPMBTN-', visible=False)]], pad=(0,0), key='-CTRLLISTCOL-', background_color = 'Yellow'), shrink=True, expand_x = True, expand_y = True,)],
-                  
-                  
-        #           #[sg.pin(sg.Column([[sg.Text(f"BPM", key='-BPMLABEL-', size=(15,2), visible=False)], [sg.Slider(range=(30, 300), default_value=120, expand_x=True,orientation='horizontal', key='-BPMSLIDE-', visible=False)],  [sg.Button('Ok', key='-BPMBTN-', visible=True)]], pad=(0,0), visible=False, key='-BPMCOL-'), shrink=True)],
-                  
-                  
-        #           [sg.pin(sg.Column([[sg.Text(f"Waveform", key='-WAVELABEL-', size=(15,2), visible=False)], [sg.Listbox(waveList, size=(50, 15), key="-WAVELIST-", expand_y=True, enable_events=True, visible=False)]], pad=(0,0)), shrink=True)],
-        #           [sg.pin(sg.Column([[sg.Text(f"Rate", key='-RATELABEL-', size=(15,2), visible=False)], [rateGraph]], pad=(0,0)), shrink=True)],
-        #           [sg.pin(sg.Column([[sg.Listbox(controlList, size=(10, 3), key="-CTRLLIST-", expand_y=True, enable_events=True, visible=False)], [sg.Button('Select', key='-SELCNTRLTYPEBTN-', visible=False)]], pad=(0,0)), shrink=True)],
-                  
-                 
-                 
-   #[sg.pin(sg.Column([[sg.Button('Reconnect', key='-RECNTBTN-', visible=True)]], pad=(0,0)), shrink=True)]#[sg.pin(sg.Column([[sg.Text('Train Model'), sg.Text(size=(2,1), key='-TRAIN-'), sg.Button('Train', key='-TRAINBTN-')]]))],
-                  #[sg.pin(sg.Column([[sg.Text('Predict hand positions'), sg.Text(size=(2,1), key='-PREDICT-'), sg.Button('Predict', key='-PREDICTBTN-')]]))],
-                  #[sg.pin(sg.Column([[sg.Text('', visible=True, key='-WORDS-'), sg.Text(size=(2,1))]], pad=(0,0)), shrink=False)],
        ]
         return sg.Window('THE CONDUCTOR: Step 2 Map positions to controls', layout, layout, size=(self.windowSizeX,self.windowSizeY), finalize=True)
     
@@ -720,7 +734,7 @@ class UX:
                             window['-MESSAGE-'].update(f"Connected to server at {self.dataStream.host} on {self.dataStream.ssid}")
                         
                             window.refresh()
-                            self.dataStream.logCSVRow('networks.csv', [self.dataStream.ssid, self.dataStream.pswd, self.dataStream.host, self.dataStream.port])
+                            self.logCSVRow('networks.csv', [self.dataStream.ssid, self.dataStream.pswd, self.dataStream.host, self.dataStream.port])
                             time.sleep(2)
                             window1 = self.makeWindow1()
                             window0.hide()
@@ -747,7 +761,7 @@ class UX:
                     print(f'self.dataStream.host: {self.dataStream.host}')
                     print(f'self.dataStream.port: {self.dataStream.port}')
 
-                    self.dataStream.logCSVRow('networks.csv', [self.dataStream.ssid, self.dataStream.pswd, self.dataStream.host, self.dataStream.port])
+                    self.logCSVRow('networks.csv', [self.dataStream.ssid, self.dataStream.pswd, self.dataStream.host, self.dataStream.port])
 
                     window0.hide()
                     window1 = self.makeWindow1()
@@ -758,9 +772,7 @@ class UX:
                     self.dataStream.sock.close()
                     window0.hide()
                     window1 = self.makeWindow1()
-                    
-                    
-           
+                              
 ##############     Window1          #################            
             if window == window1:
                 print()
@@ -801,13 +813,13 @@ class UX:
                         #TODO write the positions to the GUI and let the user select
                     else:
                         newPathPreface = self.dataStream.pathPreface
-                        print(f"No model at {self.dataStream.pathPreface}. Use this folder and create new model?")
-                        window['-MODELMESSAGE00-'].update(f"No model at {self.dataStream.pathPreface}. Use this folder and create new model?")
+                        print(f"No model configuration data at {self.dataStream.pathPreface}. Use this folder and create new model?")
+                        window['-MODELMESSAGE00-'].update(f"No model configuration data at {self.dataStream.pathPreface}. Create a new model?")
                         window['-USEDEFAULTBTN-'].update(visible=False)
                         window['-CREATEMOEDLBTN-'].update(visible=True)
-                        window['-CHOOSEDIR-'].update(visible=False)
+                       # window['-CHOOSEDIR-'].update(visible=False)
                         window['-MODELMESSAGE01-'].update(visible=False)
-                        window['-NEWFOLDER-'].update(visible=False)
+                        #window['-NEWFOLDER-'].update(visible=False)
                         window.refresh()
 
                 if event == '-ACCPTDEFAULT-':
@@ -891,9 +903,9 @@ class UX:
                     window['-USEDEFAULTBTN-'].update(visible=False)
                     #Update pathPreface and numpositions with user's preference
                     if positionLabelCount == 0:
-                        print(f'self.dataStream.pathPreface: {self.dataStream.pathPreface}')
-                        print(f'newPathPreface: {newPathPreface}')
-                        self.dataStream.pathPreface = newPathPreface
+                        # print(f'self.dataStream.pathPreface: {self.dataStream.pathPreface}')
+                        # print(f'newPathPreface: {newPathPreface}')
+                        #self.dataStream.pathPreface = newPathPreface
                         
                         window.refresh()
                         
@@ -917,7 +929,7 @@ class UX:
                         window.refresh()
                     
                     else: #All the labels are in log em...
-                        self.dataStream.logCSVRow('modelLog.csv', self.positionPathList, append=False)
+                        self.logCSVRow('modelLog.csv', self.positionPathList, append=False)
                         window['-POSLABEL-'].update(visible=False)
                         window['-SUBLABELBTN-'].update(visible=False)
                         #self.dataStream.logCSVRow('modelLog.csv', self.positionPathList)
@@ -1094,7 +1106,7 @@ class UX:
                     self.writer.bpm = values["-BPMSLIDE-"]
                     print(f'controlPath: {controlPath}')
                     #Write the midiport and bpm to the file - overwrite file
-                    self.dataStream.logCSVRow('controls.csv', [self.writer.midiPortOut, self.writer.bpm], append=False)
+                    self.logCSVRow('controls.csv', [self.writer.midiPortOut, self.writer.bpm], append=False)
                     print(f'Write Port and Midi out')
                     
                     #Check the file contents
@@ -1533,7 +1545,7 @@ class UX:
                     
                     # print(isinstance(self.controlInitData[i][1], int))
                     if self.controlLogCheck == 0: #Not using the logged data so we need a new log
-                        self.dataStream.logCSVRow('controls.csv', self.controlInitData[i], append=True)
+                        self.logCSVRow('controls.csv', self.controlInitData[i], append=True)
                     #tmpList.append(self.controlInitData[i])
 
                         #Check the file has been logged properly
@@ -1559,10 +1571,10 @@ class UX:
                         elif int(self.controlInitData[i][6]) == 1:    #Control is Arpegio
                             self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][7], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], controlType=self.controlInitData[i][6], conditionData=conditionDataList, bpm = self.writer.bpm, controlNum=i, rate=self.controlInitData[i][8], direction=self.controlInitData[i][9]))
                         #self.writer.controlList.append(newControl)   
-                            print(f'self.writer.controlList: {self.writer.controlList}')
-                            print(f'self.writer.controlList[i+1].controlLabel: {self.writer.controlList[i].controlLabel}')
-                            print(f'self.writer.controlList[0].controlLabel: {self.writer.controlList[0].controlLabel}')
-                            print(f'self.writer.controlList[1].controlLabel: {self.writer.controlList[1].controlLabel}')
+                            # print(f'self.writer.controlList: {self.writer.controlList}')
+                            # print(f'self.writer.controlList[i+1].controlLabel: {self.writer.controlList[i].controlLabel}')
+                            # print(f'self.writer.controlList[0].controlLabel: {self.writer.controlList[0].controlLabel}')
+                            #print(f'self.writer.controlList[1].controlLabel: {self.writer.controlList[1].controlLabel}')
                     elif int(self.controlInitData[i][1]) == 1:  #Condition type = Transition
                         conditionDataList = [
                             [[int(self.controlInitData[i][2]), int(self.controlInitData[i][3])], [int(self.controlInitData[i][4]), int(self.controlInitData[i][5])]],
@@ -1572,17 +1584,17 @@ class UX:
                         if int(self.controlInitData[i][10]) == 0:    #Control is Modulate
                             self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][11], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], controlType=self.controlInitData[i][10], conditionData=conditionDataList, bpm = self.writer.bpm, controlNum=i, rate=self.controlInitData[i][12], waveform=self.controlInitData[i][13], minimum=self.controlInitData[i][14], maximum=self.controlInitData[i][15]))
                             #self.writer.controlList.append(newControl)   
-                            print(f'self.writer.controlList: {self.writer.controlList}')
-                            print(f'self.writer.controlList[i+1].controlLabel: {self.writer.controlList[i].controlLabel}')
-                            print(f'self.writer.controlList[0].controlLabel: {self.writer.controlList[0].controlLabel}')
-                            print(f'self.writer.controlList[1].controlLabel: {self.writer.controlList[1].controlLabel}')
+                            # print(f'self.writer.controlList: {self.writer.controlList}')
+                            # print(f'self.writer.controlList[i+1].controlLabel: {self.writer.controlList[i].controlLabel}')
+                            # print(f'self.writer.controlList[0].controlLabel: {self.writer.controlList[0].controlLabel}')
+                            # print(f'self.writer.controlList[1].controlLabel: {self.writer.controlList[1].controlLabel}')
                         elif int(self.controlInitData[i][10]) == 1:    #Control is Arpegio
                             self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][11], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], controlType=self.controlInitData[i][10], conditionData=conditionDataList, bpm = self.writer.bpm, controlNum=i, rate=self.controlInitData[i][12], direction=self.controlInitData[i][13]))
                         #self.writer.controlList.append(newControl)   
-                            print(f'self.writer.controlList: {self.writer.controlList}')
-                            print(f'self.writer.controlList[i+1].controlLabel: {self.writer.controlList[i].controlLabel}')
-                            print(f'self.writer.controlList[0].controlLabel: {self.writer.controlList[0].controlLabel}')
-                            print(f'self.writer.controlList[1].controlLabel: {self.writer.controlList[1].controlLabel}')
+                            # print(f'self.writer.controlList: {self.writer.controlList}')
+                            # print(f'self.writer.controlList[i+1].controlLabel: {self.writer.controlList[i].controlLabel}')
+                            # print(f'self.writer.controlList[0].controlLabel: {self.writer.controlList[0].controlLabel}')
+                            # print(f'self.writer.controlList[1].controlLabel: {self.writer.controlList[1].controlLabel}')
 
             if event == '-ANOTHERBTN-':
                 print()
