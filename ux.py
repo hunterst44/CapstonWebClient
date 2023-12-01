@@ -368,7 +368,7 @@ class UX:
         for i in range(numOutPOrts):
             midiOutList.append(self.writer.available_MiDiPortsOut[i])
 
-        controlList = ['Modulate', 'Arrpegiate']
+        controlList = ['Modulate', 'Arrpegiate', 'Tof Control']
         waveList = ['sine', 'square', 'saw']
         conditionTypeList = ['Hold', 'Transition']
         currentPositionList = []
@@ -1558,13 +1558,16 @@ class UX:
                             # print(f'self.writer.controlList[i+1].controlLabel: {self.writer.controlList[i].controlLabel}')
                             # print(f'self.writer.controlList[0].controlLabel: {self.writer.controlList[0].controlLabel}')
                             # print(f'self.writer.controlList[1].controlLabel: {self.writer.controlList[1].controlLabel}')
-                        elif int(self.controlInitData[i][6]) == 1:    #Control is Arpegio
-                            self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][7], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], controlType=self.controlInitData[i][6], conditionData=conditionDataList, bpm = self.writer.bpm, controlNum=i, rate=self.controlInitData[i][8], direction=self.controlInitData[i][9]))
+                        elif int(self.controlInitData[i][6]) == 1:    #Control is Arpegio (need to add octave selection to GUI)
+                            self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][7], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], controlType=self.controlInitData[i][6], conditionData=conditionDataList, bpm = self.writer.bpm, controlNum=i, rate=self.controlInitData[i][8], direction=self.controlInitData[i][9], octave=2)) #add octve as paramiter to control creation
                         #self.writer.controlList.append(newControl)   
                             # print(f'self.writer.controlList: {self.writer.controlList}')
                             # print(f'self.writer.controlList[i+1].controlLabel: {self.writer.controlList[i].controlLabel}')
                             # print(f'self.writer.controlList[0].controlLabel: {self.writer.controlList[0].controlLabel}')
                             # print(f'self.writer.controlList[1].controlLabel: {self.writer.controlList[1].controlLabel}')
+                        elif int(self.controlInitData[i][6]) == 2:    #Control is Tof Midi Control (need to add control type 2 to GUI input)
+                            self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][7], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], controlType=self.controlInitData[i][6], conditionData=conditionDataList, bpm = self.writer.bpm, controlNum=i, rate=self.controlInitData[i][8], direction=self.controlInitData[i][9]))
+
                     elif int(self.controlInitData[i][1]) == 1:  #Condition type = Transition
                         conditionDataList = [
                             [[int(self.controlInitData[i][2]), int(self.controlInitData[i][3])], [int(self.controlInitData[i][4]), int(self.controlInitData[i][5])]],
