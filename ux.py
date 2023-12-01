@@ -45,6 +45,7 @@ import dill
 # [15] Maximum   {FLOAT} Modulate only
 #Control Type Arpegiate
 # [13] Direction
+# [14] Octave
 
 #Useful data:
 #controlTypeStr - text label of the control type
@@ -382,8 +383,6 @@ class UX:
                 [sg.pin(sg.Column([[sg.Text("If your network doesn't show up in the list open Windows network manager before clicking Refresh", visible=connectVis, key='-MESSAGE-'), sg.Text(size=(2,1))]], pad=(0,0)), shrink=True)]   
                 ]
         return sg.Window('THE CONDUCTOR: Step 0', layout, size=(self.windowSizeX,self.windowSizeY), finalize=True)
-    
-
     
     def makeWindow1(self):
         modelPath = self.dataStream.pathPreface + '/model.model'
