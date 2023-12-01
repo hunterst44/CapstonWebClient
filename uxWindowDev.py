@@ -1314,7 +1314,7 @@ class UX:
                         else:
                             print('Used up all channels')
                             window2.hide()
-                            window3_1 =self.makeWindow3_1()
+                            window3_1 =self.window.makeWindow3_1()
                         
                         window['-RATECOL-'].update(visible=True)
                         window['-WAVECOL-'].update(visible=True)
@@ -1342,7 +1342,7 @@ class UX:
                         else:
                             print('Used up all channels')
                             window2.hide()
-                            window3_1 =self.makeWindow3_1()
+                            window3_1 =self.window.makeWindow3_1()
 
                         window['-RATECOL-'].update(visible=True)
                         window['-RATELABEL-'].update(visible=True)
@@ -1544,7 +1544,7 @@ class UX:
                 print()
                 print('-CONTUBTN-')
                 window2.hide()
-                window2_1 = self.makeWindow2_1()
+                window2_1 = self.window.makeWindow2_1()
 
                     
 
@@ -1567,13 +1567,13 @@ class UX:
                     #setup datastream how we want it for training
                     #dataStream = socketClientUx.GetData(packetSize=self.packetSize, label=label, labelPath=labelPath, getTraining=True, numSensors=numSensors, pathPreface=pathPreface)
                     window2_1.hide()
-                    window3 =self.makeWindow3()
+                    window3 =self.window.makeWindow3()
                            
                 if event == "-PREDICTBTN-":  
                     print() 
                     print("-PREDICTBTN-")
                     window2_1.hide()
-                    window3_1 =self.makeWindow3_1()
+                    window3_1 =self.window.makeWindow3_1()
                 
                 if event == "-WORDS-":
                     window["-WORDS-"].update(values['-WORDS-'])
@@ -1666,7 +1666,7 @@ class UX:
                     print()
                     print("Window 3 -TRGDONEPREDICT-")
                     window3.hide()
-                    window3_1 =self.makeWindow3_1()
+                    window3_1 =self.window.makeWindow3_1()
 
 
 ##############     Window3_1          #################

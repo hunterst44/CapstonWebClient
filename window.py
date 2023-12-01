@@ -224,13 +224,28 @@ class Window:
         window2=self.create_window(content_layout,windowtitlemsg)
         return window2
 
+    def makeWindow2_1(self):
+        #Window3 Training or prediction select
+        LEFTMARGIN = 50
+        windowtitlemsg = 'THE CONDUCTOR: Step 2.1'
+        content_layout = [
+            [sg.Text('The Conductor: Window 2.1'), sg.Text(size=(2,1), key='-OUTPUT-')],
+            [sg.pin(sg.Column([[sg.Text('Train Model'), sg.Text(size=(2,1), key='-TRAIN-'), sg.Button('Train', key='-TRAINBTN-')]]))],
+            [sg.pin(sg.Column([[sg.Text('Predict hand positions'), sg.Text(size=(2,1), key='-PREDICT-'), sg.Button('Predict', key='-PREDICTBTN-')]]))],
+            [sg.pin(sg.Column([[sg.Text('', visible=True, key='-WORDS-'), sg.Text(size=(2,1))]], pad=(0,0)), shrink=False)],
+        ]
+        window2_1=self.create_window(content_layout,windowtitlemsg)
+        return window2_1
+        return sg.Window('THE CONDUCTOR: Step 2.1', layout, layout, size=(self.windowSizeX,self.windowSizeY), finalize=True)
+    
     def makeWindow3(self):
         #Window3 Training 
         windowtitlemsg = 'THE CONDUCTOR: Step 3'
-        content_layout = [[sg.T('The Conductor: Window 3'), sg.T(size=(2,1), key='-OUTPUT-')],
-                    [sg.pin(sg.Column([[sg.T("Hit the 'GO!' Btn to begin training", visible=True, key='-GESTURE-'), sg.T(size=(2,1))]], pad=(0,0)), shrink=True)],
-                    [sg.pin(sg.Column([[sg.T('', visible=True, key='-CountDown-'), sg.T(size=(2,1))]], pad=(0,0)), shrink=True)],
-                    [sg.Btn('GO!')]
+        content_layout = [[sg.Text('The Conductor: Window 3'), sg.Text(size=(2,1), key='-OUTPUT-')],
+                  [sg.pin(sg.Column([[sg.Text("Hit the 'GO!' button to begin training", visible=True, key='-GESTURE-'), sg.Text(size=(2,1))]], pad=(0,0)), shrink=False)],
+                  [sg.pin(sg.Column([[sg.Text('', visible=True, key='-CountDown-'), sg.Text(size=(2,1))]], pad=(0,0)), shrink=False)],
+                  [sg.Button('GO!', key='-GOTRAIN-', visible=True)],
+                  [sg.Button('Predict', key='-TRGDONEPREDICT-', visible=False)]
         ]
         window3=self.create_window(content_layout,windowtitlemsg)
         return window3
@@ -239,12 +254,12 @@ class Window:
 
     def makeWindow3_1(self):
         #Window3_1 Prediction 
-        windowtitlemsg = 'THE CONDUCTOR: Step 3_1'
-        content_layout = [[sg.T('The Conductor: Window 3_1'), sg.T(size=(2,1), key='-OUTPUT-')],
-                    [sg.pin(sg.Column([[sg.T("Hit the 'GO!' Btn to begin prediction", visible=True, key='-GESTURE-'), sg.T(size=(2,1))]], pad=(0,0)), shrink=True)],
-                    [sg.pin(sg.Column([[sg.T('', visible=True, key='-CountDown-'), sg.T(size=(2,1))]], pad=(0,0)), shrink=True)],
-                    [sg.pin(sg.Column([[sg.T(''), sg.T(size=(2,1), key='-GO-'), sg.Btn('GO!', key='-GOBTN-', visible=True)]]), shrink=True)],
-                    [sg.pin(sg.Column([[sg.T(''), sg.T(size=(2,1), key='-STOP-'), sg.Btn('Stop', key='-STOPBTN-', visible=False)]]), shrink=True)]
+        windowtitlemsg = 'THE CONDUCTOR: Step 3.1'
+        content_layout = [[sg.Text('The Conductor: Window 3.1'), sg.Text(size=(2,1), key='-OUTPUT-')],
+                  [sg.pin(sg.Column([[sg.Text("Hit the 'GO!' button to begin prediction", visible=True, key='-GESTURE-'), sg.Text(size=(2,1))]], pad=(0,0)), shrink=False)],
+                  [sg.pin(sg.Column([[sg.Text('', visible=True, key='-CountDown-'), sg.Text(size=(2,1))]], pad=(0,0)), shrink=False)],
+                  [sg.pin(sg.Column([[sg.Text(''), sg.Text(size=(2,1), key='-GO-'), sg.Button('GO!', key='-GOBTN-', visible=True)]]), shrink=False)],
+                  [sg.pin(sg.Column([[sg.Text(''), sg.Text(size=(2,1), key='-STOP-'), sg.Button('Stop', key='-STOPBTN-', visible=False)]]), shrink=False)]
         ]
         window3_1=self.create_window(content_layout,windowtitlemsg)
         return window3_1
