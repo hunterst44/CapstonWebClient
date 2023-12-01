@@ -87,11 +87,10 @@ class GetData:
         print(f'dataTx: {self.dataTx}')
         print(f'host {host}')
         print(f'port: {port}')
-
-        #check for default value IP with XX in it
+       
         hostLen = len(host)
-        if host[hostLen - 1] == 'X':
-            print('Please enter a valid IP address.')
+        if not host[hostLen-1].isdigit():
+            print('Please enter a valid IP address')
             return -1
 
         self.sock = socket.socket()
