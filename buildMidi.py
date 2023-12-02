@@ -127,6 +127,9 @@ class MidiBuilder:
             for value in tof_delta_array:
                 midiCC = self.MIDIControlChange(control_number=self.midiCCnum, channel=self.ch, control_value=value)
                 midi_array.append(midiCC. get_midi_cc())
+                
+        elif self.dataType in [3, '3']:
+            midi_array = []
 
         return midi_array  # Moved the return statement outside the if-elif-else block
 

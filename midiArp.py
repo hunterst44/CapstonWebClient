@@ -75,8 +75,8 @@ class MidiArp:
             print("Invalid order. Use 0 for ascending, 1 for descending, or 2 for random.")
 
     def change_octave(self):
-        if -2 <= self.octave <= 2:
-            self.current_Midi = [note_value + self.octave * 12 for note_value in self.current_Midi]
+        if -2 <= int(self.octave) <= 2:
+            self.current_Midi = [note_value + int(self.octave) * 12 for note_value in self.current_Midi]
 
 if __name__ == "__main__":
     midiIn_port_index = 3

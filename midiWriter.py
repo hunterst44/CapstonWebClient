@@ -259,7 +259,7 @@ class MiDiWriter:
     def conductor(self):
         print()
         print('conductor()')
-        self.refreshMidi()
+        # self.refreshMidi()
         
         # self.control00.midiBuilder.midiMessage = [70]
         # self.control01.midiBuilder.midiMessage= [65]
@@ -276,7 +276,7 @@ class MiDiWriter:
   
         if not self.play_loop_started:  # Check if the play_loop has not started yet
             if self.writerON == True:
-                self.refreshMidi()
+                # self.refreshMidi()
                 self.metro.startFlag = True
                 self.metro.doneFlag = True
                 play_thread = threading.Thread(target=self.play_loop, args=())
