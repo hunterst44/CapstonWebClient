@@ -339,7 +339,7 @@ class MiDiWriter:
     # ###           MidiControl
     # ############################################################################################################    
     class MidiControl:
-        def __init__(self, *, controlLabel='', midiOut=None, ToFEnable=0, updateFlag=0, predictions=[], conditionType=0, conditionData=[[0,3], [1,3]], channel=None, controlNum=None, midiLoopCount = 0, rate=None, waveform=None, minimum=None, maximum=None, direction=None, controlType = 0, bpm=0, controllerType=0, midiMessage=60, startFlag=0, octave=0, midiInput=[]):
+        def __init__(self, *, controlLabel='', midiOut=None, ToFEnable=0, updateFlag=0, predictions=[], conditionType=0, conditionData=[[0,3], [1,3]], channel=None, controlNum=None, midiLoopCount = 0, rate=None, waveform=None, minimum=None, maximum=None, direction=None, controlType = 0, bpm=0, midiMessage=60, startFlag=0, octave=0, midiInput=[]):
             #Removed attributes:  value=-1, 
             
             self.midiLoopCount = midiLoopCount #Precious value fed in each time the loop runs
@@ -382,10 +382,10 @@ class MiDiWriter:
             self.max_val = 127
             self.period = 1
             self.thread = None
-            self.controllerType = controllerType
+            # self.controllerType = controllerType
             self.threadToggle = 0 #toggle this within the thread to see what it is doing
             #self.max_duration = max_duration
-            self.midiBuilder = buildMidi.MidiBuilder(dataType=self.controllerType, midiMessage=self.midiMessage, ch=self.channel, velocity=self.velocity, rate=self.beatLenStr)
+            self.midiBuilder = buildMidi.MidiBuilder(dataType=self.controlType, midiMessage=self.midiMessage, ch=self.channel, velocity=self.velocity, rate=self.beatLenStr)
             self.midiResults = self.midiBuilder.build_midi()
             self.startFlag = startFlag
             

@@ -17,7 +17,7 @@ class MidiPlayer:
     def play_beat(self, midi_data=None, on_flag=0):
         # on_flag = 1
         a = np.asarray(midi_data)
-        if a.size == 0:
+        if a.size == 0 or midi_data == None:
             print("Midi array is empty")
         else:
             if on_flag:
