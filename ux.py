@@ -21,7 +21,7 @@ import dill
 # The format and content of the controls lists changes depending on the condition and control types:
 #  Some are common to all types
 # [0] Control Name {STR}
-# [1] Condition Type {INT} 0 = Hold, 1 = Tranisiton, 2 = Pattern
+# [1] Condition Type {INT} 0 = Hold, 1 = Tranisiton, 2 = No Action
 #Condition Type = Hold
 #[2] - [5] conditions data: [..., ON POSITION, ON THRESHOLD, OFF POSITION, OFFTHRESHOLD ..., ]
 # [6] Control Type {INT} 0 = modulate, 1 = Arpegiate, 2 = note
@@ -289,6 +289,9 @@ class UX:
                     controlListStr = controlListStr + "Direction:  " + controlLogData[i][13] + "\n"
                     controlListStr = controlListStr + "Octave:  " + str(controlLogData[i][14]) + "\n"
                     textHeight = textHeight + 5
+
+            elif controlLogData[i][1] == '2' or controlLogData[i][1] == 2:
+                controlListStr = controlListStr + "Condition Type:   No Action\n"
         
         print(f'controlListStr: {controlListStr}')
         
@@ -420,7 +423,7 @@ class UX:
 
         controlList = ['Modulate', 'Arrpegiate', 'ToF Control']
         waveList = ['sine', 'square', 'saw']
-        conditionTypeList = ['Hold', 'Transition']
+        conditionTypeList = ['Hold', 'Transition', 'No Action']
         currentPositionList = []
         arpegDirList = ['Up', 'Down', 'Random']
 
@@ -1183,60 +1186,65 @@ class UX:
                     print()
                     print(f'Window 2 -CONDTYPE-')
                     print(f'values["-CONDTYPE-"]: {values["-CONDTYPE-"]}')
+
+                    window['-CONDTYPECOL-'].set_size(size=(0,0))
+                    window['-CONDTYPECOL-'].update(visible=False)
+                    window.refresh()
                     if values['-CONDTYPE-'][0] == 'Hold':
                        newControl.append(0)   #newControl[1] condition type
                     elif values['-CONDTYPE-'][0] == 'Transition':
-                        newControl.append(1)   #newControl[1] condition type
-                    print(f'newControl: {newControl}')
+                        newControl.append(1)   #newControl[1] condition type 
+                    elif values['-CONDTYPE-'][0] == 'No Action':
+                        newControl.append(2)   #newControl[1] condition type
+                        window.write_event_value("-NOACTION-", '')
 
-                    posNum = len(self.positionPathList)
-                    usedNum = len(usedPositions)
-                    positionList = []
-                    print(f'positionPathList: {self.positionPathList}')
-                    #Make a list of unused gestures
-                    for i in range(posNum):
-                        used = 0
-                        print(f'positionList: {self.positionPathList[i]}')
-                        for j in range(usedNum):
-                            if i == j:
-                                used = 1
-                                break
+                    print(f'newControl: {newControl}')
+                    if values['-CONDTYPE-'][0] == 'Hold' or values['-CONDTYPE-'][0] == 'Transition':
+                        posNum = len(self.positionPathList)
+                        usedNum = len(usedPositions)
+                        positionList = []
+                        print(f'positionPathList: {self.positionPathList}')
+                        #Make a list of unused gestures
+                        for i in range(posNum):
+                            used = 0
+                            print(f'positionList: {self.positionPathList[i]}')
+                            for j in range(usedNum):
+                                if i == j:
+                                    used = 1
+                                    break
+                            print(f'positionList: {positionList}')
+                            if used == 0:
+                                positionList.append(self.positionPathList[i])
                         print(f'positionList: {positionList}')
-                        if used == 0:
-                            positionList.append(self.positionPathList[i])
-                    print(f'positionList: {positionList}')
-                    window['-CURRPOSLISTON-'].update(positionList)
-                    window['-CURRPOSLISTOFF-'].update(positionList)
-                    window['-CURRPOSLISTTRANSON-'].update(positionList)
-                    window['-CURRPOSLISTTRANSOFF-'].update(positionList)
-                    
-                    window['-CONDTYPECOL-'].set_size(size=(0,0))
-                    window['-CONDTYPECOL-'].update(visible=False)
-                    window['-CURRPOSLISTONCOL-'].update(visible=True)
-                    window['-CURRPOSLISTON-'].update(visible=True)
-                    window['-CURRPOSONLABEL-'].update(visible=True)
-                    window['-CURRPOSONSLIDE-'].update(visible=True)
-                    #window['-CURRPOSOFFON-'].update(visible=True)
-                    window['-CURRPOSLISTOFFCOL-'].update(visible=True)
-                    window['-CURRPOSLISTOFF-'].update(visible=True)
-                    window['-CURRPOSOFFLABEL-'].update(visible=True)
-                    window['-CURRPOSOFFSLIDE-'].update(visible=True)
-                    window['-CONDBTN-'].update(visible=True)
-                    if values["-CONDTYPE-"][0] == 'Transition':
-                        print("Transition")
-                        window['-CURRPOSONLABEL-'].update("Position, threshold START ON")
-                        window['-CURRPOSLISTTRANSONCOL-'].update(visible=True)
-                        window['-CURRPOSTRANSONSLIDE-'].update(visible=True)
-                        window['-CURRPOSLISTTRANSON-'].update(visible=True)
-                        window['-CURRPOSTRANSONLABEL-'].update(visible=True)
-                        window['-CURRPOSONLABEL-'].update("Position, threshold START OFF")
-                        window['-CURRPOSLISTTRANSOFFCOL-'].update(visible=True)
-                        window['-CURRPOSOFFTRANSSLIDE-'].update(visible=True)
-                        window['-CURRPOSLISTTRANSOFF-'].update(visible=True)
-                        window['-CURRPOSOFFTRANSLABEL-'].update(visible=True)
-                        window['-CONDTRANSBTN-'].update(visible=True)
-                        window['-CONDBTN-'].update(visible=False)
-                    window.refresh()
+                        window['-CURRPOSLISTON-'].update(positionList)
+                        window['-CURRPOSLISTOFF-'].update(positionList)
+                        window['-CURRPOSLISTTRANSON-'].update(positionList)
+                        window['-CURRPOSLISTTRANSOFF-'].update(positionList)
+                        window['-CURRPOSLISTONCOL-'].update(visible=True)
+                        window['-CURRPOSLISTON-'].update(visible=True)
+                        window['-CURRPOSONLABEL-'].update(visible=True)
+                        window['-CURRPOSONSLIDE-'].update(visible=True)
+                        #window['-CURRPOSOFFON-'].update(visible=True)
+                        window['-CURRPOSLISTOFFCOL-'].update(visible=True)
+                        window['-CURRPOSLISTOFF-'].update(visible=True)
+                        window['-CURRPOSOFFLABEL-'].update(visible=True)
+                        window['-CURRPOSOFFSLIDE-'].update(visible=True)
+                        window['-CONDBTN-'].update(visible=True)
+                        if values["-CONDTYPE-"][0] == 'Transition':
+                            print("Transition")
+                            window['-CURRPOSONLABEL-'].update("Position, threshold START ON")
+                            window['-CURRPOSLISTTRANSONCOL-'].update(visible=True)
+                            window['-CURRPOSTRANSONSLIDE-'].update(visible=True)
+                            window['-CURRPOSLISTTRANSON-'].update(visible=True)
+                            window['-CURRPOSTRANSONLABEL-'].update(visible=True)
+                            window['-CURRPOSONLABEL-'].update("Position, threshold START OFF")
+                            window['-CURRPOSLISTTRANSOFFCOL-'].update(visible=True)
+                            window['-CURRPOSOFFTRANSSLIDE-'].update(visible=True)
+                            window['-CURRPOSLISTTRANSOFF-'].update(visible=True)
+                            window['-CURRPOSOFFTRANSLABEL-'].update(visible=True)
+                            window['-CONDTRANSBTN-'].update(visible=True)
+                            window['-CONDBTN-'].update(visible=False)
+                        window.refresh()
 
                 #Set Control Type    
                 if event == '-CONDBTN-' or event == '-CONDTRANSBTN-': 
@@ -1453,6 +1461,24 @@ class UX:
 
                         window.write_event_value("-TOFBTN-", '') 
 
+                if event == '-NOACTION-':
+                    print()
+                    print(f'Window 2 -NOACTION-') 
+                    self.controlInitData.append(newControl)
+                    print(f'newControl: {newControl}')
+                    
+                    print(f'self.controlInitData: {self.controlInitData}')
+                    
+                    #controlTypeStr = 'Arpegiator'
+                    window['-TOPMESSAGE01-'].update(f'Control Created!')
+                    window['-TOPMESSAGE01-'].update(visible=True)
+                    window['-DONELABEL-'].update(visible=True)
+                    window['-ANOTHERBTN-'].update(visible=True)
+                    window['-MAPPINGDONEBTN-'].update(visible=True)
+                    window['-DONECOL-'].update(visible=True)
+                    window.refresh()
+                    #window.write_event_value("-MAPPINGDONEBTN-", '')
+                
                 if event == '-MODDATABTN-':
                     print()
                     print(f'Window 2 -MODDATABTN-')
@@ -1668,7 +1694,9 @@ class UX:
 
                         elif int(self.controlInitData[i][6]) == 2:    #Control is ToF data
                             self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][7], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], controlType=self.controlInitData[i][6], conditionData=conditionDataList, bpm = self.writer.bpm, controlNum=i))
-                        
+                    
+                    elif int(self.controlInitData[i][1]) == 2:  #Condition type = No Action
+                        self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=1, predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], bpm = self.writer.bpm, controlNum=i))
 
             if event == '-ANOTHERBTN-':
                 print()
