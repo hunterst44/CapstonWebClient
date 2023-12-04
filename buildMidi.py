@@ -95,7 +95,7 @@ class MidiBuilder:
         if self.midiMessage is None:
             midi_array =  []
 
-        if self.dataType in [0, '0']:  # MIDI note data
+        if self.dataType in [1, '1']:  # MIDI note data
             if isinstance(self.midiMessage, int):
                 for _ in range(self.multiply_rate(self.rate)):
                     note = int(self.midiMessage)
@@ -113,7 +113,7 @@ class MidiBuilder:
                         note_off = self.MIDINoteMessage(ch=self.ch, note=note, velocity=0)
                         midi_array.append(note_off.get_midi())
 
-        elif self.dataType in [1, '1']:  # MIDI control change data
+        elif self.dataType in [0, '0']:  # MIDI control change data
             waveform = self.modulation_shape()
             waveform = self.convert_range(waveform, -1.0, 1.0, 0, 127)
             waveform = self.convert_range(waveform, 0, 127, self.min_val, self.max_val)
