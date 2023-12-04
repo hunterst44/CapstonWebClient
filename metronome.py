@@ -35,6 +35,7 @@ class Metronome:
             print("Metronome stopped.")
 
     def getTimeTick(self, midiArray = []):
+  
         if midiArray == None:
             timeSlice = (60 / self.bpm) * 1000
         else:

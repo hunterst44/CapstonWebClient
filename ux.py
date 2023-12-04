@@ -1844,6 +1844,8 @@ class UX:
                 print()
                 print()
                 print("window 3_1")
+                self.writer.metro.bpm = (float(self.writer.bpm))
+                
 
                 #set up dataStream
                 self.dataStream.packetSize = 1

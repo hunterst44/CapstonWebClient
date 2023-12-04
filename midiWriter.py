@@ -16,7 +16,7 @@ import buildMidi
 from midiPlayer import MidiPlayer
 from midiArp import MidiArp
 
-BPM = 30
+# BPM = 30
 # import sys
 
 """ 
@@ -35,7 +35,7 @@ BPM = 30
 
 class MiDiWriter:
 
-    def __init__(self, *, predictions=[], port_name=1, channel=0, cc_num=75, bpm=BPM, rate='w', ToFByte=-1, playControl = []):
+    def __init__(self, *, predictions=[], port_name=1, channel=0, cc_num=75, bpm=60, rate='w', ToFByte=-1, playControl = []):
         self.midiOut = rtmidi.MidiOut()
         self.midiIn = rtmidi.MidiIn()
         self.midiPortOut = port_name
@@ -50,7 +50,7 @@ class MiDiWriter:
         self.controlList = []
         #self.loadChannels() #Load the Channels above - must be defined in loadChannels
         self.available_MiDiPortsIn = self.midiIn.get_ports()
-        self.metro = Metronome(bpm = BPM)
+        self.metro = Metronome(bpm)
         self.play_loop_started = False
         self.playControl = playControl
         self.writerON = 0
@@ -67,7 +67,7 @@ class MiDiWriter:
         # self.midiBuilder = buildMidi.MidiBuilder()
         
 
-        self.metro = Metronome(bpm = self.bpm)
+        # self.metro = Metronome(bpm = self.bpm)
         # builder1 = buildMidi.MidiBuilder(dataType=self.control00.controllerType, midiMessage=[60], ch=self.control00.channel, velocity=64, rate='w')
         # result1 = builder1.build_midi()
         # midi_data_list = [result1]
@@ -179,6 +179,7 @@ class MiDiWriter:
     
         self.midi_data_list = [control.midiResults for control in self.controlList]
         self.midi_players = [MidiPlayer(self.midiOut, self.metro.getTimeTick(midi_data), midi_data) for control, midi_data in zip(self.controlList, self.midi_data_list)]
+        
 
     def reorder_held_notes(self, order):
         if order == 0:
@@ -345,7 +346,7 @@ class MiDiWriter:
             self.midiLoopCount = midiLoopCount #Precious value fed in each time the loop runs
             self.controlLabel = controlLabel
             self.midiOut = midiOut
-            self.bpm = BPM
+            self.bpm = bpm
             self.channel = channel
             self.controlNum = controlNum
             self.controlType = controlType  #0 modulate, 1 arpeggiate, 2 notes
@@ -518,23 +519,23 @@ class MiDiWriter:
             if self.beatLenStr == 'w':
                 # 1000 * (4 * 60/self.bpm) = self.beatMillis
                 # eg. 1000 * 4 * (60/ 60 bpm) = 4000ms
-                beatMillis = 4000 * (60/self.bpm)
+                beatMillis = 4000 * (60/float(self.bpm))
             elif self.beatLenStr == 'h':
                 # 1000 * (2 * 60/self.bpm) = self.beatMillis
                 # eg. 1000 * 2 * (60/ 90 bpm) = 1333 ms
-                beatMillis = 2000 * (60/self.bpm)
+                beatMillis = 2000 * (60/float(self.bpm))
             elif self.beatLenStr == 'q':
                 # 1000 * (1 * 60/self.bpm) = self.beatMillis
                 # eg. 1000 * 1 * (60/ 120 bpm) = 500ms
-                beatMillis = 1000 * (60/self.bpm)
+                beatMillis = 1000 * (60/float(self.bpm))
             elif self.beatLenStr == 'e':
                 # 1000 * (1 * 60/self.bpm) = self.beatMillis
                 # eg. 1000 * 1 * (60/ 60 bpm) = 2000ms
-                beatMillis = 500 * (60/self.bpm)
+                beatMillis = 500 * (60/float(self.bpm))
             elif self.beatLenStr == 's':
                 # 1000 * (1 * 60/self.bpm) = self.beatMillis
                 # eg. 1000 * 1 * (60/ 60 bpm) = 2000ms
-                beatMillis = 250 * (60/self.bpm)
+                beatMillis = 250 * (60/float(self.bpm))
             else:
                 beatMillis = 0
 
