@@ -13,6 +13,7 @@ class MidiArp:
         self.octave = octave
         self.order = order
         self.current_Midi = []
+        self.midiIn_port_index = midiIn_port_index
 
     def process_messages(self):
         try:
@@ -44,9 +45,15 @@ class MidiArp:
             self.held_notes.add(note_value)
         elif status_byte >> 4 == 0x8 or (status_byte >> 4 == 0x9 and velocity == 0):  # Note-off or Note-on with velocity 0
             self.held_notes.discard(note_value)
-
+            
     def start_processing_thread(self):
+        if self.midi_in.is_port_open() == False:
+             self.midi_in.open_port(self.midiIn_port_index)
         if not self.is_running:
+            self.held_notes.clear
+            self.current_Midi = []
+            # if not self.midi_in.is_port_open:
+            #     self.midi_in.open_port(midiIn_port_index)
             thread = threading.Thread(target=self.process_messages)
             self.is_running = True
             thread.start()

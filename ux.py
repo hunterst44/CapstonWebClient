@@ -1893,6 +1893,7 @@ class UX:
                         window.refresh()
                         self.stopPredict = 0
                     self.writer.writerON = 1
+                    # self.writer.midiArp.is_running = False
                     self.writer.midiArp.start_processing_thread()
                 # if self.writer.midiArp.is_running == False:
                 #     self.writer.midiArp.start_processing_thread()
