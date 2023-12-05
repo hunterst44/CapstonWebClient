@@ -1,4 +1,5 @@
 import PySimpleGUI as sg
+import midiWriter
 import os.path
 import utils
 
@@ -12,6 +13,8 @@ class Window:
         self.colors = ("", "#FFFFFF")
         self.button1 = self.ASSETS_PATH +"/button1.png"
         self.button2 = self.ASSETS_PATH +"/button2.png"
+        self.writer = midiWriter.MiDiWriter()
+        ports = self.writer.midiOut.get_ports()
 
     def button1_properties(self):
         return {
@@ -29,18 +32,17 @@ class Window:
         }
 
     def create_window(self,content_layout, windowtitlemsg):
-
         #sg.theme("LightGrey1")  # Change the theme to your preferred one
         sg.set_options(font=self.font)
 
-
         layout = [        
-                [sg.Image(filename= self.ASSETS_PATH +"/image_3.png",pad=(30))],
+                [sg.Image(filename= self.ASSETS_PATH +"/image_3.png",pad=(30)),sg.Push()],
                 [content_layout],
-                [sg.Image(filename= self.ASSETS_PATH +"/image_2.png",pad=(0,0)),sg.Push(),sg.VPush(),sg.Image(filename= self.ASSETS_PATH +"/image_1_s.png",pad=(0,0))]
+                [sg.Image(filename= self.ASSETS_PATH +"/image_2.png",pad=(0,0)),sg.Push(),sg.VPush(),
+                sg.Image(filename= self.ASSETS_PATH +"/image_1_s.png",pad=(0,0))],
                ]
 
-        windowname = sg.Window(windowtitlemsg, layout, size=(self.windowSizeX,self.windowSizeY), resizable=True, finalize=True)
+        windowname = sg.Window(windowtitlemsg, layout, size=(self.windowSizeX,self.windowSizeY), resizable=True, finalize=True, element_justification='c', icon=self.ASSETS_PATH +"/icon.ico")
         return windowname
 
     def update_top_message(self,window, new_message):
@@ -49,18 +51,20 @@ class Window:
         return window
 
     def makeWindow00(self, pathPreface):
+        sg.set_options(font=self.font)       
         LEFTMARGIN = 50
         windowtitlemsg = 'The Conductor: STEP 00'
 
         content_layout = [[sg.Push(),sg.T('Choose a working directory', key='-OUTPUT-',font = ("Calibri", 16, "bold",), pad=((0,0),(0,25))),sg.Push()],
-                [sg.Push(),sg.pin(sg.Column([
-                    [sg.T(f"The Conductor will look in\n\n{os.path.abspath(os.getcwd()) + '/' + pathPreface}\n\nfor configuration files. Click 'Ok' to use this folder, or 'Browse' to choose a new working folder.", key="-MODELMESSAGE00-", visible=True)],
-                    [sg.Btn('Ok', key='-CREATEMOEDLBTN-', visible=False)]], pad=(LEFTMARGIN,0)), shrink=True),sg.Push()], 
-                [sg.Push(),sg.pin(sg.Column([
+                [sg.pin(sg.Column([
+                    [sg.T(f"The Conductor will look in\n\n{os.path.abspath(os.getcwd()) + '/' + pathPreface}\n\nfor configuration files. Click 'Ok' to use this folder, or 'Browse' to choose a new working folder.\n", key="-MODELMESSAGE00-", visible=True)],
+                    #[sg.Btn('Ok', key='-CREATEMOEDLBTN-', visible=False)]
+                    ], pad=(LEFTMARGIN,0)), shrink=True)], 
+                [sg.pin(sg.Column([
                     [sg.Btn('Ok',**self.button2_properties(), key='-USEDEFAULTDIRBTN-', visible=True),
-                    sg.Btn('Browse',**self.button1_properties(), key='-CHOOSEDIR-', enable_events=True)]], pad=((0,LEFTMARGIN),(0,5))), shrink=True),sg.Push()],
+                    sg.Btn('Browse',**self.button1_properties(), key='-CHOOSEDIR-', enable_events=True)]], pad=(LEFTMARGIN, 0)), shrink=True)],
                     #sg.FolderBrowse(size=(8,1), visible=True, key='-CHOOSEDIR-', enable_events=True)]], pad=(LEFTMARGIN,0)), shrink=True),sg.Push()],
-                [sg.Push(),sg.pin(sg.Column([[sg.Btn('Ok',**self.button2_properties(), key='-USESELDIRBTN-', visible=False)]], pad=(LEFTMARGIN,0)), shrink=True),sg.Push()]
+                [sg.pin(sg.Column([[sg.Btn('Ok',**self.button2_properties(), key='-USESELDIRBTN-', visible=False)]], pad=(LEFTMARGIN,0)), shrink=True)]
                 ]
         
         window00=self.create_window(content_layout, windowtitlemsg)
@@ -83,24 +87,27 @@ class Window:
 
             windowtitlemsg = 'THE CONDUCTOR: Step 0'
             content_layout = ([sg.Push(),sg.T(f'Connect to The Conductor.',key='-OUTPUT-',font = ("Calibri", 16, "bold",), pad=((0,0),(0,25))),sg.Push()], 
-                    [sg.Push(),sg.pin(sg.Column([[sg.T(topMessage, pad=(LEFTMARGIN,4), key='-TOPMESSAGE-')]]),shrink=True),sg.Push()],
-                    [sg.Push(),sg.pin(sg.Column([[sg.T(f"To use this network click 'Continue.' To connect to another network enter the network info below and click 'Reconnect'. Click 'Don't Connect' to continue without connecting", key='-TOPMESSAGE01-', pad=(LEFTMARGIN,0), visible=connectVis)]]), shrink=True),sg.Push()],
-                    [sg.Push(),sg.pin(sg.Column([[sg.Input('192.168.XX.XXX', key="-IPIN-", visible=disconnectVis, pad=((5),(0,5)), do_not_clear=True)]], pad=(LEFTMARGIN,0)),shrink=True),sg.Push()],
-                    [sg.Push(),sg.pin(sg.Column([[sg.Input('192.168.XX.XXX', key="-IPNEW-", visible=False)]]), shrink=True),sg.Push()],
-                    [sg.Push(),sg.pin(sg.Column([[sg.Btn('Connect',**self.button1_properties(), key='-APCNTEBTN-', visible=disconnectVis, pad=((0,70 ),(5,0)))]]),shrink=True),
+                    [sg.pin(sg.Column([[sg.T(topMessage, pad=(LEFTMARGIN,4), key='-TOPMESSAGE-')]]),shrink=True)],
+                    [sg.pin(sg.Column([[sg.T(f"To use this network click \"Continue.\"\n\nTo connect to another network enter the network info below and click \"Reconnect\".\n\nClick \"Don't Connect\" to continue without connecting", key='-TOPMESSAGE01-', pad=(LEFTMARGIN,0), visible=connectVis)]]), shrink=True)],
+                    [sg.pin(sg.Column([[sg.Input('192.168.XX.XXX', key="-IPIN-", visible=disconnectVis, pad=((5),(0,5)))]], pad=(LEFTMARGIN,0)),shrink=True)],
+                    [sg.pin(sg.Column([[sg.Input('192.168.XX.XXX', key="-IPNEW-", visible=False)]]), shrink=True)],
+                    [sg.pin(sg.Column([[sg.Btn('Connect',**self.button1_properties(), key='-APCNTEBTN-', visible=disconnectVis, pad=((0,70 ),(5,0)))]]),shrink=True),
+                    sg.pin(sg.Column([[sg.Btn('Connect',**self.button1_properties(), key='-SYTNCNTEBTN-', visible=False, pad=((0,70 ),(5,0)))]]),shrink=True),
                     #[sg.Column([[sg.Btn('Connect',**self.button1_properties(), key='-STNCNTEBTN-', visible=False, pad=((70,70 ),(5,0)))]]),
-                    sg.Column([[sg.Btn("Don't Connect",**self.button1_properties(), key='-NOCNTBTN-', visible=disconnectVis )]],pad=((LEFTMARGIN,0),(5,0))),sg.Push()],                
-                    sg.Push(),sg.pin(sg.Column([
+                    sg.Column([[sg.Btn("Don't Connect",**self.button1_properties(), key='-NOCNTBTN-', visible=disconnectVis )]],pad=((LEFTMARGIN,0),(5,0)))],                
+                    sg.pin(sg.Column([
                         [sg.Listbox(self.SSIDList, size=(15, 8), key="-SSIDIN-", expand_y=True, enable_events=True, visible=connectVis)],
                         [sg.Btn('Refresh', **self.button1_properties(), key='-SSIDLISTRFH-', visible=connectVis)]], pad=(LEFTMARGIN+50, 0),element_justification='c')),
-                    sg.Push(),sg.pin(sg.Column([
+                    sg.pin(sg.Column([
                         [sg.Input('Password', key="-PSWDIN-", visible=connectVis,size = 15, pad=(0, 0))],
                         [sg.Btn('Reconnect', **self.button1_properties(), key='-RECNTBTN-', visible=connectVis)],
-                        [sg.Btn("Don't Connect",**self.button1_properties(), key='-NOCNTBTN2-', visible=False )]], pad=(LEFTMARGIN, 0), element_justification='c')),
-                    sg.Push(),[sg.Btn('Continue',**self.button1_properties(), key='-CONTBTN-', visible=connectVis)],sg.Push(),
+                        [sg.Btn("Don't Connect",**self.button1_properties(), key='-NOCNTBTN2-', visible=False )],
+                        [sg.Btn('Continue',**self.button1_properties(), key='-CONTBTN-', visible=connectVis)],
+                        ], pad=(LEFTMARGIN, 0), element_justification='c')),
+                    
                     #[sg.pin(sg.Column([[sg.Btn('Connect', key='-APCNTEBTN-', visible=True)]], pad=(LEFTMARGIN,0)), shrink=True)],
-                    [sg.Push(),sg.pin(sg.Column([[sg.Btn('Continue',**self.button1_properties(), key='-CONTBTN-', visible=connectVis)]], pad=(LEFTMARGIN,0)), shrink=True),sg.Push()],
-                    [sg.Push(),sg.pin(sg.Column([[sg.T("If your network doesn't show up in the list open Windows network manager before clicking Refresh", visible=True, key='-MESSAGE-')]], pad=(LEFTMARGIN,0)), shrink=True),sg.Push()]
+                    #[sg.pin(sg.Column([[sg.Btn('Continue',**self.button1_properties(), key='-CONTBTN-', visible=connectVis)]], pad=(LEFTMARGIN,0)), shrink=True)],
+                    [sg.pin(sg.Column([[sg.T("If your network doesn't show up in the list open Windows network manager before clicking Refresh", visible=True, key='-MESSAGE-')]], pad=(LEFTMARGIN,0)), shrink=True)]
                     )
         
             window0=self.create_window(content_layout, windowtitlemsg)
@@ -134,6 +141,59 @@ class Window:
     def makeWindow2(self,controlList,waveList,conditionTypeList,currentPositionList,arpegDirList,midiOutList,controlListStr,textHeight,Message00Text,logVisibility,logInvisibility):
         LEFTMARGIN = 50
         windowtitlemsg = 'THE CONDUCTOR: Step 2'
+        """
+        Creates a window and initializes the MIDI ports and control lists.
+
+        This function finds the available MIDI ports to connect to and initializes the control lists.
+        It also checks if a control log file exists and sets the MIDI port and BPM based on the log data.
+        If a control log file exists, it adds the controls from the log to self.controlInitData.
+
+        Returns:
+            None
+        """
+        
+        # # Find MIDI ports to connect to
+        # self.writer.available_MIDIPortsOut = self.writer.midiOut.get_ports()
+        # self.writer.available_MIDIPortsIn = self.writer.midiIn.get_ports()
+
+        # numOutPorts = len(self.writer.available_MIDIPortsOut)
+        # midiOutList = []
+        # for i in range(numOutPorts):
+        #     midiOutList.append(self.writer.available_MIDIPortsOut[i])
+
+        # controlList = ['Modulate', 'Arpeggiate']
+        # waveList = ['sine', 'square', 'saw']
+        # conditionTypeList = ['Hold', 'Transition']
+        # currentPositionList = []
+        # arpegDirList = ['Up', 'Down', 'Random']
+
+        # controlLogData = self.checkControlLog()
+        # logVisibility = False
+        # logInvisibility = True
+
+        # if controlLogData[0] != -1:
+        #     self.writer.midiPortOut = controlLogData[0][0]  # MIDI Port Name
+        #     self.writer.bpm = controlLogData[0][1]
+
+        #     newControlList = controlLogData[1:]  # Take the first item off the list
+        #     controlListStr, textHeight = self.getControlListStr(newControlList)
+        #     # Add the controls from the log to self.controlInitData
+        #     for i in range(len(controlLogData)):
+        #         if i > 0:
+        #             print(f'i: {i}')
+        #             print(f'controlLogData[{i}]: {controlLogData[i]}')
+        #             self.controlInitData.append(controlLogData[i])
+
+        #     print(f'controlListStr: {controlListStr} textHeight: {textHeight}')
+        #     Message00Text = "A log file exists with pre-mapped controls.\n Click Ok to use these controls, or Overwrite to create new controls"
+        #     logVisibility = True
+        #     logInvisibility = False
+
+        # else:
+        #     Message00Text = "Let's map MIDI controls to hand positions."
+        #     controlListStr = "First choose a MIDI port to send commands to:"
+        #     textHeight = 1
+
         content_layout = [
             [sg.Push(),sg.T('The Conductor: Window 2', key='-OUTPUT-',font = ("Calibri", 16, "bold",), pad=((LEFTMARGIN,0),(0,25))),sg.Push()
                 #[sg.Input('How many hand positions will you train?', key="-NUMPOS-", visible=False, enable_events=True)]
@@ -142,16 +202,16 @@ class Window:
                 [sg.T(Message00Text, key='-TOPMESSAGE00-', visible=True)], 
                 [sg.T(controlListStr, key='-TOPMESSAGE01-', visible=True)]
                 ], key='-TOPMESSAGE00COL-', element_justification='left', expand_x = True, vertical_alignment='t', pad=(LEFTMARGIN,0)), sg.Push(),
-            sg.Push(),sg.Column([
+            sg.Column([
                 [sg.Btn('OK', **self.button2_properties(), key='-USELOGBTN-', visible=logVisibility)], 
                 [sg.Btn('Overwrite', **self.button1_properties(), key='-NEWCONTROLBTN-', visible=logVisibility)],
                 [sg.Btn('Continue', **self.button1_properties(), key='-CONTUBTN-', visible=False)] 
-                ], key='-CNTRLOVERIDECOL-', element_justification='left', expand_x = True, vertical_alignment='t', pad=(LEFTMARGIN,0), visible=logVisibility), sg.Push(),
-            sg.Push(), sg.Column([
+                ], key='-CNTRLOVERIDECOL-', element_justification='left', expand_x = True, vertical_alignment='t', pad=(LEFTMARGIN,0), visible=logVisibility),
+            sg.Column([
                 [sg.Listbox(midiOutList, size=(50, 8), key="-MIDIPORTOUT-", expand_x=True, expand_y=True,enable_events=True, visible=logInvisibility)], 
                 [sg.Btn('Refresh', **self.button1_properties(), key='-MIDIOUTLISTRFH-', visible=logInvisibility)], 
                 [sg.Btn('Connect', **self.button1_properties(), key='-MIDIOUTCNTBTN-', visible=logInvisibility)]
-                ], key='-MIDIPORTOUTCOL-',  element_justification='c', expand_x = True, vertical_alignment='t', pad=(LEFTMARGIN,0)),sg.Push(),
+                ], key='-MIDIPORTOUTCOL-',  element_justification='c', expand_x = True, vertical_alignment='t', pad=(LEFTMARGIN,0)),
             ],
             [sg.Push(), sg.pin(sg.Column([
                 [sg.T("BPM", key='-BPMLABEL-', visible=False)],

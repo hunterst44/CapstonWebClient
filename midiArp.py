@@ -6,7 +6,7 @@ import random
 class MidiArp:
     def __init__(self, midiIn_port_index=3, octave=0, order=0):
         self.midi_in = rtmidi.MidiIn()
-        self.midi_in.open_port(midiIn_port_index)
+        self.midi_in.open_port()
         self.held_notes = set()
         self.lock = threading.Lock()
         self.is_running = False

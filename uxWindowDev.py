@@ -169,7 +169,7 @@ class UX:
             existsVis = True #model exists
             notVis = False
         else:
-            modelMessage = 'Create a model.\nNo model available at ' + modelPath + 'Click okay to create a new one.'
+            modelMessage = 'Create a model.\nNo model available at: ' + modelPath + ' Click okay to create a new one.'
             existsVis = False
             notVis = True
         return modelMessage, existsVis, notVis   
@@ -355,6 +355,7 @@ class UX:
         Returns:
             None
         """
+        
         # Find MIDI ports to connect to
         self.writer.available_MIDIPortsOut = self.writer.midiOut.get_ports()
         self.writer.available_MIDIPortsIn = self.writer.midiIn.get_ports()
@@ -520,7 +521,7 @@ class UX:
                     #newModelLogPath = newPathPreface + '/modelLog.csv'
 
                     if os.path.exists(newPathPreface):
-                        positionLabelMessage00 = newPathPreface + " exists.\n Click 'Ok' to use this directory, or 'Browse' for another."
+                        positionLabelMessage00 = newPathPreface + " exists.\n\nClick 'Ok' to use this directory, or 'Browse' for another.\n"
                         
                         window['-MODELMESSAGE00-'].update(positionLabelMessage00)
                         window['-USEDEFAULTDIRBTN-'].update(visible=False)
@@ -583,9 +584,11 @@ class UX:
                         self.SSIDList = self.dataStream.getNetworks()
                         window['-TOPMESSAGE-'].update(f'Conductor Connected!  SSID: {self.dataStream.ssid}, IP Address: {self.dataStream.host}')
                         window['-TOPMESSAGE01-'].update(visible=True)
-                        window['-TOPMESSAGE01-'].update(f'To use this network click continue. To connect to another network enter the network info below and click Reconnect')
+                        window['-TOPMESSAGE01-'].update(f'To use this network click "Continue".\n\nTo connect to another network enter the network info below and click "Reconnect"')
                         window['-MESSAGE-'].update(visible=True)
                         window['-CONTBTN-'].update(visible=True)
+                        window['-NOCNTBTN-'].update(visible=False)
+                        window['-NOCNTBTN2-'].update(visible=True)
                     
                     else:
                         window['-TOPMESSAGE-'].update(f'Conductor Not Connected on  SSID: {self.dataStream.ssid}, IP Address: {self.dataStream.host}')
@@ -828,7 +831,7 @@ class UX:
                     window['-POSLABEL-'].update(visible=False)
                     window['-SUBLABELBTN-'].update(visible=False)
                     window.refresh()
-
+            
                 if event == '-NUMPOS-':
                     print()
                     print(f'Window 1 -NUMPOS-')
@@ -921,8 +924,9 @@ class UX:
                 #print(self.Test)
                 
                 if event == sg.WIN_CLOSED or event == 'Exit':
-                    window2.hide()
-                    window1 =self.window.makeWindow1(self.dataStream.pathPreface)   
+                    #window2.hide()
+                    #window1 =self.window.makeWindow0(self.dataStream.sockConnection, self.SSIDList, self.dataStream.ssid, self.dataStream.host)
+                    break   
 
                 if event == '-USELOGBTN-':
                     print()
@@ -981,7 +985,7 @@ class UX:
                     window.refresh()
 
                 #Set BPM
-                if event == '-MIDIOUTCNTBTN-': 
+                if event == '-MIDIOUTCNTBTN-':
                     print()
                     print(f'Window 2 -MIDIOUTCNTBTN-')
                     
