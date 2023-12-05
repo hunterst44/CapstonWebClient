@@ -11,7 +11,8 @@ import NeuralNetwork
 # import subprocess
 # import shutil
 #import sys
-import window
+#import window
+import dill
 
 
 # UX.py use this file for developing data bindings to the GUI. Window difinitions are defined in this file.
@@ -51,36 +52,46 @@ import window
 
 class UX:
 
-    def __init__(self, *, theme='LightGrey1'):
+    def __init__(self, *, theme='LightGrey1',ASSETS_PATH = r"./assets"):
         self.theme = theme
-        #self.writer = midiWriter.MiDiWriter()
+        self.writer = midiWriter.MiDiWriter()
         self.packetLimit = 30
         #self.packetSize = 1
         #self.numSensors = 4
         self.numHandPositions = 3   #How many handPositions trained by the model
-        #self.pathPreface = "data/test/"
+        #self.dataStream.pathPreface = "data/test/"
         #self.dataTx = 0xFF
         self.trainCountDown = 0 # Counter for training countdown
         self.sampleCount = 0 #counter for the number of samples collected per handPosition while training
         self.handPositionCount = 0 #counter for the number of handPositions collected while training
         self.goTrain = 0
         self.Test = 0 # A variable to test things
+        self.ASSETS_PATH = ASSETS_PATH
+        self.windowSizeX = 850 #Width of the window
+        self.windowSizeY = 660 #Height of the window
+        self.font = ("Calibri", 12)
+        self.fontB = ("Calibri", 12, 'bold')
+        self.colors = ("", "#FFFFFF")
+        self.button1 = self.ASSETS_PATH +"/button1.png"
+        self.button2 = self.ASSETS_PATH +"/button2.png"
         self.stopPredict = 0
         self.dataStream = socketClientUx.GetData() # default values: host="192.168.4.1", port=80, packetSize=1, numSensors=4, pathPreface='data/test', labelPath="Test", label=0, getTraining=True
         self.IPAddress = ''
         self.SSIDList = []
-        self.positionPathList = []
+        self.positionPathList = []  #Human readable filenames for position classes
+        #self.controlList = [] #a List of controls from GUI or log file
         self.controlInitData = []
+        #define a graph to make the double slider for max / min values
+        #self.rateGraph=sg.Graph(canvas_size=(127,10), graph_bottom_left=(0, 0), graph_top_right=(100,10), background_color='blue', enable_events=True, drag_submits=True, key='-RATEGRAPH-', visible=False)
         self.controlLogCheck = 0 #Change to 1 after the control log file has been checked 
         self.init_Loaded_Flag = 0 #useing to make sure controls are loaded once -JF
-        self.window = window.Window()
+
+        ports = self.writer.midiOut.get_ports()
+        print(f'ports {ports}')
         
-        #ports = self.writer.midiOut.get_ports()
-        #print(f'ports {ports}')
-        
-        #print(f'available_MiDiPortsOut {self.writer.available_MiDiPortsOut}')
-        #ports = self.writer.midiOut.get_ports()
-        #print(f'ports {ports}')
+        print(f'available_MiDiPortsOut {self.writer.available_MiDiPortsOut}')
+        ports = self.writer.midiOut.get_ports()
+        print(f'ports {ports}')
 
 
 ###############################################################################################
@@ -129,7 +140,7 @@ class UX:
         
         try:
             model.finalize()
-            print(f'Model USccessfully created at: {modelPath}') 
+            print(f'Model Successfully created at: {modelPath}') 
         except:
             print('Model file failure.')
             return -1 
@@ -169,7 +180,7 @@ class UX:
             existsVis = True #model exists
             notVis = False
         else:
-            modelMessage = 'Create a model.\nNo model available at: ' + modelPath + ' Click okay to create a new one.'
+            modelMessage = 'Create a model.\nNo model available at ' + modelPath + 'Click okay to create a new one.'
             existsVis = False
             notVis = True
         return modelMessage, existsVis, notVis   
@@ -269,82 +280,130 @@ class UX:
         
         return controlListStr, textHeight
             
+    def button1_properties(self):
+        return {
+            'button_color': self.colors,
+            'border_width': 0,
+            'image_source': self.ASSETS_PATH + "/button1.png",
+            'font': self.fontB
+        }
+    def button2_properties(self):
+        return {
+            'button_color': self.colors,
+            'border_width': 0,
+            'image_source': self.ASSETS_PATH + "/button2.png",
+            'font': self.fontB
+    }
 
+    def create_window(self,content_layout, windowtitlemsg):
+    #sg.theme("LightGrey1")  # Change the theme to your preferred one
+        sg.set_options(font=self.font)
+
+        layout = [        
+                [sg.Image(filename= self.ASSETS_PATH +"/image_3.png",pad=(30)),sg.Push()],
+                [content_layout],
+                [sg.Image(filename= self.ASSETS_PATH +"/image_2.png",pad=(0,0)),sg.Push(),sg.VPush(),
+                sg.Image(filename= self.ASSETS_PATH +"/image_1_s.png",pad=(0,0))],
+                ]
+
+        windowname = sg.Window(windowtitlemsg, layout, size=(self.windowSizeX,self.windowSizeY), resizable=True, finalize=True, element_justification='c', icon=self.ASSETS_PATH +"/icon.ico")
+        return windowname
+    
 ###############################################################################################
 ##############                  Window Definitions                            #################
 ###############################################################################################
 
-    # def makeWindow0(self, connected):
+    def makeWindow00(self):
+        sg.set_options(font=self.font)       
+        LEFTMARGIN = 50
+        windowtitlemsg = 'The Conductor: STEP 00'
 
-    #     if connected:
-    #         topMessage = 'The Conductor is connected on ' + self.dataStream.ssid + ' at ' + self.dataStream.host
-    #         connectVis = True   #Use to set visibility of an item when The Conductor is connected
-    #         disconnectVis = False  #Use to unset visibility of an item when The Conductor is not connected
-    #         self.SSIDList = self.dataStream.getNetworks()  #Get the network list from the air so user can reconnect
+        content_layout = [[sg.Push(),sg.T('Choose a working directory', key='-OUTPUT-',font = ("Calibri", 16, "bold",), pad=((0,0),(0,25))),sg.Push()],
+                [sg.pin(sg.Column([
+                    [sg.T(f"The Conductor will look in\n\n{os.path.abspath(os.getcwd()) + '/' + self.dataStream.pathPreface}\n\nfor configuration files. Click 'Ok' to use this folder, or 'Browse' to choose a new working folder.\n", key="-MODELMESSAGE00-", visible=True)],
+                    #[sg.Btn('Ok', key='-CREATEMOEDLBTN-', visible=False)]
+                    ], pad=(LEFTMARGIN,0)), shrink=True)], 
+                [sg.pin(sg.Column([
+                    [sg.Btn('Ok',**self.button2_properties(), key='-USEDEFAULTDIRBTN-', visible=True),
+                    sg.Btn('Browse',**self.button1_properties(), key='-CHOOSEDIR-', enable_events=True)]], pad=(LEFTMARGIN, 0)), shrink=True)],
+                    #sg.FolderBrowse(size=(8,1), visible=True, key='-CHOOSEDIR-', enable_events=True)]], pad=(LEFTMARGIN,0)), shrink=True),sg.Push()],
+                [sg.pin(sg.Column([[sg.Btn('Ok',**self.button2_properties(), key='-USESELDIRBTN-', visible=False)]], pad=(LEFTMARGIN,0)), shrink=True)]
+                ]
+        
+        window00=self.create_window(content_layout, windowtitlemsg)
+        return window00
 
-    #     else:
-    #         topMessage = 'Start up The Conductor and connect your PC to the SSID displayed on the screen. Then enter IP address on the screen and click "Connect."'
-    #         connectVis = False
-    #         disconnectVis = True
+    def makeWindow0(self, connected):
+            LEFTMARGIN = 50
 
-    # #Window zero welcome, set up wifi
-    # #sg row builder... 
-    #             # [
-    #             #     sg.pin(
-    #             #         sg.Column(
-    #             #             [
-    #             #                 [sg.Listbox(self.SSIDList, size=(15, 4), key="-SSIDIN-", expand_y=True, enable_events=True, visible=False)
-    #             #                 ], 
-    #             #                 [sg.Button('Refresh', key='-SSIDLISTRFH-', visible=visibility)
-    #             #                 ]
-    #             #             ], 
-    #             #             pad=(0,0)), 
-    #             #         shrink=True)
-    #             # ],
-    #     layout = [[sg.Text('The Conductor: Window 0: Connect to The Conductor.'), sg.Text(size=(2,1), key='-OUTPUT-')],
-    #             [sg.pin(sg.Column([[sg.Text(topMessage, key='-TOPMESSAGE-', size=(100,2))]]))],
-    #             [sg.pin(sg.Column([[sg.Text(f"To use this network click 'Continue.' To connect to another network enter the network info below and click 'Reconnect'. Click 'Don't Connect' to continue without connecting", key='-TOPMESSAGE01-', size=(100,2), visible=connectVis)]]), shrink=True)],
-    #             [sg.pin(sg.Column([[sg.Input('192.168.XX.XX', key="-IPIN-", visible=disconnectVis)], [sg.Button('Connect', key='-APCNTEBTN-', visible=disconnectVis)]], pad=(0,0)), shrink=True)],
-    #             [sg.pin(sg.Column([[sg.Input('192.168.XX.XX', key="-IPNEW-", visible=False)]]), shrink=True)],
-    #             [sg.pin(sg.Column([[sg.Button('Connect', key='-STNCNTEBTN-', visible=False)]], pad=(0,0)), shrink=True)],
-    #             [sg.pin(sg.Column([[sg.Button("Don't Connect", key='-NOCNTBTN-', visible=disconnectVis)]], pad=(0,0)), shrink=True)],
-    #             # [sg.pin(sg.Column([[sg.Listbox(self.SSIDList, size=(15, 4), key="-SSIDIN-", expand_y=True, enable_events=True, visible=False)]]), shrink=True)],
-    #             [sg.pin(sg.Column([[sg.Button('Continue', key='-CONTBTN-', visible=connectVis)]], pad=(0,0)), shrink=True)],
-    #             [sg.pin(sg.Column([[sg.Listbox(self.SSIDList, size=(15, 8), key="-SSIDIN-", expand_y=True, enable_events=True, visible=connectVis)], [sg.Button('Refresh', key='-SSIDLISTRFH-', visible=connectVis)]], pad=(0,0)), shrink=True)],
-    #             #[sg.pin(sg.Column([[sg.Input('Network SSID', key="-SSIDIN-", visible=False)]]), shrink=False)],
-    #             [sg.pin(sg.Column([[sg.Input('Password', key="-PSWDIN-", visible=connectVis)]]), shrink=True)],
-    #             #[sg.pin(sg.Column([[sg.Button('Connect', key='-APCNTEBTN-', visible=visibility)]], pad=(0,0)), shrink=False)],
-    #             [sg.pin(sg.Column([[sg.Button('Reconnect', key='-RECNTBTN-', visible=connectVis)]], pad=(0,0)), shrink=True)],
-    #             #[sg.pin(sg.Column([[sg.Text('Upload a model'), sg.Text(size=(2,1), key='-UPLOADMODEL-'), sg.Input(), sg.FileBrowse(), sg.Button('Ok', key='-UPLOADMODELBTN-')]]))],
-    #             #[sg.Text(''), sg.Text(size=(2,1), key='-OUTPUT-'), sg.Button('Ok', key='-APCONNECTBTN-')],
-    #             [sg.pin(sg.Column([[sg.Text("If your network doesn't show up in the list open Windows network manager before clicking Refresh", visible=connectVis, key='-MESSAGE-'), sg.Text(size=(2,1))]], pad=(0,0)), shrink=True)]   
-    #             ]
-    #     return sg.Window('THE CONDUCTOR: Step 0', layout, size=(self.windowSizeX,self.windowSizeY), finalize=True)
-    
+            if connected:
+                topMessage = 'The Conductor is connected on ' + self.dataStream.ssid + ' at ' + self.dataStream.host
+                connectVis = True   #Use to set visibility of an item when The Conductor is connected
+                disconnectVis = False  #Use to unset visibility of an item when The Conductor is not connected
+                self.SSIDList = self.dataStream.getNetworks()  #Get the network list from the air so user can reconnect
+            else:
+                topMessage = 'Start up The Conductor and connect your PC to the SSID displayed on the screen.\n\nThen enter IP address on the screen and click "Connect."'
+                connectVis = False
+                disconnectVis = True
 
-    
-    # def makeWindow1(self, modelMessage):
-    # #Window one welcome, load / create model
-    #     layout = [[sg.Text('The Conductor: Window 1'), sg.Text(size=(2,1), key='-OUTPUT-')],
-    #             [sg.pin(sg.Column([[sg.Text(f"The Conductor will look in {os.path.abspath(os.getcwd()) + '/' + self.dataStream.pathPreface} for Neural Network model files\n. Click 'Ok' to use this folder.", key="-MODELMESSAGE00-", visible=True)], [sg.Button('Ok', key='-USEDEFAULTBTN-', visible=True)], [sg.Button('Ok', key='-CREATEMOEDLBTN-', visible=False)]], pad=(0,0)), shrink=True)], 
-    #             [sg.pin(sg.Column([[sg.FolderBrowse(size=(8,1), visible=True, key='-CHOOSEDIR-')],[sg.Text(f"Or Browse for a new folder and click 'New Folder.'", key="-MODELMESSAGE01-", visible=True)], [sg.Button('New Folder', key='-NEWFOLDER-', visible=True)], [sg.Button('Ok', key='-ACCPTDEFAULT-', visible=False)]], pad=(0,0)), shrink=True)],
-    #             [sg.pin(sg.Column([[sg.Input('How many hand positions will you train?', key="-NUMPOS-", visible=False, enable_events=True)]], pad=(0,0)), shrink=True)],
-    #             [sg.pin(sg.Column([[sg.Input('Position 1 label', key="-POSLABEL-", visible=False)], [sg.Button('SUBMIT', key='-SUBLABELBTN-', visible=False)]], pad=(0,0)), shrink=True)],
-    #             [sg.pin(sg.Column([[sg.Text('Train Model', key='-TRAIN-', visible=False), sg.Text(size=(2,1)), sg.Button('Train', key='-TRAINBTN-', visible=False)]]))],
-    #             [sg.pin(sg.Column([[sg.Text('Predict hand positions', key='-PREDICT-', visible=False), sg.Text(size=(2,1)), sg.Button('Predict', key='-PREDICTBTN-',visible=False)]]))]
-                  
-    #             #[sg.Text(f'The Conductor will look in {os.path.abspath(os.getcwd()) + self.dataStream.pathPreface} for Neural Network model files.'), sg.Text(size=(5,1), key='-OUTPUT-')],
-    #             # [sg.pin(sg.Column([[sg.Text(modelMessage), sg.Text(size=(2,1), key='-MODELMESSAGE-'), sg.Button('Ok', key='-MODELMESAGEBTN-')]]))],
-    #             # [sg.pin(sg.Column([[sg.Text('Upload a model'), sg.Text(size=(2,1), key='-UPLOADMODEL-'), sg.Input(), sg.FileBrowse(), sg.Button('Upload', key='-UPLOADMODELBTN-')]]))],
-    #             # [sg.Text('Create a New Model'), sg.Text(size=(2,1), key='-OUTPUT-'), sg.Button('Ok', key='-CREATE-')],
-    #             # [sg.pin(sg.Column([[sg.Text('', visible=True, key='-MESSAGE-'), sg.Text(size=(2,1))]], pad=(0,0)), shrink=False)],
-    #             #[sg.pin(sg.Column([[sg.Button('-MODELOK-', visible=False)]], pad=(0,0)), shrink=False)]
-    #                     #sg.Text('Not a valid model file. Please try again.', size=(2,1), key='-invalidModel-', visible=True, pad=(0,0)), sg.Text(size=(2,1))]
-    #             ]
+            windowtitlemsg = 'THE CONDUCTOR: Step 0'
+            content_layout = ([sg.Push(),sg.T(f'Connect to The Conductor.',key='-OUTPUT-',font = ("Calibri", 16, "bold",), pad=((0,0),(0,25))),sg.Push()], 
+                    [sg.pin(sg.Column([[sg.T(topMessage, pad=(LEFTMARGIN,4), key='-TOPMESSAGE-')]]),shrink=True)],
+                    [sg.pin(sg.Column([[sg.T(f"To use this network click \"Continue.\"\n\nTo connect to another network enter the network info below and click \"Reconnect\".\n\nClick \"Don't Connect\" to continue without connecting", key='-TOPMESSAGE01-', pad=(LEFTMARGIN,0), visible=connectVis)]]), shrink=True)],
+                    [sg.pin(sg.Column([[sg.Input('192.168.XX.XXX', key="-IPIN-", visible=disconnectVis, pad=((5),(0,5)))]], pad=(LEFTMARGIN,0)),shrink=True)],
+                    [sg.pin(sg.Column([[sg.Input('192.168.XX.XXX', key="-IPNEW-", visible=False)]]), shrink=True)],
+                    [sg.pin(sg.Column([[sg.Btn('Connect',**self.button1_properties(), key='-APCNTEBTN-', visible=disconnectVis, pad=((0,70 ),(5,0)))]]),shrink=True),
+                    sg.pin(sg.Column([[sg.Btn('Connect',**self.button1_properties(), key='-SYTNCNTEBTN-', visible=False, pad=((0,70 ),(5,0)))]]),shrink=True),
+                    #[sg.Column([[sg.Btn('Connect',**self.button1_properties(), key='-STNCNTEBTN-', visible=False, pad=((70,70 ),(5,0)))]]),
+                    sg.Column([[sg.Btn("Don't Connect",**self.button1_properties(), key='-NOCNTBTN-', visible=disconnectVis )]],pad=((LEFTMARGIN,0),(5,0)))],                
+                    sg.pin(sg.Column([
+                        [sg.Listbox(self.SSIDList, size=(15, 8), key="-SSIDIN-", expand_y=True, enable_events=True, visible=connectVis)],
+                        [sg.Btn('Refresh', **self.button1_properties(), key='-SSIDLISTRFH-', visible=connectVis)]], pad=(LEFTMARGIN+50, 0),element_justification='c')),
+                    sg.pin(sg.Column([
+                        [sg.Input('Password', key="-PSWDIN-", visible=connectVis,size = 15, pad=(0, 0))],
+                        [sg.Btn('Reconnect', **self.button1_properties(), key='-RECNTBTN-', visible=connectVis)],
+                        [sg.Btn("Don't Connect",**self.button1_properties(), key='-NOCNTBTN2-', visible=False )],
+                        [sg.Btn('Continue',**self.button1_properties(), key='-CONTBTN-', visible=connectVis)],
+                        ], pad=(LEFTMARGIN, 0), element_justification='c')),
+                    
+                    #[sg.pin(sg.Column([[sg.Btn('Connect', key='-APCNTEBTN-', visible=True)]], pad=(LEFTMARGIN,0)), shrink=True)],
+                    #[sg.pin(sg.Column([[sg.Btn('Continue',**self.button1_properties(), key='-CONTBTN-', visible=connectVis)]], pad=(LEFTMARGIN,0)), shrink=True)],
+                    [sg.pin(sg.Column([[sg.T("If your network doesn't show up in the list open Windows network manager before clicking Refresh", visible=True, key='-MESSAGE-')]], pad=(LEFTMARGIN,0)), shrink=True)]
+                    )
+        
+            window0=self.create_window(content_layout, windowtitlemsg)
+            return window0
+        
+    def makeWindow1(self):
+        LEFTMARGIN = 50
+        modelPath = self.dataStream.pathPreface + '/model.model'
+        print(f'modelPath: {modelPath}')
+        modelMessage, existsVis, notVis = self.makeModelFileMessage(modelPath)
 
-    #     return sg.Window('THE CONDUCTOR: Step 1', layout, size=(self.windowSizeX,self.windowSizeY), finalize=True)
-    
-    def pre_makeWindow2(self):
+        #Window one welcome, load / create model
+        windowtitlemsg = 'THE CONDUCTOR: Step 1'
+        content_layout =([sg.Push(),sg.T('The Conductor: Window 1',key='-OUTPUT-',font = ("Calibri", 16, "bold",), pad=((LEFTMARGIN,0),(0,25))),sg.Push()],
+                [sg.Push(),sg.pin(sg.Column([
+                    [sg.T(modelMessage, key="-MODELMESSAGE00-", visible=True)], 
+                    [sg.Btn('Ok',**self.button2_properties(), key='-USEDEFAULTBTN-', visible=existsVis),
+                    sg.Btn('Create New',**self.button1_properties(), key='-CREATEMOEDLBTN-', visible=True),
+                    sg.Btn('Ok',**self.button2_properties(), key='-ACCPTDEFAULT-', visible=notVis)]], pad=(LEFTMARGIN, 0)), shrink=True),sg.Push()], 
+                [sg.Push(),sg.pin(sg.Column([[sg.T(modelMessage, key="-MODELMESSAGE01-", visible=False)]], pad=(LEFTMARGIN, 0)), shrink=True),sg.Push()],
+                [sg.Push(),sg.pin(sg.Column([[sg.Input('How many hand positions will you train?', key="-NUMPOS-", visible=False, enable_events=True)]], pad=(LEFTMARGIN,0)), shrink=True),sg.Push()],
+                [sg.Push(),sg.pin(sg.Column([[sg.Input('Position 1 label', key="-POSLABEL-", visible=False)], 
+                    [sg.Btn('SUBMIT',**self.button1_properties(), key='-SUBLABELBTN-', visible=False)]], pad=(LEFTMARGIN,0)), shrink=True),sg.Push()],
+                [sg.Push(),sg.pin(sg.Column([[sg.T('Train Model', key='-TRAIN-', visible=False),sg.Btn('Train',**self.button1_properties(), key='-TRAINBTN-', visible=False)]], pad=(LEFTMARGIN, 0)), shrink=True),sg.Push()],
+                [sg.Push(),sg.pin(sg.Column([
+                    [sg.T('Predict hand positions', key='-PREDICT-', visible=False),
+                    sg.Btn('Predict',**self.button1_properties(), key='-PREDICTBTN-',visible=False)]], pad=(LEFTMARGIN, 0)), shrink=True),sg.Push()]
+        )
+        
+        window1=self.create_window(content_layout,windowtitlemsg)
+        return window1
+
+    def makeWindow2(self):
+        LEFTMARGIN = 50
+        
         """
         Creates a window and initializes the MIDI ports and control lists.
 
@@ -360,10 +419,10 @@ class UX:
         self.writer.available_MIDIPortsOut = self.writer.midiOut.get_ports()
         self.writer.available_MIDIPortsIn = self.writer.midiIn.get_ports()
 
-        numOutPorts = len(self.writer.available_MIDIPortsOut)
+        numOutPorts = len(self.writer.available_MiDiPortsOut)
         midiOutList = []
         for i in range(numOutPorts):
-            midiOutList.append(self.writer.available_MIDIPortsOut[i])
+            midiOutList.append(self.writer.available_MiDiPortsOut[i])
 
         controlList = ['Modulate', 'Arpeggiate']
         waveList = ['sine', 'square', 'saw']
@@ -376,8 +435,8 @@ class UX:
         logInvisibility = True
 
         if controlLogData[0] != -1:
-            self.writer.midiPortOut = controlLogData[0][0]  # MIDI Port Name
-            self.writer.bpm = controlLogData[0][1]
+            self.midiPortOut = controlLogData[0][0]  # MIDI Port Name
+            self.bpm = controlLogData[0][1]
 
             newControlList = controlLogData[1:]  # Take the first item off the list
             controlListStr, textHeight = self.getControlListStr(newControlList)
@@ -397,46 +456,137 @@ class UX:
             Message00Text = "Let's map MIDI controls to hand positions."
             controlListStr = "First choose a MIDI port to send commands to:"
             textHeight = 1
+        
+        windowtitlemsg = 'THE CONDUCTOR: Step 2'
+        content_layout = [
+            [sg.Push(),sg.T('The Conductor: Window 2', key='-OUTPUT-',font = ("Calibri", 16, "bold",), pad=((LEFTMARGIN,0),(0,25))),sg.Push()
+                #[sg.Input('How many hand positions will you train?', key="-NUMPOS-", visible=False, enable_events=True)]
+            ],
+            [sg.Push(),sg.Column([
+                [sg.T(Message00Text, key='-TOPMESSAGE00-', visible=True)], 
+                [sg.T(controlListStr, key='-TOPMESSAGE01-', visible=True)]
+                ], key='-TOPMESSAGE00COL-', element_justification='left', expand_x = True, vertical_alignment='t', pad=(LEFTMARGIN,0)), sg.Push(),
+            sg.Column([
+                [sg.Btn('OK', **self.button2_properties(), key='-USELOGBTN-', visible=logVisibility)], 
+                [sg.Btn('Overwrite', **self.button1_properties(), key='-NEWCONTROLBTN-', visible=logVisibility)],
+                [sg.Btn('Continue', **self.button1_properties(), key='-CONTUBTN-', visible=False)] 
+                ], key='-CNTRLOVERIDECOL-', element_justification='left', expand_x = True, vertical_alignment='t', pad=(LEFTMARGIN,0), visible=logVisibility),
+            sg.Column([
+                [sg.Listbox(midiOutList, size=(50, 8), key="-MIDIPORTOUT-", expand_x=True, expand_y=True,enable_events=True, visible=logInvisibility)], 
+                [sg.Btn('Refresh', **self.button1_properties(), key='-MIDIOUTLISTRFH-', visible=logInvisibility)], 
+                [sg.Btn('Connect', **self.button1_properties(), key='-MIDIOUTCNTBTN-', visible=logInvisibility)]
+                ], key='-MIDIPORTOUTCOL-',  element_justification='c', expand_x = True, vertical_alignment='t', pad=(LEFTMARGIN,0)),
+            ],
+            [sg.Push(), sg.pin(sg.Column([
+                [sg.T("BPM", key='-BPMLABEL-', visible=False)],
+                [sg.Slider(range=(30, 300), default_value=120, expand_x=True,orientation='horizontal', key='-BPMSLIDE-', visible=False)],
+                [sg.Btn('Ok', **self.button2_properties(), key='-BPMBTN-', visible=False)]
+                ], key='-BPMCOL-',  vertical_alignment='t', pad=(LEFTMARGIN,0)), shrink=True), sg.Push(),
+            sg.Push(), sg.Column([
+                [sg.Input('Control Name', size=(15,10), key="-CTRLNAME-", visible=False)],
+                [sg.Btn('Ok', **self.button2_properties(), key='-CTRLNAMEBTN-', visible=False)]
+                ], key='-CTRLNAMECOL-',  vertical_alignment='t', visible=False, pad=(LEFTMARGIN,0)), sg.Push(),
+            sg.Push(), sg.Column([
+                [sg.Listbox(conditionTypeList, size=(10, 3), key="-CONDTYPE-", expand_y=True, enable_events=True, visible=False)]
+                ], key='-CONDTYPECOL-',  vertical_alignment='t', pad=(LEFTMARGIN,0), visible=False), sg.Push(),
+            sg.Push(), sg.Column([
+                [sg.T(f"Position, threshold Control ON.", key='-CURRPOSONLABEL-', size=(15,2), visible=False)],
+                [sg.Listbox(currentPositionList, size=(10, 3), key="-CURRPOSLISTON-", expand_y=True, enable_events=True, visible=False)],
+                [sg.Slider(range=(1, 25), default_value=3, expand_x=True,orientation='horizontal', key='-CURRPOSONSLIDE-', visible=False)]
+                ], key='-CURRPOSLISTONCOL-',  vertical_alignment='t', pad=(LEFTMARGIN,0), visible=False), sg.Push(),
+            sg.Push(), sg.Column([
+                [sg.T(f"Position, threshold at END ON.", key='-CURRPOSTRANSONLABEL-', size=(15,2), visible=False)],
+                [sg.Listbox(currentPositionList, size=(10, 3), key="-CURRPOSLISTTRANSON-", expand_y=True, enable_events=True, visible=False)],
+                [sg.Slider(range=(1, 25), default_value=3, expand_x=True,orientation='horizontal', key='-CURRPOSTRANSONSLIDE-', visible=False)]
+                ], key='-CURRPOSLISTTRANSONCOL-',  vertical_alignment='t', pad=(LEFTMARGIN,0), visible=False), sg.Push(),
+            sg.Push(), sg.Column([
+                [sg.T(f"Position, threshold control OFF.", key='-CURRPOSOFFLABEL-', size=(15,2), visible=False)],
+                [sg.Listbox(currentPositionList, size=(10, 3), key="-CURRPOSLISTOFF-", expand_y=True, enable_events=True, visible=False)],
+                [sg.Slider(range=(1, 25), default_value=3, expand_x=True,orientation='horizontal', key='-CURRPOSOFFSLIDE-', visible=False)],
+                [sg.Btn('Ok', **self.button2_properties(), key='-CONDBTN-', visible=False)]
+                ], key='-CURRPOSLISTOFFCOL-', vertical_alignment='t', pad=(LEFTMARGIN,0), visible=False), sg.Push(),
+            sg.Push(), sg.Column([
+                [sg.T(f"Position, threshold at END OFF.", key='-CURRPOSOFFTRANSLABEL-', size=(15,2), visible=False)],
+                [sg.Listbox(currentPositionList, size=(10, 3), key="-CURRPOSLISTTRANSOFF-", expand_y=True, enable_events=True, visible=False)],
+                [sg.Slider(range=(1, 25), default_value=3, expand_x=True,orientation='horizontal', key='-CURRPOSOFFTRANSSLIDE-', visible=False)],
+                [sg.Btn('Ok', key='-CONDTRANSBTN-', visible=False)]
+                ], key='-CURRPOSLISTTRANSOFFCOL-',  vertical_alignment='t', pad=(LEFTMARGIN,0), visible=False), sg.Push(),
+            sg.Push(), sg.Column([
+                [sg.Listbox(arpegDirList, size=(10, 3), key="-ARPEGDIR-", expand_y=True, enable_events=True, visible=False)],
+                [sg.Btn('Ok', **self.button2_properties(), key='-ARPEGBTN-', visible=False)]
+                ], key='-ARPEGDIRCOL-',  vertical_alignment='t', pad=(LEFTMARGIN,0), visible=False), sg.Push(),
+            sg.Push(), sg.Column([
+                [sg.Listbox(controlList, size=(10, 3), key="-CTRLLIST-", expand_y=True, enable_events=True, visible=False)],
+                [sg.Btn('Select', **self.button1_properties(), key='-SELCNTRLTYPEBTN-', visible=False)]
+                ], key='-CTRLLISTCOL-',  vertical_alignment='t', pad=(LEFTMARGIN,0)), sg.Push(),
+            sg.Push(), sg.Column([
+                [sg.T(f"Rate", key='-RATELABEL-', size=(15,2), visible=False)],
+                [sg.Slider(range=(0, 127), default_value=30, expand_x=True,orientation='horizontal',key='-RATESLIDE-', visible=False)]
+                ], key='-RATECOL-', vertical_alignment='t', pad=(LEFTMARGIN,0)), sg.Push(),
+            sg.Push(), sg.Column([
+                [sg.T(f"Waveform", key='-WAVELABEL-', size=(15,2), visible=False)],
+                [sg.Listbox(waveList, size=(50, 3), key="-WAVELIST-", enable_events=True, visible=False)]
+                ], key='-WAVECOL-',  vertical_alignment='t', pad=(LEFTMARGIN,0)), sg.Push(),
+            sg.Push(), sg.Column([
+                [sg.T(f"Minimum", key='-MINLABEL-', size=(15,2), visible=False)],
+                [sg.Slider(range=(0, 127), default_value=30, expand_x=True,orientation='horizontal', key='-MINSLIDE-', visible=False)]
+                ], key='-MINCOL-',  vertical_alignment='t', pad=(LEFTMARGIN,0)), sg.Push(),
+            sg.Push(), sg.Column([
+                [sg.T(f"Maximum", key='-MAXLABEL-', size=(15,2), visible=False)],
+                [sg.Slider(range=(0, 127), default_value=30, expand_x=True,orientation='horizontal', key='-MAXSLIDE-', visible=False)],
+                [sg.Btn('Ok', **self.button2_properties(), key='-MODDATABTN-', visible=False)]
+                ], key='-MAXCOL-',  vertical_alignment='t', pad=(LEFTMARGIN,0)), sg.Push(),
+            sg.Push(), sg.Column([
+                [sg.T(f"Click 'Another' to setup another control, or click 'Done' to continue.", key='-DONELABEL-', size=(15,2), visible=False)],
+                [sg.Btn('Another', **self.button1_properties(), key='-ANOTHERBTN-', visible=False)],
+                [sg.Btn('Done', **self.button1_properties(), key='-MAPPINGDONEBTN-', visible=False)]
+                ], key='-DONECOL-',  vertical_alignment='t', pad=(0,0), visible=False), sg.Push(),
+            #sg.Column([[sg.T(f"Min / Max", key='-MINMAXLABEL-', size=(15,2), visible=False)], [sg.Listbox(waveList, size=(50, 15), key="-WAVELIST-", expand_y=True, enable_events=True, visible=False)]], key='-MINCOL-',  vertical_alignment='t', pad=(0,0))
+            ]
+        ]
+        window2=self.create_window(content_layout,windowtitlemsg)
+        return window2
 
-        self.window.makeWindow2(controlList,waveList,conditionTypeList,currentPositionList,arpegDirList,midiOutList,controlListStr,textHeight,Message00Text,logVisibility,logInvisibility)
-    #     #Window3 Training or prediction select
-    #     layout = [[sg.Text('The Conductor: Window 2'), sg.Text(size=(2,1), key='-OUTPUT-')],
-    #               [sg.pin(sg.Column([[sg.Text('Train Model'), sg.Text(size=(2,1), key='-TRAIN-'), sg.Button('Train', key='-TRAINBTN-')]]))],
-    #               [sg.pin(sg.Column([[sg.Text('Predict hand positions'), sg.Text(size=(2,1), key='-PREDICT-'), sg.Button('Predict', key='-PREDICTBTN-')]]))],
-    #               [sg.pin(sg.Column([[sg.Text('', visible=True, key='-WORDS-'), sg.Text(size=(2,1))]], pad=(0,0)), shrink=False)],
-    #     ]
-    #     return sg.Window('THE CONDUCTOR: Step 2 Map positions to controls', layout, layout, size=(self.windowSizeX,self.windowSizeY), finalize=True)
+    def makeWindow2_1(self):
+        #Window3 Training or prediction select
+        LEFTMARGIN = 50
+        windowtitlemsg = 'THE CONDUCTOR: Step 2.1'
+        content_layout = [
+            [sg.Text('The Conductor: Window 2.1'), sg.Text(size=(2,1), key='-OUTPUT-')],
+            [sg.pin(sg.Column([[sg.Text('Train Model'), sg.Text(size=(2,1), key='-TRAIN-'), sg.Button('Train',**self.button1_properties(), key='-TRAINBTN-')]]))],
+            [sg.pin(sg.Column([[sg.Text('Predict hand positions'), sg.Text(size=(2,1), key='-PREDICT-'), sg.Button('Predict',**self.button1_properties(), key='-PREDICTBTN-')]]))],
+            [sg.pin(sg.Column([[sg.Text('', visible=True, key='-WORDS-'), sg.Text(size=(2,1))]], pad=(0,0)), shrink=False)],
+        ]
+        window2_1=self.create_window(content_layout,windowtitlemsg)
+        return window2_1
+        return sg.Window('THE CONDUCTOR: Step 2.1', layout, layout, size=(self.windowSizeX,self.windowSizeY), finalize=True)
     
-
-    # def makeWindow2_1(self):
-    #     #Window3 Training or prediction select
-    #     layout = [[sg.Text('The Conductor: Window 2.1'), sg.Text(size=(2,1), key='-OUTPUT-')],
-    #               [sg.pin(sg.Column([[sg.Text('Train Model'), sg.Text(size=(2,1), key='-TRAIN-'), sg.Button('Train', key='-TRAINBTN-')]]))],
-    #               [sg.pin(sg.Column([[sg.Text('Predict hand positions'), sg.Text(size=(2,1), key='-PREDICT-'), sg.Button('Predict', key='-PREDICTBTN-')]]))],
-    #               [sg.pin(sg.Column([[sg.Text('', visible=True, key='-WORDS-'), sg.Text(size=(2,1))]], pad=(0,0)), shrink=False)],
-    #     ]
-    #     return sg.Window('THE CONDUCTOR: Step 2.1', layout, layout, size=(self.windowSizeX,self.windowSizeY), finalize=True)
-    
-
-    # def makeWindow3(self):
-    #     #Window3 Training 
-    #     layout = [[sg.Text('The Conductor: Window 3'), sg.Text(size=(2,1), key='-OUTPUT-')],
-    #               [sg.pin(sg.Column([[sg.Text("Hit the 'GO!' button to begin training", visible=True, key='-GESTURE-'), sg.Text(size=(2,1))]], pad=(0,0)), shrink=False)],
-    #               [sg.pin(sg.Column([[sg.Text('', visible=True, key='-CountDown-'), sg.Text(size=(2,1))]], pad=(0,0)), shrink=False)],
-    #               [sg.Button('GO!')]
-    #     ]
-    #     return sg.Window('THE CONDUCTOR: Step 3', layout, layout, size=(self.windowSizeX,self.windowSizeY), finalize=True)
+    def makeWindow3(self):
+        #Window3 Training 
+        windowtitlemsg = 'THE CONDUCTOR: Step 3'
+        content_layout = [[sg.Text('The Conductor: Window 3'), sg.Text(size=(2,1), key='-OUTPUT-')],
+                  [sg.pin(sg.Column([[sg.Text("Hit the 'GO!' button to begin training", visible=True, key='-GESTURE-'), sg.Text(size=(2,1))]], pad=(0,0)), shrink=False)],
+                  [sg.pin(sg.Column([[sg.Text('', visible=True, key='-CountDown-'), sg.Text(size=(2,1))]], pad=(0,0)), shrink=False)],
+                  [sg.Button('GO!',**self.button2_properties(), key='-GOTRAIN-', visible=True)],
+                  [sg.Button('Predict',**self.button1_properties(), key='-TRGDONEPREDICT-', visible=False)]
+        ]
+        window3=self.create_window(content_layout,windowtitlemsg)
+        return window3
+        return sg.Window('THE CONDUCTOR: Step 3', layout, layout, size=(self.windowSizeX,self.windowSizeY), finalize=True)
 
 
-    # def makeWindow3_1(self):
-    #     #Window3_1 Prediction 
-    #     layout = [[sg.Text('The Conductor: Window 3_1'), sg.Text(size=(2,1), key='-OUTPUT-')],
-    #               [sg.pin(sg.Column([[sg.Text("Hit the 'GO!' button to begin prediction", visible=True, key='-GESTURE-'), sg.Text(size=(2,1))]], pad=(0,0)), shrink=False)],
-    #               [sg.pin(sg.Column([[sg.Text('', visible=True, key='-CountDown-'), sg.Text(size=(2,1))]], pad=(0,0)), shrink=False)],
-    #               [sg.pin(sg.Column([[sg.Text(''), sg.Text(size=(2,1), key='-GO-'), sg.Button('GO!', key='-GOBTN-', visible=True)]]), shrink=False)],
-    #               [sg.pin(sg.Column([[sg.Text(''), sg.Text(size=(2,1), key='-STOP-'), sg.Button('Stop', key='-STOPBTN-', visible=False)]]), shrink=False)]
-    #     ]
-    #     return sg.Window('THE CONDUCTOR: Step 3_1', layout, layout, size=(self.windowSizeX,self.windowSizeY), finalize=True)
+    def makeWindow3_1(self):
+        #Window3_1 Prediction 
+        windowtitlemsg = 'THE CONDUCTOR: Step 3.1'
+        content_layout = [[sg.Text('The Conductor: Window 3.1'), sg.Text(size=(2,1), key='-OUTPUT-')],
+                  [sg.pin(sg.Column([[sg.Text("Hit the 'GO!' button to begin prediction", visible=True, key='-GESTURE-'), sg.Text(size=(2,1))]], pad=(0,0)), shrink=False)],
+                  [sg.pin(sg.Column([[sg.Text('', visible=True, key='-CountDown-'), sg.Text(size=(2,1))]], pad=(0,0)), shrink=False)],
+                  [sg.pin(sg.Column([[sg.Text(''), sg.Text(size=(2,1), key='-GO-'), sg.Button('GO!',**self.button2_properties(), key='-GOBTN-', visible=True)]]), shrink=False)],
+                  [sg.pin(sg.Column([[sg.Text(''), sg.Text(size=(2,1), key='-STOP-'), sg.Button('Stop',**self.button1_properties(), key='-STOPBTN-', visible=False)]]), shrink=False)]
+        ]
+        window3_1=self.create_window(content_layout,windowtitlemsg)
+        return window3_1
+        return sg.Window('THE CONDUCTOR: Step 3_1', layout, layout, size=(self.windowSizeX,self.windowSizeY), finalize=True)
 
 ###############################################################################################
 ##############                  UX LOOP                                       #################
@@ -453,11 +603,12 @@ class UX:
         usedChannels = {'m': 0, 'a':0, 'n': 0}
         controlPath = self.dataStream.pathPreface + "/controls.csv"
         newPathPreface = -1
-        
+        #self.positonPathList = ['pos1', 'pos2', 'pos3']
+
         stopPredict = 0
        
         ##Methods to collect run time data required for the GUI
-        # modelPath = self.dataStream.pathPreface + 'model.model'
+        # modelPath = self.dataStream.pathPreface + '/model.model'
         # print(f'modelPath: {modelPath}')
         # modelMessage = self.makeModelFileMessage(modelPath)
 
@@ -470,11 +621,14 @@ class UX:
         newPositionLabelList = []
 
         # Set all windows to Noe except window 1 to start
-        window00 = self.window.makeWindow00(self.dataStream.pathPreface)
-        window0 = None #self.window.makeWindow0(self.dataStream.sockConnection, self.SSIDList, self.dataStream.ssid, self.dataStream.host)
-        #window1 = self.window.makeWindow1(modelMessage)
+        window00 = self.makeWindow00()
+        #window00 = None
+        #window0 = self.makeWindow0(self.dataStream.sockConnection)
+        window0 = None #self.makeWindow0(self.dataStream.sockConnection)
+        #window1 = self.makeWindow1()
         window1 = None
-        window2 = None
+        #window2 = self.makeWindow2()
+        window2=None
         window2_1 = None
         window3 = None
         window3_1 = None
@@ -483,6 +637,7 @@ class UX:
             window, event, values = sg.read_all_windows()
             print(f'event: {event}')
             print(f'values: {values}')
+
 
 ##############     Window00          #################
             #events for window00 (Setup user directory)
@@ -494,34 +649,24 @@ class UX:
 
                 if event == sg.WIN_CLOSED or event == 'Exit':
                     break
-                
-                
-                if  event == '-CHOOSEDIR-':
-                    foldername = sg.popup_get_folder('Select a folder', no_window=True, initial_folder=os.getcwd())
-                    print('Selected folder:', foldername)
 
                 if event == '-USEDEFAULTDIRBTN-':
                     print()
                     print(f'Window 00 -USEDEFAULTDIRBTN-')
                     #Just use the default directory and carry on
                     window00.hide()
-                    window0 = self.window.makeWindow0(self.dataStream.sockConnection, self.SSIDList, self.dataStream.ssid, self.dataStream.host)
+                    window0 = self.makeWindow0(self.dataStream.sockConnection)
 
                 if event == '-CHOOSEDIR-':
                     print()
                     print(f'Window 00 -CHOOSEDIR-')
                     #Use the directory provided by the user, if it exists
-                    foldername = sg.popup_get_folder('Select a folder', no_window=True, initial_folder=os.getcwd())
-                    values['-CHOOSEDIR-'] = foldername  # Save the selected folder path to the values dictionary
-                    # print('Selected folder:', foldername)
-                    print('Selected folder:', '-CHOOSEDIR-')
-                    #newPathPreface = values[foldername]
                     newPathPreface = values["-CHOOSEDIR-"]
                     #newModelPath = newPathPreface + '/model.model'
                     #newModelLogPath = newPathPreface + '/modelLog.csv'
 
                     if os.path.exists(newPathPreface):
-                        positionLabelMessage00 = newPathPreface + " exists.\n\nClick 'Ok' to use this directory, or 'Browse' for another.\n"
+                        positionLabelMessage00 = newPathPreface + " exists.\n Click 'Ok' to use this directory, or 'Browse' for another."
                         
                         window['-MODELMESSAGE00-'].update(positionLabelMessage00)
                         window['-USEDEFAULTDIRBTN-'].update(visible=False)
@@ -536,8 +681,10 @@ class UX:
                     # modelMessage = self.makeModelFileMessage(modelPath)
 
                     window00.hide()
-                    window0 = self.window.makeWindow0(self.dataStream.sockConnection, self.SSIDList, self.dataStream.ssid, self.dataStream.host)
+                    window0 = self.makeWindow0(self.dataStream.sockConnection)
                 
+
+
 ##############     Window0          #################
             #events for window0 (Create connection)
             #TODO Add option to choose from previous connections
@@ -584,11 +731,9 @@ class UX:
                         self.SSIDList = self.dataStream.getNetworks()
                         window['-TOPMESSAGE-'].update(f'Conductor Connected!  SSID: {self.dataStream.ssid}, IP Address: {self.dataStream.host}')
                         window['-TOPMESSAGE01-'].update(visible=True)
-                        window['-TOPMESSAGE01-'].update(f'To use this network click "Continue".\n\nTo connect to another network enter the network info below and click "Reconnect"')
+                        window['-TOPMESSAGE01-'].update(f'To use this network click continue. To connect to another network enter the network info below and click Reconnect')
                         window['-MESSAGE-'].update(visible=True)
                         window['-CONTBTN-'].update(visible=True)
-                        window['-NOCNTBTN-'].update(visible=False)
-                        window['-NOCNTBTN2-'].update(visible=True)
                     
                     else:
                         window['-TOPMESSAGE-'].update(f'Conductor Not Connected on  SSID: {self.dataStream.ssid}, IP Address: {self.dataStream.host}')
@@ -596,8 +741,6 @@ class UX:
                         window['-TOPMESSAGE01-'].update(f'To connect to another network enter the network info below and click Reconnect')
                         window['-CONTBTN-'].update(visible=False)
                         window['-MESSAGE-'].update(visible=True)
-                        window['-NOCNTBTN-'].update(visible=False)
-                        window['-NOCNTBTN2-'].update(visible=True)
                     
                     self.SSIDList = self.dataStream.getNetworks()
                     window['-IPIN-'].update(visible=False)
@@ -675,7 +818,7 @@ class UX:
                             window.refresh()
                             self.dataStream.logCSVRow('networks.csv', [self.dataStream.ssid, self.dataStream.pswd, self.dataStream.host, self.dataStream.port])
                             time.sleep(2)
-                            window1 = self.window.makeWindow1(self.dataStream.pathPreface)
+                            window1 = self.makeWindow1()
                             window0.hide()
                         else:
                             print(f"Error Connecting to {newIP} at {newSSID}")
@@ -703,14 +846,16 @@ class UX:
                     self.dataStream.logCSVRow('networks.csv', [self.dataStream.ssid, self.dataStream.pswd, self.dataStream.host, self.dataStream.port])
 
                     window0.hide()
-                    window1 = self.window.makeWindow1(self.dataStream.pathPreface)
+                    window1 = self.makeWindow1()
 
-                if event == '-NOCNTBTN-' or event == '-NOCNTBTN2-':
+                if event == '-NOCNTBTN-':
                     print()
                     print(f'Window 0 -NOCNTBTN-')
                     self.dataStream.sock.close()
                     window0.hide()
-                    window1 = self.window.makeWindow1(self.dataStream.pathPreface)
+                    window1 = self.makeWindow1()
+                    
+                    
            
 ##############     Window1          #################            
             if window == window1:
@@ -777,7 +922,7 @@ class UX:
                     window['-MODELMESSAGE01-'].update(visible=False)
                     window['-ACCPTDEFAULT-'].update(visible=False)
                     window1.hide()
-                    window2 = self.pre_makeWindow2()
+                    window2 = self.makeWindow2()
                     # window['-TRAIN-'].update(visible=True)
                     # window['-PREDICT-'].update(visible=True)
                     # window['-TRAINBTN-'].update(visible=True)
@@ -831,7 +976,7 @@ class UX:
                     window['-POSLABEL-'].update(visible=False)
                     window['-SUBLABELBTN-'].update(visible=False)
                     window.refresh()
-            
+
                 if event == '-NUMPOS-':
                     print()
                     print(f'Window 1 -NUMPOS-')
@@ -881,7 +1026,7 @@ class UX:
 
                         window['-MODELMESSAGE01-'].update(visible=True)
                         window1.hide()
-                        window2 = self.pre_makeWindow2()  #model complete go to window two - map positions
+                        window2 = self.makeWindow2()  #model complete go to window two - map positions
                         # window['-TRAIN-'].update(visible=True)
                         # window['-PREDICT-'].update(visible=True)
                         # window['-TRAINBTN-'].update(visible=True)
@@ -906,13 +1051,13 @@ class UX:
                 #     #setup datastream how we want it for training
                 #     #dataStream = socketClientUx.GetData(packetSize=self.packetSize, label=label, labelPath=labelPath, getTraining=True, numSensors=numSensors, pathPreface=pathPreface)
                 #     window1.hide()
-                #     window3 =self.window.makeWindow3()
+                #     window3 =self.makeWindow3()
                            
                 # if event == "-PREDICTBTN-":  
                 #     print() 
                 #     print("-PREDICTBTN-")
                 #     window1.hide()
-                #     window3_1 =self.window.makeWindow3_1()
+                #     window3_1 =self.makeWindow3_1()
 
 ##############     Window2          #################
             if window == window2:
@@ -921,12 +1066,10 @@ class UX:
                 print()
                 print()
                 print("Window 2")
-                #print(self.Test)
-                
+
                 if event == sg.WIN_CLOSED or event == 'Exit':
-                    #window2.hide()
-                    #window1 =self.window.makeWindow0(self.dataStream.sockConnection, self.SSIDList, self.dataStream.ssid, self.dataStream.host)
-                    break   
+                    window2.hide()
+                    window1 =self.makeWindow0() 
 
                 if event == '-USELOGBTN-':
                     print()
@@ -985,7 +1128,7 @@ class UX:
                     window.refresh()
 
                 #Set BPM
-                if event == '-MIDIOUTCNTBTN-':
+                if event == '-MIDIOUTCNTBTN-': 
                     print()
                     print(f'Window 2 -MIDIOUTCNTBTN-')
                     
@@ -1318,7 +1461,7 @@ class UX:
                         else:
                             print('Used up all channels')
                             window2.hide()
-                            window3_1 =self.window.makeWindow3_1()
+                            window3_1 =self.makeWindow3_1()
                         
                         window['-RATECOL-'].update(visible=True)
                         window['-WAVECOL-'].update(visible=True)
@@ -1346,7 +1489,7 @@ class UX:
                         else:
                             print('Used up all channels')
                             window2.hide()
-                            window3_1 =self.window.makeWindow3_1()
+                            window3_1 =self.makeWindow3_1()
 
                         window['-RATECOL-'].update(visible=True)
                         window['-RATELABEL-'].update(visible=True)
@@ -1548,7 +1691,7 @@ class UX:
                 print()
                 print('-CONTUBTN-')
                 window2.hide()
-                window2_1 = self.window.makeWindow2_1()
+                window2_1 = self.makeWindow2_1()
 
                     
 
@@ -1563,7 +1706,7 @@ class UX:
                 
                 if event == sg.WIN_CLOSED or event == 'Exit':
                     window2_1.hide()
-                    window1 = self.window.makeWindow0(self.dataStream.sockConnection, self.SSIDList, self.dataStream.ssid, self.dataStream.host)   
+                    window1 =self.makeWindow0()   
 
                 if event == "-TRAINBTN-":
                     print()
@@ -1571,13 +1714,13 @@ class UX:
                     #setup datastream how we want it for training
                     #dataStream = socketClientUx.GetData(packetSize=self.packetSize, label=label, labelPath=labelPath, getTraining=True, numSensors=numSensors, pathPreface=pathPreface)
                     window2_1.hide()
-                    window3 =self.window.makeWindow3()
+                    window3 =self.makeWindow3()
                            
                 if event == "-PREDICTBTN-":  
                     print() 
                     print("-PREDICTBTN-")
                     window2_1.hide()
-                    window3_1 =self.window.makeWindow3_1()
+                    window3_1 =self.makeWindow3_1()
                 
                 if event == "-WORDS-":
                     window["-WORDS-"].update(values['-WORDS-'])
@@ -1670,7 +1813,7 @@ class UX:
                     print()
                     print("Window 3 -TRGDONEPREDICT-")
                     window3.hide()
-                    window3_1 =self.window.makeWindow3_1()
+                    window3_1 =self.makeWindow3_1()
 
 
 ##############     Window3_1          #################
