@@ -707,6 +707,7 @@ class UX:
                             #Check pattern for IP, Get list of available networks aand let user check
                         #connector.SSID = values["-SSIDIN-"]
                         self.dataStream.host = values["-IPIN-"]
+                        #self.dataStream.host = "192.168.1.75"
                         #connector.PSWD = "NoneShallPass"
                         
                         window['-MESSAGE-'].update(f'Connecting to The Conductor at IP Address {self.dataStream.host}...')
@@ -714,12 +715,16 @@ class UX:
                         connectTries = 0
                         while connectTries < 3:
                             print("Trying to make a socket connection")
+                            print(f"self.dataStream.host: {self.dataStream.host}")
+                            
                             if self.dataStream.makeSockConnection(self.dataStream.host, self.dataStream.port) == -1:
                                 connectTries += 1
                                 time.sleep(1)
                             else:
                                 print("Connected to The Conductor!")
                                 break
+
+                        print(f'self.dataStream.sockConnection: {self.dataStream.sockConnection}')
         
                     if connectTries == 3:
                         print("Can't connect to the Conductor")

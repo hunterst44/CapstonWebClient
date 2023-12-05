@@ -16,7 +16,7 @@ import buildMidi
 from midiPlayer import MidiPlayer
 from midiArp import MidiArp
 
-BPM = 120
+# BPM = 30
 # import sys
 
 """ 
@@ -35,7 +35,7 @@ BPM = 120
 
 class MiDiWriter:
 
-    def __init__(self, *, predictions=[], port_name=1, channel=0, cc_num=75, bpm=BPM, rate='w', ToFByte=-1, playControl = []):
+    def __init__(self, *, predictions=[], port_name=1, channel=0, cc_num=75, bpm=60, rate='w', ToFByte=-1, playControl = []):
         self.midiOut = rtmidi.MidiOut()
         self.midiIn = rtmidi.MidiIn()
         self.midiPortOut = port_name
@@ -50,7 +50,7 @@ class MiDiWriter:
         self.controlList = []
         #self.loadChannels() #Load the Channels above - must be defined in loadChannels
         self.available_MiDiPortsIn = self.midiIn.get_ports()
-        self.metro = Metronome(bpm = BPM)
+        self.metro = Metronome(bpm)
         self.play_loop_started = False
         self.playControl = playControl
         self.writerON = 0
@@ -67,7 +67,7 @@ class MiDiWriter:
         # self.midiBuilder = buildMidi.MidiBuilder()
         
 
-        self.metro = Metronome(bpm = self.bpm)
+        # self.metro = Metronome(bpm = self.bpm)
         # builder1 = buildMidi.MidiBuilder(dataType=self.control00.controllerType, midiMessage=[60], ch=self.control00.channel, velocity=64, rate='w')
         # result1 = builder1.build_midi()
         # midi_data_list = [result1]
@@ -152,7 +152,7 @@ class MiDiWriter:
                     #         non_zero_indices = i
 
     def refreshMidi(self):
-        # self.midiArp.update_Midi()  # Update MIDI information from midiArp just once for all controls
+        self.midiArp.update_Midi()  # Update MIDI information from midiArp just once for all controls
         
         time.sleep(0.03)
         self.midiArp.update_Midi()
@@ -170,7 +170,7 @@ class MiDiWriter:
             control.midiBuilder.newTof = control.controlValue
 
             # Update midiInput for each control from midiArp
-            control.midiInput = arpNote
+            control.midiInput = self.midiArp.current_Midi
             control.midiBuilder.midiMessage = control.midiInput
             print(f"refreshMidi notes {control.midiInput}")
             
@@ -179,6 +179,7 @@ class MiDiWriter:
     
         self.midi_data_list = [control.midiResults for control in self.controlList]
         self.midi_players = [MidiPlayer(self.midiOut, self.metro.getTimeTick(midi_data), midi_data) for control, midi_data in zip(self.controlList, self.midi_data_list)]
+        
 
     def reorder_held_notes(self, order):
         if order == 0:
@@ -259,7 +260,7 @@ class MiDiWriter:
     def conductor(self):
         print()
         print('conductor()')
-        self.refreshMidi()
+        # self.refreshMidi()
         
         # self.control00.midiBuilder.midiMessage = [70]
         # self.control01.midiBuilder.midiMessage= [65]
@@ -276,7 +277,7 @@ class MiDiWriter:
   
         if not self.play_loop_started:  # Check if the play_loop has not started yet
             if self.writerON == True:
-                self.refreshMidi()
+                # self.refreshMidi()
                 self.metro.startFlag = True
                 self.metro.doneFlag = True
                 play_thread = threading.Thread(target=self.play_loop, args=())
@@ -339,13 +340,13 @@ class MiDiWriter:
     # ###           MidiControl
     # ############################################################################################################    
     class MidiControl:
-        def __init__(self, *, controlLabel='', midiOut=None, ToFEnable=0, updateFlag=0, predictions=[], conditionType=0, conditionData=[[0,3], [1,3]], channel=None, controlNum=None, midiLoopCount = 0, rate=None, waveform=None, minimum=None, maximum=None, direction=None, controlType = 0, bpm=0, controllerType=0, midiMessage=60, startFlag=0, octave=0, midiInput=[]):
+        def __init__(self, *, controlLabel='', midiOut=None, ToFEnable=0, updateFlag=0, predictions=[], conditionType=0, conditionData=[[0,3], [1,3]], channel=None, controlNum=None, midiLoopCount = 0, rate=None, waveform=None, minimum=None, maximum=None, direction=None, controlType = 0, bpm=0, midiMessage=60, startFlag=0, octave=0, midiInput=[]):
             #Removed attributes:  value=-1, 
             
             self.midiLoopCount = midiLoopCount #Precious value fed in each time the loop runs
             self.controlLabel = controlLabel
             self.midiOut = midiOut
-            self.bpm = BPM
+            self.bpm = bpm
             self.channel = channel
             self.controlNum = controlNum
             self.controlType = controlType  #0 modulate, 1 arpeggiate, 2 notes
@@ -382,10 +383,10 @@ class MiDiWriter:
             self.max_val = 127
             self.period = 1
             self.thread = None
-            self.controllerType = controllerType
+            # self.controllerType = controllerType
             self.threadToggle = 0 #toggle this within the thread to see what it is doing
             #self.max_duration = max_duration
-            self.midiBuilder = buildMidi.MidiBuilder(dataType=self.controllerType, midiMessage=self.midiMessage, ch=self.channel, velocity=self.velocity, rate=self.beatLenStr)
+            self.midiBuilder = buildMidi.MidiBuilder(dataType=self.controlType, midiMessage=self.midiMessage, ch=self.channel, velocity=self.velocity, rate=self.beatLenStr)
             self.midiResults = self.midiBuilder.build_midi()
             self.startFlag = startFlag
             
@@ -518,23 +519,23 @@ class MiDiWriter:
             if self.beatLenStr == 'w':
                 # 1000 * (4 * 60/self.bpm) = self.beatMillis
                 # eg. 1000 * 4 * (60/ 60 bpm) = 4000ms
-                beatMillis = 4000 * (60/self.bpm)
+                beatMillis = 4000 * (60/float(self.bpm))
             elif self.beatLenStr == 'h':
                 # 1000 * (2 * 60/self.bpm) = self.beatMillis
                 # eg. 1000 * 2 * (60/ 90 bpm) = 1333 ms
-                beatMillis = 2000 * (60/self.bpm)
+                beatMillis = 2000 * (60/float(self.bpm))
             elif self.beatLenStr == 'q':
                 # 1000 * (1 * 60/self.bpm) = self.beatMillis
                 # eg. 1000 * 1 * (60/ 120 bpm) = 500ms
-                beatMillis = 1000 * (60/self.bpm)
+                beatMillis = 1000 * (60/float(self.bpm))
             elif self.beatLenStr == 'e':
                 # 1000 * (1 * 60/self.bpm) = self.beatMillis
                 # eg. 1000 * 1 * (60/ 60 bpm) = 2000ms
-                beatMillis = 500 * (60/self.bpm)
+                beatMillis = 500 * (60/float(self.bpm))
             elif self.beatLenStr == 's':
                 # 1000 * (1 * 60/self.bpm) = self.beatMillis
                 # eg. 1000 * 1 * (60/ 60 bpm) = 2000ms
-                beatMillis = 250 * (60/self.bpm)
+                beatMillis = 250 * (60/float(self.bpm))
             else:
                 beatMillis = 0
 

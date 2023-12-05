@@ -77,8 +77,10 @@ class Window:
 
             if connected:
                 topMessage = 'The Conductor is connected on ' + ssid + ' at ' + host
+                topMessage = 'The Conductor is connected on ' + ssid + ' at ' + host
                 connectVis = True   #Use to set visibility of an item when The Conductor is connected
                 disconnectVis = False  #Use to unset visibility of an item when The Conductor is not connected
+                
                 
             else:
                 topMessage = 'Start up The Conductor and connect your PC to the SSID displayed on the screen.\n\nThen enter IP address on the screen and click "Connect."'

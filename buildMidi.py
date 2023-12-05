@@ -91,52 +91,29 @@ class MidiBuilder:
 
     def build_midi(self):
         midi_array = []
-        if self.dataType == 0:  # for MIDI note data
-            if self.midiMessage == None:
-                midi_array = []
-            elif isinstance(self.midiMessage, int):
-                for _ in range(self.multiply_rate(self.rate)):    
+
+        if self.midiMessage is None:
+            midi_array =  []
+
+        if self.dataType in [1, '1']:  # MIDI note data
+            if isinstance(self.midiMessage, int):
+                for _ in range(self.multiply_rate(self.rate)):
                     note = int(self.midiMessage)
                     note_on = self.MIDINoteMessage(ch=self.ch, note=note, velocity=self.velocity)
                     midi_array.append(note_on.get_midi())
 
-                        # Add a small delay between note-on and note-off (adjust as needed)
-                        # time.sleep(0.1)
-
-                        # Create MIDI note-off message
                     note_off = self.MIDINoteMessage(ch=self.ch, note=note, velocity=0)
                     midi_array.append(note_off.get_midi())
             else:
                 for _ in range(self.multiply_rate(self.rate)):
                     for note in self.midiMessage:
-                        # note = self.midiMessage
                         note_on = self.MIDINoteMessage(ch=self.ch, note=note, velocity=self.velocity)
                         midi_array.append(note_on.get_midi())
 
-                            # Add a small delay between note-on and note-off (adjust as needed)
-                            # time.sleep(0.1)
-
-                            # Create MIDI note-off message
                         note_off = self.MIDINoteMessage(ch=self.ch, note=note, velocity=0)
                         midi_array.append(note_off.get_midi())
-            
 
-            return midi_array
-            for _ in range(self.multiply_rate(self.rate)):
-                for note in set(self.midiMessage):  # Create a copy of the set
-                    # Create MIDI note-on message
-                    note_on = self.MIDINoteMessage(ch=self.ch, note=note, velocity=self.velocity)
-                    midi_array.append(note_on.get_midi())
-
-                    # Add a small delay between note-on and note-off (adjust as needed)
-                    # time.sleep(0.1)
-
-                    # Create MIDI note-off message
-                    note_off = self.MIDINoteMessage(ch=self.ch, note=note, velocity=0)
-                    midi_array.append(note_off.get_midi())
-
-            return midi_array
-        elif self.dataType == 1:  # for MIDI control change data
+        elif self.dataType in [0, '0']:  # MIDI control change data
             waveform = self.modulation_shape()
             waveform = self.convert_range(waveform, -1.0, 1.0, 0, 127)
             waveform = self.convert_range(waveform, 0, 127, self.min_val, self.max_val)
@@ -144,13 +121,18 @@ class MidiBuilder:
                 for value in waveform:
                     midiCC = self.MIDIControlChange(channel=self.ch, control_number=self.midiCCnum, control_value=value)
                     midi_array.append(midiCC.get_midi_cc())
-            return midi_array
-        elif self.dataType == 2:  # for MIDI control Tof data
+
+        elif self.dataType in [2, '2']:  # MIDI control Tof data
             tof_delta_array = self.generate_deltaTof_array()
             for value in tof_delta_array:
                 midiCC = self.MIDIControlChange(control_number=self.midiCCnum, channel=self.ch, control_value=value)
-                midi_array.append(midiCC.get_midi_cc())
-            return midi_array
+                midi_array.append(midiCC. get_midi_cc())
+                
+        elif self.dataType in [3, '3']:
+            midi_array = []
+
+        return midi_array  # Moved the return statement outside the if-elif-else block
+
 
     class MIDIControlChange:
         def __init__(self, control_number, control_value, channel=0):
