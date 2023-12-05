@@ -53,7 +53,7 @@ class UX:
 
     def __init__(self, *, theme='LightGrey1'):
         self.theme = theme
-        self.writer = midiWriter.MiDiWriter()
+        #self.writer = midiWriter.MiDiWriter()
         self.packetLimit = 30
         #self.packetSize = 1
         #self.numSensors = 4
@@ -75,12 +75,12 @@ class UX:
         self.init_Loaded_Flag = 0 #useing to make sure controls are loaded once -JF
         self.window = window.Window()
         
-        ports = self.writer.midiOut.get_ports()
-        print(f'ports {ports}')
+        #ports = self.writer.midiOut.get_ports()
+        #print(f'ports {ports}')
         
-        print(f'available_MiDiPortsOut {self.writer.available_MiDiPortsOut}')
-        ports = self.writer.midiOut.get_ports()
-        print(f'ports {ports}')
+        #print(f'available_MiDiPortsOut {self.writer.available_MiDiPortsOut}')
+        #ports = self.writer.midiOut.get_ports()
+        #print(f'ports {ports}')
 
 
 ###############################################################################################
