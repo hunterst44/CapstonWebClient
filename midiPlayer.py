@@ -1,3 +1,31 @@
+"""
+Description:
+This Python script defines a MidiPlayer class, which orchestrates MIDI playback based on incoming MIDI data and timing synchronization from Metronome. It also includes initialization of MIDI output, MIDI building, and a main loop to coordinate MIDI playback according to the Metronome's timing.
+
+Classes and Methods:
+- MidiPlayer: Class responsible for playing MIDI data.
+    - __init__(): Initializes the MidiPlayer instance with parameters:
+        - midi_out: MIDI output instance.
+        - time_slice: Time duration for MIDI events (default: 0).
+        - midi_data: MIDI data to be played (default: None).
+        - on_flag: Flag indicating MIDI playback (default: 0).
+    - play_beat(): Plays MIDI data either as a single message or as a sequence.
+    - play_beat_threaded(): Plays MIDI data in multiple threads for simultaneous playback.
+    - (other methods if present remain unchanged)
+
+- initialize_midi_player(): Function to initialize the MIDI output.
+- main_loop(): Function that orchestrates MIDI playback based on the Metronome's timing.
+
+Functionality:
+- The MidiPlayer class facilitates MIDI playback by sending MIDI messages through a MIDI output interface.
+- It includes methods to play MIDI data either as a single message or as a sequence of messages, synchronizing with the specified time slice.
+- The initialize_midi_player() function initializes the MIDI output, selects the available port, and opens it for MIDI communication.
+- The main_loop() function continuously checks the Metronome's state and triggers the playback of MIDI data based on the Metronome's timing.
+- The script also involves the instantiation of a Metronome, initialization of a MIDI output, creation of MIDI builders, and orchestration of MIDI playback according to the Metronome's timing and MIDI data.
+
+Note: The script's execution is designed to be initiated with the main conditional block. It utilizes the defined classes, functions, and instances to orchestrate MIDI playback in synchronization with a Metronome's timing and MIDI data.
+"""
+
 import time
 import rtmidi
 import threading

@@ -1673,7 +1673,7 @@ class UX:
                             # print(f'self.writer.controlList[0].controlLabel: {self.writer.controlList[0].controlLabel}')
                             # print(f'self.writer.controlList[1].controlLabel: {self.writer.controlList[1].controlLabel}')
                         elif int(self.controlInitData[i][6]) == 2:    #Control is Tof Midi Control (need to add control type 2 to GUI input)
-                            self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][7], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], controlType=self.controlInitData[i][6], conditionData=conditionDataList, bpm = self.writer.bpm))
+                            self.writer.controlList.append(self.writer.MidiControl(controlLabel=self.controlInitData[i][0], midiOut=self.writer.midiPortOut, channel=self.controlInitData[i][7], predictions=self.writer.predictions, conditionType=self.controlInitData[i][1], controlType=self.controlInitData[i][6], conditionData=conditionDataList, bpm = self.writer.bpm, controlNum=i))
 
                     elif int(self.controlInitData[i][1]) == 1:  #Condition type = Transition
                         conditionDataList = [
@@ -1872,6 +1872,7 @@ class UX:
                     if self.writer.ToFEnable == 1 and self.dataStream.ToFByte > 0 and self.dataStream.ToFByte < 128:   #TOF enabled and Valid ToFData
                         self.writer.ToFByte = self.dataStream.ToFByte     #Pass ToF data to midiWriter
                         PredictMessage = "ToF enabled. Detected Gesture " + str(prediction)
+                        
                         #self.writer.getPredictions(prediction)
                     elif self.writer.ToFEnable == 1 and self.dataStream.ToFByte == -1:      #TOF enabled and not valid ToF data
                         print(f"TOFByte not set: {self.writer.ToFByte}")
