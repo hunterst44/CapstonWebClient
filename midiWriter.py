@@ -64,7 +64,7 @@ class MiDiWriter:
         self.midiPortOut = port_name
         self.bpm = bpm
         self.predictions = predictions
-        self.ToFEnable = 0
+        self.ToFEnable = 1
         self.memorySize = 1000 #How many samples to save before purging
         self.memorySizeMin = 100 #How many predictions to keep on purge
         self.ToFByte = ToFByte
@@ -198,7 +198,7 @@ class MiDiWriter:
         #Add as many controles as you need to get the effects you want
         # Eventually I will write a control generator so you can create controles and conditions            
        
-        self.ToFEnable = 0
+        self.ToFEnable = 1    #By default TOF is enabled
         #print(f'control List: {self.controlList}')
         for control in self.controlList:
             # control.startFlag = True
@@ -215,12 +215,13 @@ class MiDiWriter:
             # control.controlCounters[control.channel]  += 1 #Check the conditions then update the loop
             
                 #3 Toggle ToFEnable / get ToFByte
-                self.ToFEnable = control.ToFEnable
-                if self.ToFEnable:
-                    print(f'ToFByte: {self.ToFByte}')
-                    if self.ToFByte > 0 and self.ToFByte < 128:   #Make sure we have a valid ToF value
-                        control.controlValue = self.ToFByte    #ToF supplies the control value 
-                        # control.midiBuilder.newTof = control.controlValue
+                #TOF should be enabled all the time
+                self.ToFEnable = 1   #control.ToFEnable
+                # if self.ToFEnable:
+                #     print(f'ToFByte: {self.ToFByte}')
+                #     if self.ToFByte > 0 and self.ToFByte < 128:   #Make sure we have a valid ToF value
+                #         control.controlValue = self.ToFByte    #ToF supplies the control value 
+                #         # control.midiBuilder.newTof = control.controlValue
         self.garbageMan()
       
 
@@ -229,7 +230,7 @@ class MiDiWriter:
     # ###           MidiControl
     # ############################################################################################################    
     class MidiControl:
-        def __init__(self, *, controlLabel='', midiOut=None, ToFEnable=0, updateFlag=0, predictions=[], conditionType=0, conditionData=[[0,3], [1,3]], channel=None, controlNum=None, midiLoopCount = 0, rate=None, waveform=None, minimum=None, maximum=None, direction=None, controlType = 0, bpm=0, midiMessage=60, startFlag=0, octave=0, midiInput=[]):
+        def __init__(self, *, controlLabel='', midiOut=None, ToFEnable=1, updateFlag=0, predictions=[], conditionType=0, conditionData=[[0,3], [1,3]], channel=None, controlNum=None, midiLoopCount = 0, rate=None, waveform=None, minimum=None, maximum=None, direction=None, controlType = 0, bpm=0, midiMessage=60, startFlag=0, octave=0, midiInput=[]):
             #Removed attributes:  value=-1, 
             
             self.midiLoopCount = midiLoopCount #Precious value fed in each time the loop runs
