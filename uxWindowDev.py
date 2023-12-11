@@ -511,9 +511,9 @@ class UX:
         for i in range(numOutPorts):
             midiOutList.append(self.writer.available_MiDiPortsOut[i])
 
-        controlList = ['Modulate', 'Arpeggiate']
+        controlList = ['Modulate', 'Arrpegiate', 'ToF Control']
         waveList = ['sine', 'square', 'saw']
-        conditionTypeList = ['Hold', 'Transition']
+        conditionTypeList = ['Hold', 'Transition', 'No Action']
         currentPositionList = []
         arpegDirList = ['Up', 'Down', 'Random']
 
