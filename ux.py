@@ -794,7 +794,7 @@ class UX:
                     self.dataStream.sock.close()
                     window0.hide()
                     window1 = self.makeWindow1()
-                              
+
 ##############     Window1          #################            
             if window == window1:
                 print()
@@ -1444,7 +1444,7 @@ class UX:
                         window['-ARPEGDIRCOL-'].update(visible=True)
                         window['-ARPEGDIR-'].update(visible=True)
                         window['-ARPEGBTN-'].update(visible=True)
-                        window['-DIRLABEL-'].update(visible=True)       
+                        window['-DIRLABEL-'].update(visible=True)
                         
                     elif values['-CTRLLIST-'][0] == 'ToF Control':
                         print(f'Play Note')

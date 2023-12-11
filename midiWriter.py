@@ -101,13 +101,13 @@ class MiDiWriter:
         self.playControl = [control.startFlag for control in self.controlList]
 
         # Printing the array of control.startFlag attributes
-        print(self.playControl)
+       # #print(self.playControl)
 
     def play_loop(self):
      
         while self.metro.startFlag:
             self.refreshMidi()
-            # print("Indices where elements are not zero:", non_zero_indices)
+            # #print("Indices where elements are not zero:", non_zero_indices)
             self.metro.startFlag = self.writerON
             if self.writerON:
                 self.update_playControl()
@@ -142,7 +142,7 @@ class MiDiWriter:
             # Update midiInput for each control from midiArp
             control.midiInput = self.midiArp.current_Midi
             control.midiBuilder.midiMessage = control.midiInput
-            print(f"refreshMidi notes {control.midiInput}")
+            #print(f"refreshMidi notes {control.midiInput}")
             
 
             control.midiResults = control.midiBuilder.build_midi()
@@ -171,7 +171,7 @@ class MiDiWriter:
             self.predictions = [self.predictions[i] for i in range(length - self.memorySizeMin, length)]
 
     def getPredictions(self, prediction):
-        print()
+        #print()
         print('getPredictions()')
         # Called in socketClient after prediction has been made 
         # Hands prediction data to the OSCWriter
@@ -208,9 +208,11 @@ class MiDiWriter:
             print(f'threadToggle: {control.threadToggle}')
             control.predictions = self.predictions     
             control.checkConditions()
-            
-            print(f'control enabled?: {control.updateFlag}')
+            control.controlValue = self.ToFByte 
+            #print(f'control enabled?: {control.updateFlag}')
+            self.ToFEnable = 1 
             if control.updateFlag:
+            
    
             # control.controlCounters[control.channel]  += 1 #Check the conditions then update the loop
             
@@ -289,7 +291,7 @@ class MiDiWriter:
             newRate = self.controlValue
             if newRate == 0:
                 self.beatLenStr = rate
-                print(newRate)
+                #print(newRate)
             elif(newRate < 10):
                 self.midiBuilder.rate = 's'
                 self.beatLenStr = 's'
@@ -306,7 +308,7 @@ class MiDiWriter:
                 self.midiBuilder.rate = 'w'
                 self.beatLenStr = 'w'
                
-            print(self.beatLenStr)
+            #print(self.beatLenStr)
                 
         def getBeatMillis(self):
         #beatMillis is 1000 * (noteFactor * bps) 
