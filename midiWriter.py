@@ -297,6 +297,7 @@ class MiDiWriter:
             
             #2 Check conditions
             print(f'threadToggle: {control.threadToggle}')
+            control.predictions = self.predictions
             control.checkConditions()
             
             print(f'control enabled?: {control.updateFlag}')
@@ -394,9 +395,7 @@ class MiDiWriter:
             self.octave = octave
             #self.order = order
             self.midiInput = midiInput
-            
-
-      
+              
         def changeRate(self, rate):  
             newRate = self.controlValue
             if newRate == 0:
@@ -419,100 +418,7 @@ class MiDiWriter:
                 self.beatLenStr = 'w'
                
             print(self.beatLenStr)
-            
-            
-
-
-        # def playBeat(self, midi_data, timeSlice, midiOut):
-        #     while True:
-        #         startFlag = self.startFlag
-        #         if self.startFlag != True:
-        #             count = 0
-        #             while(count < 3):
-        #                 for msg in midi_data:
-        #                 # msg = midi_data
-        #                     print(f"Playing MIDI from control: {msg}")
-        #                     print(self.midiOut.is_port_open)
-        #                     midiOut.send_message(msg)
-        #                     time.sleep(timeSlice / 1000)
-        #                     time.sleep(0.002)
-        #             break
-                        
-        #         while (self.startFlag == True):
-        #             for msg in midi_data:
-        #                 # msg = midi_data
-        #                 print(f"Playing MIDI from control: {msg}")
-        #                 print(self.midiOut.is_port_open)
-        #                 midiOut.send_message(msg)
-        #                 time.sleep(timeSlice / 1000)
-        #                 time.sleep(0.002)
-                    
-     
-        #             #self.midiMessage = ([CONTROL_CHANGE | self.channel, self.controlNum, self.controlValue])
-        
-
-
-        # def play_modulation_loop(self, period, max_duration, signal):
-        #     if self.getBeatMillis():
-        #         modulation = self.modulation_shape(self.shape, self.period, 1, self.invert)
-        #         while True:
-        #             self.play_modulation(modulation, 8, self.midiOut)
-        #             #need to add flag to stop modulation
-               
-                    
-        # def play_modulation(self, y, max_duration,midiOut):
-        #     bpm = self.bpm
-        #     bps = bpm/60
-        #     pause_duration = self.getBeatMillis()/y.size
-        #     # pause_duration = max_duration / y.size
-        #     for v in y:
-        #         # beatStart = int(time() * 1000)
-        #         # beatStop = beatStart + pause_duration
-        #         v = self.convert_range(v, -1.0, 1.0, 0, 127)
-        #         v = self.convert_range(v, 0, 127, self.min_val, self.max_val)
-        #         # print(f"Mod: {v}")
-        #         mod = ([CONTROL_CHANGE | self.channel, self.cc_num, v])
-        #         print(self.midiOut.is_port_open())
-        #         midiOut.send_message(mod)
-        #         self.midiOut.send_message(mod)
-        #         print(time.time())
-        #         # time.sleep(0.5)
-                
-        #         # beatNow = int(time() * 1000)
-        #         # while beatNow < beatStop:
-        #         time.sleep((self.getBeatMillis()/1000)/10)
-        # def sendBeat(self, midiOut):
-        #     print("sendBeat")
-        #     self.getBeatMillis()
-        #     while True:
-        #         beatStart = int(time.time() * 1000)
-        #         #print(f'beatStart: {beatStart}')
-        #         beatStop = beatStart + self.beatMillis
-        #         print(self.getBeatMillis)
-        #         # print(f'beatStop: {beatStart}')
-        #         #Add other commands here...
-        #         if self.updateFlag:
-        #             try:
-        #                 midiOut.send_message(self.midiMessage)   
-        #                 print(f'midiOut sent: {self.midiMessage}')
-        #             except:
-        #                 print('midiOut failure') 
-        #         beatNow = int(time.time() * 1000)
-        #         # print(f'beatNow: {beatNow}')
-        #         # print(f'beatStop - beatNow: {beatStop - beatNow}') 
-        #         while beatStop - beatNow > 1:
-        #             beatNow = int(time.time() * 1000)
-        #             #print(f'beatStop - beatNow: {beatStop - beatNow}') 
-        #             time.sleep(0.001)
-        #         # if self.threadToggle == 1:
-        #         #     self.threadToggle = 0
-        #         # else:
-        #         #    self.threadToggle = 1 
-                
-                
-
-                
-                
+                      
         def getBeatMillis(self):
         #beatMillis is 1000 * (noteFactor * bps) 
         # bps = 60 / self.bpm  
@@ -671,7 +577,6 @@ class MiDiWriter:
             #       checks for a gesture (conditionData[0]) 
             #       held for a threshold (conditionData[1])
             #       writes conditionData[3] to self.value
-            
             
             #Get index of starting point
             lenPred = len(self.predictions)
