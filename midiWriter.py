@@ -208,9 +208,11 @@ class MiDiWriter:
             print(f'threadToggle: {control.threadToggle}')
             control.predictions = self.predictions     
             control.checkConditions()
-            
+            control.controlValue = self.ToFByte 
             #print(f'control enabled?: {control.updateFlag}')
+            self.ToFEnable = 1 
             if control.updateFlag:
+            
    
             # control.controlCounters[control.channel]  += 1 #Check the conditions then update the loop
             
