@@ -198,7 +198,7 @@ class UX:
             existsVis = True #model exists
             notVis = False
         else:
-            modelMessage = 'Create a model.\nNo model available at ' + modelPath + 'Click okay to create a new one.'
+            modelMessage = 'Create a model.\nNo model available at\n' + modelPath + '\nClick okay to create a new one.'
             existsVis = False
             notVis = True
         return modelMessage, existsVis, notVis   
@@ -411,9 +411,9 @@ class UX:
                     #[sg.Btn('Ok', key='-CREATEMOEDLBTN-', visible=False)]
                     ], pad=(LEFTMARGIN,0)), shrink=True)], 
                 [sg.pin(sg.Column([
-                    [sg.Btn('Ok',**self.button2_properties(), key='-USEDEFAULTDIRBTN-', visible=True)],
-                    #sg.Btn('Browse',**self.button1_properties(), key='-CHOOSEDIR-', enable_events=True)]], pad=(LEFTMARGIN, 0)), shrink=True)],
-                    [sg.FolderBrowse(size=(8,1), visible=True, key='-CHOOSEDIR-', enable_events=True)]], pad=(LEFTMARGIN,0)), shrink=True),sg.Push()],
+                    [sg.Btn('Ok',**self.button2_properties(), key='-USEDEFAULTDIRBTN-', visible=True),
+                    sg.Btn('Browse',**self.button1_properties(), key='-CHOOSEDIR-', enable_events=True)]], pad=(LEFTMARGIN, 0)), shrink=True)],
+                    #[sg.FolderBrowse(size=(8,1), visible=True, key='-CHOOSEDIR-', enable_events=True)]], pad=(LEFTMARGIN,0)), shrink=True),sg.Push()],
                 [sg.pin(sg.Column([[sg.Btn('Ok',**self.button2_properties(), key='-USESELDIRBTN-', visible=False)]], pad=(LEFTMARGIN,0)), shrink=True)]
                 ]
         
@@ -511,9 +511,9 @@ class UX:
         for i in range(numOutPorts):
             midiOutList.append(self.writer.available_MiDiPortsOut[i])
 
-        controlList = ['Modulate', 'Arpeggiate']
+        controlList = ['Modulate', 'Arrpegiate', 'ToF Control']
         waveList = ['sine', 'square', 'saw']
-        conditionTypeList = ['Hold', 'Transition']
+        conditionTypeList = ['Hold', 'Transition', 'No Action']
         currentPositionList = []
         arpegDirList = ['Up', 'Down', 'Random']
 
@@ -747,8 +747,9 @@ class UX:
                 if event == '-CHOOSEDIR-':
                     print()
                     print(f'Window 00 -CHOOSEDIR-')
+                    newPathPreface = sg.popup_get_folder('Select a folder', no_window=True, initial_folder=os.getcwd())
                     #Use the directory provided by the user, if it exists
-                    newPathPreface = values["-CHOOSEDIR-"]
+                    #newPathPreface = values["-CHOOSEDIR-"]
                     #newModelPath = newPathPreface + '/model.model'
                     #newModelLogPath = newPathPreface + '/modelLog.csv'
 
@@ -769,7 +770,6 @@ class UX:
 
                     window00.hide()
                     window0 = self.makeWindow0(self.dataStream.sockConnection)
-                
 
 
 ##############     Window0          #################
@@ -1786,7 +1786,7 @@ class UX:
                     
                     # print(isinstance(self.controlInitData[i][1], int))
                     if self.controlLogCheck == 0: #Not using the logged data so we need a new log
-                        self.logCSVRow('controls.csv', self.controlInitData[i], append=True)
+                        self.logCSVRow('controls.csv', self.controlInitData[i], append=False)
                     #tmpList.append(self.controlInitData[i])
 
                         #Check the file has been logged properly
@@ -2022,7 +2022,7 @@ class UX:
                         #self.writer.getPredictions(prediction)
                     elif self.writer.ToFEnable == 1 and self.dataStream.ToFByte == -1:      #TOF enabled and not valid ToF data
                         print(f"TOFByte not set: {self.writer.ToFByte}")
-                        PredictMessage = "ToF Data: " + str(self.writer.ToFByte) + ". Detected Gesture " + str(prediction)
+                        PredictMessage = "ToF Data: " + str(self.writer.ToFByte) +  ". Detected Gesture " + str(prediction)
                     else:                                                                   #ToF not enabled
                         PredictMessage = "ToF Data: " + str(self.writer.ToFByte) + ". Detected Gesture " + str(prediction)
                     
