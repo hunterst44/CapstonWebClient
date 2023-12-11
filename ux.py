@@ -37,7 +37,7 @@ import dill
 
 #Condition Type = Transition
 # [2] - [9] conditions data: [..., BEGIN ON POSITION, BEGIN ON THRESHOLD, END ON POSITION, END ON THRESHOLD, BEGIN OFF POSITION, BEGIN OFF THRESHOLD, END OFF POSITION, END OFF THRESHOLD, ...]
-# [10] Control Type {INT} 0 = modulate, 1 = Arpegiate, 2 = note
+# [10] Control Type {INT} 0 = modulate, 1 = Arpegiate, 2 = ToF
 # [11] Channel
 # [12] Rate [Float]
 #Control Type Modulate
@@ -202,7 +202,7 @@ class UX:
             # #window['-MESSAGE-'].update(f'message')
 
     def checkControlLog(self):
-        controlPath = "data/test" + "/controls.csv"
+        controlPath = self.dataStream.pathPreface + "/controls.csv"
         newControlData = [-1]
         if os.path.exists(controlPath):
             with open(controlPath, 'r') as csvfile:
@@ -1639,9 +1639,10 @@ class UX:
                     
                     # print(isinstance(self.controlInitData[i][1], int))
                     if self.controlLogCheck == 0: #Not using the logged data so we need a new log
-                        self.logCSVRow('controls.csv', self.controlInitData[i], append=False)
+                        print("over writing controls logfile")
+                        self.logCSVRow('controls.csv', self.controlInitData[i], append=True)
                     #tmpList.append(self.controlInitData[i])
-
+                        controlPath = self.dataStream.pathPreface + "/controls.csv"
                         #Check the file has been logged properly
                         with open(controlPath, 'r') as csvfile:
                             tmpList = list(csv.reader(csvfile, delimiter=","))
