@@ -90,8 +90,8 @@ class MidiBuilder:
             y = sig_invert * signal.sawtooth(2 * self.multiply_rate(self.rate) * np.pi * x)
         elif self.shape == 'square' or 2:  # 'square'
             y = sig_invert * signal.square(2 * self.multiply_rate(self.rate) * np.pi * x)
-        else:
-            print("That wave is not supported")
+        # else:
+        #     #print("That wave is not supported")
 
         return y
 
@@ -195,32 +195,32 @@ class MidiBuilder:
             noteOFF = [int(self.ch) + 0x80, int(self.note), int(self.velocity)]
             return noteON
 
-def __init__():
-    # Creating instances of MidiBuilder class
+# def __init__():
+#     # # Creating instances of MidiBuilder class
     
-    # Builder for MIDI note data
-    builder1 = MidiBuilder(dataType=0, midiMessage=[60, 62, 64], ch=0, velocity=64)
+#     # # Builder for MIDI note data
+#     # builder1 = MidiBuilder(dataType=0, midiMessage=[60, 62, 64], ch=0, velocity=64)
     
-    # Builder for MIDI control change data
-    builder2 = MidiBuilder(dataType=1, shape=0, signal_invert=0, midiCC_ch=1, min_val=0)
+#     # # Builder for MIDI control change data
+#     # builder2 = MidiBuilder(dataType=1, shape=0, signal_invert=0, midiCC_ch=1, min_val=0)
     
-    # Builder for MIDI control Tof data
-    builder3 = MidiBuilder(dataType=2, midiCC_ch=2, oldTof=65, newTof=75)
+#     # # Builder for MIDI control Tof data
+#     # builder3 = MidiBuilder(dataType=2, midiCC_ch=2, oldTof=65, newTof=75)
     
-    # Printing the results
+#     # # Printing the results
     
-    print("Builder 1 - MIDI Note Data:")
-    result1 = builder1.build_midi()
-    for midi in result1:
-        print(midi)
+#     # #print("Builder 1 - MIDI Note Data:")
+#     # result1 = builder1.build_midi()
+#     # for midi in result1:
+#     #     #print(midi)
     
-    print("\nBuilder 2 - MIDI Control Change Data:")
-    result2 = builder2.build_midi()
-    for midi in result2:
-        print(midi)
+#     # #print("\nBuilder 2 - MIDI Control Change Data:")
+#     # result2 = builder2.build_midi()
+#     # for midi in result2:
+#     #     #print(midi)
     
-    print("\nBuilder 3 - MIDI Control Tof Data:")
-    result3 = builder3.build_midi()
-    for midi in result3:
-        print(midi)
+#     # #print("\nBuilder 3 - MIDI Control Tof Data:")
+#     # result3 = builder3.build_midi()
+#     # for midi in result3:
+#     #     #print(midi)
 

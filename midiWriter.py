@@ -101,13 +101,13 @@ class MiDiWriter:
         self.playControl = [control.startFlag for control in self.controlList]
 
         # Printing the array of control.startFlag attributes
-        print(self.playControl)
+       # #print(self.playControl)
 
     def play_loop(self):
      
         while self.metro.startFlag:
             self.refreshMidi()
-            # print("Indices where elements are not zero:", non_zero_indices)
+            # #print("Indices where elements are not zero:", non_zero_indices)
             self.metro.startFlag = self.writerON
             if self.writerON:
                 self.update_playControl()
@@ -142,7 +142,7 @@ class MiDiWriter:
             # Update midiInput for each control from midiArp
             control.midiInput = self.midiArp.current_Midi
             control.midiBuilder.midiMessage = control.midiInput
-            print(f"refreshMidi notes {control.midiInput}")
+            #print(f"refreshMidi notes {control.midiInput}")
             
 
             control.midiResults = control.midiBuilder.build_midi()
@@ -171,7 +171,7 @@ class MiDiWriter:
             self.predictions = [self.predictions[i] for i in range(length - self.memorySizeMin, length)]
 
     def getPredictions(self, prediction):
-        print()
+        #print()
         print('getPredictions()')
         # Called in socketClient after prediction has been made 
         # Hands prediction data to the OSCWriter
@@ -199,17 +199,17 @@ class MiDiWriter:
         # Eventually I will write a control generator so you can create controles and conditions            
        
         self.ToFEnable = 0
-        #print(f'control List: {self.controlList}')
+        ##print(f'control List: {self.controlList}')
         for control in self.controlList:
             # control.startFlag = True
             # midi_player = MidiPlayer(self.midiOut, time_slice=self.metro.getTimeTick(control.midiResults), midi_data = control.midiResults)
             
             #2 Check conditions
-            print(f'threadToggle: {control.threadToggle}')
+            #print(f'threadToggle: {control.threadToggle}')
             control.predictions = self.predictions
             control.checkConditions()
             
-            print(f'control enabled?: {control.updateFlag}')
+            #print(f'control enabled?: {control.updateFlag}')
             if control.updateFlag:
    
             # control.controlCounters[control.channel]  += 1 #Check the conditions then update the loop
@@ -217,7 +217,7 @@ class MiDiWriter:
                 #3 Toggle ToFEnable / get ToFByte
                 self.ToFEnable = control.ToFEnable
                 if self.ToFEnable:
-                    print(f'ToFByte: {self.ToFByte}')
+                    #print(f'ToFByte: {self.ToFByte}')
                     if self.ToFByte > 0 and self.ToFByte < 128:   #Make sure we have a valid ToF value
                         control.controlValue = self.ToFByte    #ToF supplies the control value 
                         # control.midiBuilder.newTof = control.controlValue
@@ -290,7 +290,7 @@ class MiDiWriter:
             newRate = self.controlValue
             if newRate == 0:
                 self.beatLenStr = rate
-                print(newRate)
+                #print(newRate)
             elif(newRate < 10):
                 self.midiBuilder.rate = 's'
                 self.beatLenStr = 's'
@@ -307,7 +307,7 @@ class MiDiWriter:
                 self.midiBuilder.rate = 'w'
                 self.beatLenStr = 'w'
                
-            print(self.beatLenStr)
+            #print(self.beatLenStr)
                 
         def getBeatMillis(self):
         #beatMillis is 1000 * (noteFactor * bps) 

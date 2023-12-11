@@ -61,7 +61,7 @@ class MidiArp:
 
         finally:
             self.midi_in.close_port()
-            print("MIDI input port closed.")
+            #print("MIDI input port closed.")
 
     def _handle_midi_message(self, msg):
         status_byte = msg[0]  # Status byte is the first element of the message
@@ -105,8 +105,8 @@ class MidiArp:
             self.current_Midi = sorted(self.current_Midi, reverse=True)
         elif self.order == 2 or self.order == 'Random':
             random.shuffle(self.current_Midi)
-        else:
-            print("Invalid order. Use 0 for ascending, 1 for descending, or 2 for random.")
+        # else:
+        #     #print("Invalid order. Use 0 for ascending, 1 for descending, or 2 for random.")
 
     def change_octave(self):
         if -2 <= int(self.octave) <= 2:
@@ -122,7 +122,7 @@ def __init__():
     try:
         # Continuous monitoring of held notes
         while True:
-            print(f"Currently Held Notes: {midi_note_manager.current_Midi}")
+            #print(f"Currently Held Notes: {midi_note_manager.current_Midi}")
             time.sleep(1)
 
     except KeyboardInterrupt:
