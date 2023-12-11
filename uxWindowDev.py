@@ -309,6 +309,38 @@ class UX:
         windowname = sg.Window(windowtitlemsg, layout, size=(self.windowSizeX,self.windowSizeY), resizable=True, finalize=True, element_justification='c', icon=self.ASSETS_PATH +"/icon.ico")
         return windowname
     
+    def getloggedCSV(self, pathSuffix):
+        networkPath = self.dataStream.pathPreface + '/' + pathSuffix #"/networks.csv"
+        if os.path.exists(networkPath):
+            with open(networkPath, 'r') as csvfile:
+                networkList = list(csv.reader(csvfile, delimiter=","))
+                print(f'networkList; {networkList}')
+            return networkList
+        else:
+            return [['-1']]
+
+    def logCSVRow(self, pathSuffix, csvRowList, *, append=True):
+        print()
+        print(f'logCSVRow()')
+        if append == True:
+            mode = 'a'
+        else:
+            mode = 'w'
+        if pathSuffix != -1:
+            networkPath = self.dataStream.pathPreface + '/' + pathSuffix #"/networks.csv"
+            print(f'CSV writer path: {networkPath}')
+            if os.path.exists(networkPath):
+                print(f"file exists")
+                with open(networkPath, mode, newline='') as csvfile:
+                    csvWrite = csv.writer(csvfile)
+                    csvWrite.writerow(csvRowList)
+                    #[self.ssid, self.pswd, self.host, self.port]
+            else:
+                print(f"Creating new file")
+                with open(networkPath, 'w', newline='') as csvfile:
+                    csvWrite = csv.writer(csvfile)
+                    csvWrite.writerow(csvRowList)
+    
 ###############################################################################################
 ##############                  Window Definitions                            #################
 ###############################################################################################
@@ -324,9 +356,9 @@ class UX:
                     #[sg.Btn('Ok', key='-CREATEMOEDLBTN-', visible=False)]
                     ], pad=(LEFTMARGIN,0)), shrink=True)], 
                 [sg.pin(sg.Column([
-                    [sg.Btn('Ok',**self.button2_properties(), key='-USEDEFAULTDIRBTN-', visible=True),
-                    sg.Btn('Browse',**self.button1_properties(), key='-CHOOSEDIR-', enable_events=True)]], pad=(LEFTMARGIN, 0)), shrink=True)],
-                    #sg.FolderBrowse(size=(8,1), visible=True, key='-CHOOSEDIR-', enable_events=True)]], pad=(LEFTMARGIN,0)), shrink=True),sg.Push()],
+                    [sg.Btn('Ok',**self.button2_properties(), key='-USEDEFAULTDIRBTN-', visible=True)],
+                    #sg.Btn('Browse',**self.button1_properties(), key='-CHOOSEDIR-', enable_events=True)]], pad=(LEFTMARGIN, 0)), shrink=True)],
+                    [sg.FolderBrowse(size=(8,1), visible=True, key='-CHOOSEDIR-', enable_events=True)]], pad=(LEFTMARGIN,0)), shrink=True),sg.Push()],
                 [sg.pin(sg.Column([[sg.Btn('Ok',**self.button2_properties(), key='-USESELDIRBTN-', visible=False)]], pad=(LEFTMARGIN,0)), shrink=True)]
                 ]
         
@@ -389,7 +421,7 @@ class UX:
                     sg.Btn('Create New',**self.button1_properties(), key='-CREATEMOEDLBTN-', visible=True),
                     sg.Btn('Ok',**self.button2_properties(), key='-ACCPTDEFAULT-', visible=notVis)]], pad=(LEFTMARGIN, 0)), shrink=True),sg.Push()], 
                 [sg.Push(),sg.pin(sg.Column([[sg.T(modelMessage, key="-MODELMESSAGE01-", visible=False)]], pad=(LEFTMARGIN, 0)), shrink=True),sg.Push()],
-                [sg.Push(),sg.pin(sg.Column([[sg.Input('How many hand positions will you train?', key="-NUMPOS-", visible=False, enable_events=True)]], pad=(LEFTMARGIN,0)), shrink=True),sg.Push()],
+                [sg.Push(),sg.pin(sg.Column([[sg.Input('How many hand positions will you train?', key="-NUMPOS-", visible=False, enable_events=False)]], pad=(LEFTMARGIN,0)), shrink=True),sg.Push()],
                 [sg.Push(),sg.pin(sg.Column([[sg.Input('Position 1 label', key="-POSLABEL-", visible=False)], 
                     [sg.Btn('SUBMIT',**self.button1_properties(), key='-SUBLABELBTN-', visible=False)]], pad=(LEFTMARGIN,0)), shrink=True),sg.Push()],
                 [sg.Push(),sg.pin(sg.Column([[sg.T('Train Model', key='-TRAIN-', visible=False),sg.Btn('Train',**self.button1_properties(), key='-TRAINBTN-', visible=False)]], pad=(LEFTMARGIN, 0)), shrink=True),sg.Push()],
@@ -848,7 +880,7 @@ class UX:
                     print(f'self.dataStream.host: {self.dataStream.host}')
                     print(f'self.dataStream.port: {self.dataStream.port}')
 
-                    self.dataStream.logCSVRow('networks.csv', [self.dataStream.ssid, self.dataStream.pswd, self.dataStream.host, self.dataStream.port])
+                    self.logCSVRow('networks.csv', [self.dataStream.ssid, self.dataStream.pswd, self.dataStream.host, self.dataStream.port])
 
                     window0.hide()
                     window1 = self.makeWindow1()

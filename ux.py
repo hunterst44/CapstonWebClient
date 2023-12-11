@@ -625,7 +625,6 @@ class UX:
                     window0 = self.makeWindow0(self.dataStream.sockConnection)
                 
 
-
 ##############     Window0          #################
             #events for window0 (Create connection)
             #TODO Add option to choose from previous connections
@@ -1640,7 +1639,7 @@ class UX:
                     
                     # print(isinstance(self.controlInitData[i][1], int))
                     if self.controlLogCheck == 0: #Not using the logged data so we need a new log
-                        self.logCSVRow('controls.csv', self.controlInitData[i], append=True)
+                        self.logCSVRow('controls.csv', self.controlInitData[i], append=False)
                     #tmpList.append(self.controlInitData[i])
 
                         #Check the file has been logged properly
@@ -1871,14 +1870,14 @@ class UX:
                     print(f'prediction: {prediction}')
                     if self.writer.ToFEnable == 1 and self.dataStream.ToFByte > 0 and self.dataStream.ToFByte < 128:   #TOF enabled and Valid ToFData
                         self.writer.ToFByte = self.dataStream.ToFByte     #Pass ToF data to midiWriter
-                        PredictMessage = "ToF enabled. Detected Gesture " + str(prediction)
+                        PredictMessage = "ToF Data: " + str(self.writer.ToFByte) + ". Detected Gesture " + str(prediction)
                         
                         #self.writer.getPredictions(prediction)
                     elif self.writer.ToFEnable == 1 and self.dataStream.ToFByte == -1:      #TOF enabled and not valid ToF data
                         print(f"TOFByte not set: {self.writer.ToFByte}")
-                        PredictMessage = "ToF enabled, but no data available. Detected Gesture " + str(prediction)
+                        PredictMessage = "ToF Data: " + str(self.writer.ToFByte) +  ". Detected Gesture " + str(prediction)
                     else:                                                                   #ToF not enabled
-                        PredictMessage = "ToF disabled. Detected Gesture " + str(prediction)
+                        PredictMessage = "ToF Data: " + str(self.writer.ToFByte) + ". Detected Gesture " + str(prediction)
                     
                     #self.writer.getPredictions(prediction)
 
