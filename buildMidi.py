@@ -1,10 +1,51 @@
+"""
+Description:
+This Python script defines a MidiBuilder class that facilitates the creation of MIDI messages. It includes functionalities to generate MIDI note data, MIDI control change data,
+and MIDI control time of flight (Tof) data. The script uses various attributes and methods to build MIDI messages based on the control type selected in the GUI, 
+such as MIDI channel, note values, velocity, modulation shapes, control change values, etc.
+
+Special thanks to Jor van der Poel's tutorial on Udemy for descibing how to implement Midi CC modulation https://www.udemy.com/course/learning-python-with-ableton-live/
+Variables:
+
+- Rate: Class holding different note rates - whole, half, triplet, quarter, eighth, sixteenth.
+- MidiBuilder: Class responsible for constructing MIDI messages with various parameters:
+    - dataType: Type of MIDI data (0 for note data, 1 for creating Midi mod control changes, 2 for MidiCC messages using the Tof data).
+    - midiMessage: MIDI message data (note values or control change values).
+    - ch: MIDI channel.
+    - note: MIDI note.
+    - velocity: MIDI note velocity.
+    - shape: Modulation shape for control change data (sine, saw, square).
+    - signal_invert: Flag to invert the signal.
+    - midiCC_ch: MIDI control change channel.
+    - min_val: Minimum value for control change data.
+    - max_val: Maximum value for control change data.
+    - deltaToF: Delta time of flight for control Tof data.
+    - oldTof: Old time of flight for control Tof data.
+    - newTof: New time of flight for control Tof data.
+    - rate: Rate of MIDI note data (whole, half, triplet, quarter, eighth, sixteenth).
+    - midiCCnum: MIDI control change number.
+    - threshold: Threshold value for generating delta time of flight array.
+
+Functions/Methods:
+- modulation_shape(): Generates a modulation waveform based on specified shapes (sine, saw, square).
+- convert_range(): Converts the range of values from one scale to another.
+- generate_deltaTof_array(): Generates an array of delta time of flight based on threshold and new/old time of flight values.
+- multiply_rate(): Converts the rate of notes to numeric values for calculations.
+- build_midi(): Constructs MIDI messages based on specified data types and parameters.
+- MIDIControlChange: Inner class to create MIDI control change messages.
+    - get_midi_cc(): Returns MIDI control change messages.
+- MIDINoteMessage: Inner class to create MIDI note messages.
+    - get_midi(): Returns MIDI note messages.
+
+Note: The script also includes commented-out code demonstrating the usage of MidiBuilder for different types of MIDI data construction.
+"""
+
 import numpy as np
 from scipy import signal
 from rtmidi.midiconstants import CONTROL_CHANGE
 import matplotlib.pylab as plt
 import time
 
-BPM = 120
 
 class Rate:
     whole = 'w'
@@ -49,8 +90,8 @@ class MidiBuilder:
             y = sig_invert * signal.sawtooth(2 * self.multiply_rate(self.rate) * np.pi * x)
         elif self.shape == 'square' or 2:  # 'square'
             y = sig_invert * signal.square(2 * self.multiply_rate(self.rate) * np.pi * x)
-        else:
-            print("That wave is not supported")
+        # else:
+        #     #print("That wave is not supported")
 
         return y
 
@@ -154,27 +195,32 @@ class MidiBuilder:
             noteOFF = [int(self.ch) + 0x80, int(self.note), int(self.velocity)]
             return noteON
 
-# # Builder for MIDI note data
-# builder1 = MidiBuilder(dataType=0, midiMessage=[60, 62, 64], ch=0, velocity=64)
+# def __init__():
+#     # # Creating instances of MidiBuilder class
+    
+#     # # Builder for MIDI note data
+#     # builder1 = MidiBuilder(dataType=0, midiMessage=[60, 62, 64], ch=0, velocity=64)
+    
+#     # # Builder for MIDI control change data
+#     # builder2 = MidiBuilder(dataType=1, shape=0, signal_invert=0, midiCC_ch=1, min_val=0)
+    
+#     # # Builder for MIDI control Tof data
+#     # builder3 = MidiBuilder(dataType=2, midiCC_ch=2, oldTof=65, newTof=75)
+    
+#     # # Printing the results
+    
+#     # #print("Builder 1 - MIDI Note Data:")
+#     # result1 = builder1.build_midi()
+#     # for midi in result1:
+#     #     #print(midi)
+    
+#     # #print("\nBuilder 2 - MIDI Control Change Data:")
+#     # result2 = builder2.build_midi()
+#     # for midi in result2:
+#     #     #print(midi)
+    
+#     # #print("\nBuilder 3 - MIDI Control Tof Data:")
+#     # result3 = builder3.build_midi()
+#     # for midi in result3:
+#     #     #print(midi)
 
-# # Builder for MIDI control change data
-# builder2 = MidiBuilder(dataType=1, shape=0, signal_invert=0, midiCC_ch=1, min_val=0)
-
-# # Builder for MIDI control Tof data
-# builder3 = MidiBuilder(dataType=2, midiCC_ch=2, oldTof=65, newTof=75)
-
-# # Printing the results
-# print("Builder 1 - MIDI Note Data:")
-# result1 = builder1.build_midi()
-# for midi in result1:
-#     print(midi)
-
-# print("\nBuilder 2 - MIDI Control Change Data:")
-# result2 = builder2.build_midi()
-# for midi in result2:
-#     print(midi)
-
-# print("\nBuilder 3 - MIDI Control Tof Data:")
-# result3 = builder3.build_midi()
-# for midi in result3:
-#     print(midi)

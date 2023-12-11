@@ -1066,7 +1066,7 @@ class UX:
                         window.refresh()
                     
                     else: #All the labels are in log em...
-                        self.logCSVRow('modelLog.csv', self.positionPathList, append=False)
+                        self.logcsvrow('modelLog.csv', self.positionPathList, append=False)
                         window['-POSLABEL-'].update(visible=False)
                         window['-SUBLABELBTN-'].update(visible=False)
                         #self.logCSVRow('modelLog.csv', self.positionPathList)

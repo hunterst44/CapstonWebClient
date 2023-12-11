@@ -1,12 +1,32 @@
+"""
+Description:
+This Python script defines a Metronome class that synchronizes MIDI events to a global clock. It calculates time delays for array-type MIDI commands based on beats per minute (BPM) and handles starting/stopping the metronome. Additionally, it offers functionality to calculate time slices for MIDI events and determine subdivision counts based on note values.
+
+Class and Methods:
+- Metronome: Class representing a metronome for MIDI event synchronization.
+    - __init__(): Initializes the Metronome instance with parameters:
+        - bpm: Beats per minute (default: 60).
+        - startFlag: Flag indicating the start state of the metronome (default: False).
+        - BPM_millis: Time in milliseconds per beat for the metronome (default: 0).
+        - doneFlag: Flag indicating the completion of a time interval (default: 0).
+    - timer_function(): Thread function to simulate a metronome ticking at specified intervals.
+    - startMetro(): Starts or stops the metronome based on the offONState parameter.
+    - getTimeTick(): Calculates the time slice for MIDI events based on the BPM and MIDI array length.
+    - getSubdivisionCount(): Determines the subdivision count based on note values.
+
+Functionality:
+- The Metronome class handles the initialization of metronome parameters such as BPM, start/stop flags, and time calculations.
+- It provides methods to start or stop the metronome, using threading to simulate metronome ticks at specific intervals based on BPM.
+- The getTimeTick() method calculates time slices for MIDI events, taking into account the BPM and MIDI array length, or a default time slice if the array is None.
+- The getSubdivisionCount() method determines the subdivision count based on different note values (whole, half, triplet, quarter, eighth, sixteenth).
+
+Note: The script does not include an __init__ block for execution as it is designed to be imported and utilized in another Python file or program.
+"""
+
+
 import time
 import threading
 import buildMidi
-
-#Function of this class: To sync midi events to a global clock and calculate the time delays for array type midi commands
-#How it works Midi clock is initalized when the play button is pressed, it takes the bpm from the GUI and calculates the milliseconds per beat
-# The milliseconds per beat is the total time per a bar of music. We want to be able to divide this chunk of time into smaller chunks so we can modify the following paramiters
-    # Be able to play diffrent
-
 
 
 class Metronome:
@@ -63,28 +83,4 @@ class Metronome:
             return 16
         else:
             return 1  # Default value for an unknown note value
-
-# # Builder for MIDI note data
-# builder1 = buildMidi.MidiBuilder(dataType=0, midiMessage=[60], ch=0, velocity=64, rate = 'q')
-# result1 = builder1.buildMidi()
-
-# # Builder for MIDI control change data
-# builder2 = buildMidi.MidiBuilder(dataType=1, shape=0, signal_invert=0, midiCC_ch=1, min_val=0, rate = 'q')
-# result2 = builder2.buildMidi()
-
-# # Builder for MIDI control Tof data
-# builder3 = buildMidi.MidiBuilder(dataType=2, shape=0, signal_invert=0, midiCC_ch=1, oldTof=65, newTof=65, rate = 'w')
-# result3 = builder3.buildMidi()
-
-# # Example usage:
-# metronome = Metronome()
-# print(metronome.getTimeTick(result1))
-# print(metronome.getTimeTick(result2))
-# print(metronome.getTimeTick(result3))
-# metronome.startMetro(True)
-
-# # To stop the thread
-# time.sleep(5)
-# metronome.startMetro(False)
-
 
