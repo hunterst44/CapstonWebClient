@@ -1,3 +1,30 @@
+"""
+Description:
+This Python script implements a MIDI arpeggiator (MidiArp) using the rtmidi library. The MidiArp class enables MIDI message processing for arpeggiating notes received from a MIDI input port. The arpeggiator can generate and manage a sequence of MIDI notes by adjusting the octave, order, and handling note events.
+
+Class and Methods:
+- MidiArp: Class representing the MIDI arpeggiator.
+    - __init__(): Initializes the MidiArp instance with parameters:
+        - midiIn_port_index: MIDI input port index (default: 3).
+        - octave: Octave value for note manipulation (default: 2).
+        - order: Order of note arrangement (default: 0 for ascending).
+    - process_messages(): Processes incoming MIDI messages continuously when the arpeggiator is running.
+    - _handle_midi_message(): Handles MIDI messages, adding or discarding notes based on note-on/off events.
+    - start_processing_thread(): Starts a thread for processing MIDI messages.
+    - stop_processing_thread(): Stops the MIDI message processing thread.
+    - update_Midi(): Updates the sequence of MIDI notes based on held notes, octave, and order.
+    - reorder_Midi(): Reorders the current MIDI notes based on specified order (ascending, descending, or random).
+    - change_octave(): Adjusts the octave of the held MIDI notes.
+    
+Functionality:
+- Upon instantiation, MidiArp initializes MIDI input port, holds notes, and sets default parameters.
+- It continuously processes MIDI messages in a separate thread.
+- The class handles incoming note-on and note-off MIDI messages, updating the held notes accordingly.
+- The current sequence of held MIDI notes can be monitored and modified based on octave and order.
+- The script demonstrates the functionality by instantiating MidiArp, starting a processing thread, and printing currently held notes in a loop until interrupted by a KeyboardInterrupt (Ctrl+C).
+"""
+
+
 import rtmidi
 import threading
 import time
@@ -47,8 +74,8 @@ class MidiArp:
             self.held_notes.discard(note_value)
             
     def start_processing_thread(self):
-        if self.midi_in.is_port_open() == False:
-             self.midi_in.open_port(self.midiIn_port_index)
+        # if self.midi_in.is_port_open() == False:
+        #      self.midi_in.open_port(self.midiIn_port_index)
         if not self.is_running:
             self.held_notes.clear
             self.current_Midi = []
@@ -85,15 +112,19 @@ class MidiArp:
         if -2 <= int(self.octave) <= 2:
             self.current_Midi = [note_value + int(self.octave) * 12 for note_value in self.current_Midi]
 
-if __name__ == "__main__":
-    midiIn_port_index = 3
-    midi_note_manager = MidiArp(midiIn_port_index)
+def __init__():
+    midiIn_port_index = 3  # MIDI input port index
+    midi_note_manager = MidiArp(midiIn_port_index)  # Creating an instance of MidiArp
+    
+    # Starting the processing thread
     midi_note_manager.start_processing_thread()
 
     try:
+        # Continuous monitoring of held notes
         while True:
             print(f"Currently Held Notes: {midi_note_manager.current_Midi}")
             time.sleep(1)
 
     except KeyboardInterrupt:
+        # Stopping the processing thread when interrupted
         midi_note_manager.stop_processing_thread()

@@ -1,3 +1,39 @@
+"""
+Description:
+This Python script defines a MiDiWriter class that interfaces with MIDI functionalities through the rtmidi library. It interprets gesture predictions from a neural network and associates them with MIDI channels and data to produce musical output. The script orchestrates the real-time generation of MIDI events based on neural network predictions and their associated musical attributes.
+
+Classes and Methods:
+- MiDiWriter: Class that coordinates the interpretation of neural network gesture predictions to generate MIDI events.
+    - __init__(): Initializes the MiDiWriter instance with various parameters.
+    - generate_midi_data(): Generates new MIDI data based on control parameters.
+    - start_play_loop(): Starts the play loop for MIDI event generation.
+    - update_playControl(): Updates the control flags for MIDI playback.
+    - play_loop(): Manages the continuous loop for MIDI playback based on metronome timing and control flags.
+    - refreshMidi(): Refreshes MIDI data based on updated control attributes.
+    - reorder_held_notes(): Reorders held notes based on the specified order.
+    - garbageMan(): Cleans up prediction data based on a specified memory size.
+    - getPredictions(): Collects gesture predictions from the neural network for MIDI interpretation.
+    - conductor(): Orchestrates the process of gathering and sending MIDI data based on control parameters and neural network predictions.
+
+Inner Class:
+- MidiControl: Inner class that encapsulates MIDI control attributes and methods.
+    - __init__(): Initializes MidiControl instances with MIDI-related attributes.
+    - changeRate(): Modifies the MIDI rate based on the specified rate value.
+    - getBeatMillis(): Calculates the duration of a beat in milliseconds based on the specified rate.
+    - checkConditions(): Checks conditions based on gesture thresholds for control behavior.
+    - gestureThreshold(): Checks whether a specific gesture meets a threshold within the prediction data.
+    - gestureTransition(): Checks transitions between two gestures with associated thresholds.
+
+Functionality:
+- The MiDiWriter class serves as a bridge between neural network gesture predictions and MIDI event generation.
+- It utilizes multiple methods and control attributes to interpret and convert predicted gestures into MIDI data.
+- The script incorporates methods for updating control parameters, managing MIDI data generation based on predictions, and orchestrating MIDI playback according to specified conditions.
+- Inner class MidiControl encapsulates individual MIDI control attributes and methods for handling MIDI-related operations based on gesture predictions and control parameters.
+- The script demonstrates a complex interaction between neural network predictions, MIDI generation, control parameters, and a continuous loop for real-time MIDI playback.
+
+"""
+
+
 # Import standard library modules
 from re import U
 import time
@@ -16,19 +52,6 @@ import buildMidi
 from midiPlayer import MidiPlayer
 from midiArp import MidiArp
 
-# BPM = 30
-# import sys
-
-""" 
-    'noteon': NOTE_ON,
-    'noteoff': NOTE_OFF,
-    'programchange': PROGRAM_CHANGE,
-    'controllerchange': CONTROLLER_CHANGE,
-    'pitchbend': PITCH_BEND,
-    'polypressure': POLY_PRESSURE,
-    'channelpressure': CHANNEL_PRESSURE """
-
-
 ### Almost there! 
 ### This module takes the gestures classes predicted by the neural network and associates them with OSC channeles and data.
 ### Then it sends the data on to the VST to make sweet music.
@@ -45,10 +68,8 @@ class MiDiWriter:
         self.memorySize = 1000 #How many samples to save before purging
         self.memorySizeMin = 100 #How many predictions to keep on purge
         self.ToFByte = ToFByte
-        #self.channelCounters = []  #Use this to count each channels loops outside the loop
         self.available_MiDiPortsOut = self.midiOut.get_ports()
         self.controlList = []
-        #self.loadChannels() #Load the Channels above - must be defined in loadChannels
         self.available_MiDiPortsIn = self.midiIn.get_ports()
         self.metro = Metronome(bpm)
         self.play_loop_started = False
@@ -57,34 +78,7 @@ class MiDiWriter:
         self.writerRate = rate
         self.midi_data_list = []
         self.busy = 0
-        # self.midi_player = MidiPlayer()
-        # self.midi_player = MidiPlayer()
         self.midiArp = MidiArp(midiIn_port_index = 2) #Need to add this to GUI
-        
-        #self.midiArp.start_processing_thread()
-        
-        
-        # self.midiBuilder = buildMidi.MidiBuilder()
-        
-
-        # self.metro = Metronome(bpm = self.bpm)
-        # builder1 = buildMidi.MidiBuilder(dataType=self.control00.controllerType, midiMessage=[60], ch=self.control00.channel, velocity=64, rate='w')
-        # result1 = builder1.build_midi()
-        # midi_data_list = [result1]
-        
-        
-        
-        # print(f'self.available_MiDiPortsOut: {self.available_MiDiPortsOut}')
-        # #print(f'self.available_MiDiPortsOut[0]: {self.available_MiDiPortsOut[0]}')
-        # print(f'self.available_MiDiPortsIn: {self.available_MiDiPortsIn}')
-        # #print(f'self.available_MiDiPortsIn[0]: {self.available_MiDiPortsIn[0]}')
-
-        # if len(self.available_MiDiPortsOut) > 1:
-            
-        #     self.midiOut.open_port(port_name)  #TO DO Start this when the Go button is pressed
-        # else:
-        #     print(f"Could not find {port_name} in available ports. Opening the first port.")
-        #     #self.midiOut.open_port(1)
 
     def generate_midi_data(self):
         # Logic to generate new MIDI data
@@ -101,9 +95,7 @@ class MiDiWriter:
             
     def update_playControl(self):
         self.playControl = []
-        # for control in self.controlList:
-        #     self.playControl.append(control.startFlag)
-        # print(self.playControl)   
+  
         
         # Extracting control.startFlag attribute for each object using list comprehension
         self.playControl = [control.startFlag for control in self.controlList]
@@ -112,8 +104,7 @@ class MiDiWriter:
         print(self.playControl)
 
     def play_loop(self):
-        # non_zero_indices = 0
-        # self.playControl = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+     
         while self.metro.startFlag:
             self.refreshMidi()
             # print("Indices where elements are not zero:", non_zero_indices)
@@ -129,27 +120,6 @@ class MiDiWriter:
                     for thread in threads:
                         thread.join()
 
-                    # for i in range(len(self.playControl)):
-                    #     if self.playControl[i] != 0:
-                    #         non_zero_indices = i
-
-                    # # print(self.control00.startFlag)
-                    # # print(self.control01.startFlag)
-                    # # print(self.control02.startFlag)
-                
-                    # # Update playControl based on conditions
-                    # for i, control in enumerate(self.controlList):
-                    #     if control.startFlag != 0:
-                    #         self.playControl = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-                    #         self.playControl[i] = 1
-                    #         non_zero_indices = i
-
-                    # print("All elements in the array are 0." if all(element == 0 for element in self.playControl) else "Some elements in the array are not 0.")
-                    # print("")
-
-                    # for i in range(len(self.playControl)):
-                    #     if self.playControl[i] != 0:
-                    #         non_zero_indices = i
 
     def refreshMidi(self):
         self.midiArp.update_Midi()  # Update MIDI information from midiArp just once for all controls
@@ -194,53 +164,6 @@ class MiDiWriter:
         else:
             print(f"Could not find {self.direction} in available ports. Opening the first port.")
             #self.midiOut.open_port(1)
-
-    # def loadChannels(self):
-    #     #1. Define Channels
-    #     #Channel 0
-    #     #condition type = 0 
-    #     # method = modulateDist()
-    #     # ToF enable = 1
-    #     #conditionData = [[0,3],[1,3]]
-    #     #First list is for the ON state, second list is for OFF state
-    #     # Gesture -> conditionData[x][0] 
-    #     # threshold -> conditionData[x][1])
-    #     #self.metro = Metronome(bpm = BPM)
-        
-    #     #Control demo for midi Tof control
-    #     # self.control00 = self.MidiControl(controlLabel="Channel0", midiOut=self.midiOut, channel=0, predictions=self.predictions, conditionType=0, conditionData=[[0,3],[1,3]], bpm = self.bpm, controlNum=0, controllerType=2, waveform=2)
-    #     # self.control01 = self.MidiControl(controlLabel="Channel1", midiOut=self.midiOut, channel=1, predictions=self.predictions, conditionType=1, conditionData=[[1,3],[2,3]], bpm = self.bpm, controlNum=1, controllerType=2, waveform=2)
-    #     # self.control02 = self.MidiControl(controlLabel="Channel2", midiOut=self.midiOut, channel=2, predictions=self.predictions, conditionType=2, conditionData=[[2,3],[3,3]], bpm = self.bpm, controlNum=2, controllerType=2, waveform=2)
-       
-    #     #Apregiator Demo
-    #     # self.control00 = self.MidiControl(controlLabel="Channel0", midiOut=self.midiOut, channel=0, predictions=self.predictions, conditionType=0, conditionData=[[0,3],[1,3]], bpm = self.bpm, controlNum=0, controllerType=0, waveform=2)
-    #     # self.control01 = self.MidiControl(controlLabel="Channel1", midiOut=self.midiOut, channel=1, predictions=self.predictions, conditionType=1, conditionData=[[1,3],[2,3]], bpm = self.bpm, controlNum=1, controllerType=0, waveform=2)
-    #     # self.control02 = self.MidiControl(controlLabel="Channel2", midiOut=self.midiOut, channel=2, predictions=self.predictions, conditionType=2, conditionData=[[2,3],[3,3]], bpm = self.bpm, controlNum=2, controllerType=0, waveform=2)
-        
-    #      #Midi Mod demo
-    #     self.control00 = self.MidiControl(controlLabel="Channel0", midiOut=self.midiOut, channel=0, predictions=self.predictions, conditionType=0, conditionData=[[0,3],[1,3]], bpm = self.bpm, controlNum=0, controllerType=1, waveform=0)
-    #     self.control01 = self.MidiControl(controlLabel="Channel1", midiOut=self.midiOut, channel=1, predictions=self.predictions, conditionType=1, conditionData=[[1,3],[2,3]], bpm = self.bpm, controlNum=1, controllerType=1, waveform=1)
-    #     self.control02 = self.MidiControl(controlLabel="Channel2", midiOut=self.midiOut, channel=2, predictions=self.predictions, conditionType=2, conditionData=[[2,3],[3,3]], bpm = self.bpm, controlNum=2, controllerType=1, waveform=2)
-        
-    #     self.control00.midiBuilder.rate = 's'
-    #     self.controlList = [self.control00, self.control01, self.control02]
-                
-    #     self.controlList[0].waveform = 0
-    #     self.controlList[1].waveform = 1
-    #     self.controlList[2].waveform = 2
-        
-    #     self.control00.order = 0
-    #     self.control01.order = 1
-    #     self.control02.order = 2
-
-    #     self.control00.order = 1
-    #     self.control01.order = 2
-    #     self.control02.order = -2
-
-        
-    #     self.midi_data_list = [self.control00.midiResults, self.control01.midiResults, self.control02.midiResults]
-   
-    #     self.midi_players = [MidiPlayer(self.midiOut, self.metro.getTimeTick(midi_data), midi_data) for control, midi_data in zip(self.controlList, self.midi_data_list)] 
                   
     def garbageMan(self):
         length = len(self.predictions)
@@ -260,20 +183,6 @@ class MiDiWriter:
     def conductor(self):
         print()
         print('conductor()')
-        # self.refreshMidi()
-        
-        # self.control00.midiBuilder.midiMessage = [70]
-        # self.control01.midiBuilder.midiMessage= [65]
-        # self.control02.midiBuilder.midiMessage= [55]
-
-        # self.refreshMidi()
-        
-        
-        
-        # midi_data_list = [self.control00.midiResults, self.control01.midiResults, self.control02.midiResults]
-        # midi_players = [MidiPlayer(self.midiOut, self.metro.getTimeTick(midi_data), midi_data, onFlag="startFlag") for midi_data in midi_data_list]
-        
-        # midi_players = [MidiPlayer(self.midiOut, self.metro.getTimeTick(midi_data), midi_data) for control, midi_data in zip(self.controlList, midi_data_list)]
   
         if not self.play_loop_started:  # Check if the play_loop has not started yet
             if self.writerON == True:
@@ -297,7 +206,7 @@ class MiDiWriter:
             
             #2 Check conditions
             print(f'threadToggle: {control.threadToggle}')
-            control.predictions = self.predictions
+            control.predictions = self.predictions     
             control.checkConditions()
             
             print(f'control enabled?: {control.updateFlag}')
@@ -312,29 +221,8 @@ class MiDiWriter:
                     if self.ToFByte > 0 and self.ToFByte < 128:   #Make sure we have a valid ToF value
                         control.controlValue = self.ToFByte    #ToF supplies the control value 
                         # control.midiBuilder.newTof = control.controlValue
-            
-                #control.buildMidi()
-                # control.changeRate()
-
-        # 4 Start controlThread if it's not going already
-            # WriterThread = Thread(target=control00.sendBeat)
-                # if control.thread == None:
-                #     control.thread = threading.Thread(name=control.controlLabel, target=control.playBeat, args=(control.midiResults, midi_player.timeSlice, self.midiOut))
-                #     # control.thread =  threading.Thread(name=control.controlLabel, target=control.play_modulation_loop, args=( control.period, control.max_duration, control.invert))
-                #     control.thread.start()
-                #     print(f'control name {control.thread.getName()}')
-                #     print(f'control is alive {control.thread.is_alive()}')
-                #     print(f'Threads (In writer): {threading.enumerate()}')
-                # else:
-                #     print(f'control is alive? {control.thread.is_alive()}')
-                    
-            # control.startFlag=False
-                
-                    #control.thread.start()
-        
-        # while threading.active_count() > 1:    #wait for the last threads to finish processing
-        #     #print(f'threading.active_count(): {threading.active_count()}')
-        #     OSCThread.join() 
+        self.garbageMan()
+      
 
 
     ##############################################################################################################
@@ -418,7 +306,7 @@ class MiDiWriter:
                 self.beatLenStr = 'w'
                
             print(self.beatLenStr)
-                      
+                
         def getBeatMillis(self):
         #beatMillis is 1000 * (noteFactor * bps) 
         # bps = 60 / self.bpm  
@@ -538,31 +426,6 @@ class MiDiWriter:
                             self.updateFlag = 0
                             self.startFlag = 0
 
-        # def buildMidi(self):
-        #     match self.controlNumType:
-        #         case 0:
-        #             print(f'channel:{self.channel}')
-        #             print(f'controlNum:{self.controlNum}')
-        #             print(f'controlValue:{self.controlValue}')
-
-        #             self.midiMessage = ([CONTROL_CHANGE | int(self.channel), int(self.controlNum), int(self.controlValue)])
-
-        # def changeRate(self):  
-        #         newRate = self.controlValue
-        #         print(newRate)
-        #         if(newRate < 10):
-        #             self.beatLenStr = 's'
-        #         elif( 10 < newRate and newRate < 20):
-        #             self.beatLenStr = 'e'
-        #         elif( 20 < newRate and newRate < 30):
-        #             self.beatLenStr = 'q'
-        #         elif( 30 < newRate and newRate < 50):
-        #             self.beatLenStr = 'h'
-        #         elif(50 < newRate):
-        #             self.beatLenStr = 'w'
-               
-        #         print(self.beatLenStr)
-
 #####################################################################################      
 #Condition checking methods - called in checkConditions() based on switch case result
 ##################################################################################### 
@@ -608,91 +471,3 @@ class MiDiWriter:
             else:
                 return -1 
 
-#####################################################################################
-##Midi Command builder methods - call these within condition checking methods above  
-######################################################################################       
-        # def modulateDist(self, gesture, threshold):
-        #     print("modulateDist")
-        #     self.gestureThreshold(gesture, threshold, 0) 
-
-        #     while self.midiLoopCount < self.modXIdx * 0.01:
-        #         self.modulate()
-        #         if self.messageType == 0xB:  #This is a control command so send this data...
-        #             self.midiMessage = ([CONTROL_CHANGE | self.channel, self.controlNum, self.controlValue])
-        #         self.midiLoopCount += 1
-
-        # def modulate(self):
-        # #How does self.ToFByte change the modulation?
-        #     y = self.modulation_shape(self.period, self.modLenS, self.midiLoopCount)
-        #     y = self.convert_range(y, -1.0, 1.0, 0, 127)
-        #     y = self.convert_range(y, 0, 127, self.min_val, self.max_val) 
-        #     self.controlValue = int((y * self.ToFByte) / 256)
-
-
-        # #Joel's modulation shape function - uses self.xxx atributes to set shape etc. 
-        # # We need these there so they can be exposed to the GUI        
-        # def modulation_shape(self, period, x, xArrIdx):
-        #     xArr = np.arrange(0, self.modLenS, 0.01)
-        #     x = xArr[xArrIdx]
-        #     y = 1
-
-        #     if self.shape == 0: #'sine':
-        #         y = self.invert * np.sin(2 * np.pi / period * x)
-        #     elif self.shape == 1: #'saw':
-        #         y = self.invert * signal.sawtooth(2 * np.pi / period * x)
-        #     elif self.shape == 2: #'square':
-        #         y = self.invert * signal.square(2 * np.pi / period * x)
-        #     else:
-        #         print("That wave is not supported")
-
-        #     return y   
-
-        # def modulation_shape(self, shape, period, max_duration, signal_invert):
-        #     x = np.arange(0, max_duration, 0.01)
-        #     y = 1
-        #     sig_invert = 1
-
-        #     if signal_invert:
-        #         sig_invert = -1
-
-        #     if shape == 'sine':
-        #         y = sig_invert * np.sin(2 * np.pi / period * x)
-        #     elif shape == 'saw':
-        #         y = sig_invert * signal.sawtooth(2 * np.pi / period * x)
-        #     elif shape == 'square':
-        #         y = sig_invert * signal.square(2 * np.pi / period * x)
-        #     else:
-        #         print("That wave is not supported")
-        #         sys.exit()  #We need to exit 
-
-        #     return y  
-                
-            # bpm = self.bpm
-            # bps = bpm/60
-            # pause_duration = self.getBeatMillis()/y.size
-            # # pause_duration = max_duration / y.size
-            # for v in y:
-            #     beatStart = int(time() * 1000)
-            #     beatStop = beatStart + pause_duration
-            #     v = self.convert_range(v, -1.0, 1.0, 0, 127)
-            #     v = self.convert_range(v, 0, 127, self.min_val, self.max_val)
-            #     # print(f"Mod: {v}")
-            #     mod = ([CONTROL_CHANGE | self.channel, self.cc_num, v])
-            #     self.midiout.send_message(mod)
-            #     beatNow = int(time() * 1000)
-            #     # while beatNow < beatStop:
-            #     time.sleep(pause_duration)
-                    
-        # def convert_range(self, value, in_min, in_max, out_min, out_max):
-        #     l_span = in_max - in_min
-        #     r_span = out_max - out_min
-        #     scaled_value = (value - in_min) / l_span
-        #     scaled_value = out_min + (scaled_value * r_span)
-        #     return np.round(scaled_value)
-    
-
-# def main():
-
-#     #writer = MiDiWriter(predictions=[], port_name=0, channel=0, cc_num=75, bpm=120, rate='w', ToFByte=-1)
-
-# if __name__ == "__main__": main()
