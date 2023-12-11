@@ -37,7 +37,7 @@ import dill
 
 #Condition Type = Transition
 # [2] - [9] conditions data: [..., BEGIN ON POSITION, BEGIN ON THRESHOLD, END ON POSITION, END ON THRESHOLD, BEGIN OFF POSITION, BEGIN OFF THRESHOLD, END OFF POSITION, END OFF THRESHOLD, ...]
-# [10] Control Type {INT} 0 = modulate, 1 = Arpegiate, 2 = note
+# [10] Control Type {INT} 0 = modulate, 1 = Arpegiate, 2 = ToF
 # [11] Channel
 # [12] Rate [Float]
 #Control Type Modulate
@@ -1276,15 +1276,15 @@ class UX:
                     print(f'values["-BPMSLIDE-"][0]: {values["-BPMSLIDE-"]}')
                     
                     self.writer.bpm = values["-BPMSLIDE-"]
-                    controlPath = self.dataStream.pathPreface + "/controls.csv"
-                    #print(f'controlPath: {controlPath}')
+                    #controlPath = self.dataStream.pathPreface + "/controls.csv"
+                    print(f'controlPath: {controlPath}')
                     #Write the midiport and bpm to the file - overwrite file
-                    self.logCSVRow('controls.csv', [self.writer.midiPortOut, self.writer.bpm], append=True)
+                    self.logCSVRow('controls.csv', [self.writer.midiPortOut, self.writer.bpm], append=False)
                     print(f'Write Port and Midi out')
                     
                     #Check the file contents
-                    with open(controlPath, 'r') as csvfile:
-                        print(f'{list(csv.reader(csvfile, delimiter=","))}')
+                    #with open(controlPath, 'r') as csvfile:
+                    #    print(f'{list(csv.reader(csvfile, delimiter=","))}')
                         
                     print(f'self.writer.bpm: {self.writer.bpm}')
 
@@ -1790,7 +1790,8 @@ class UX:
                     
                     # print(isinstance(self.controlInitData[i][1], int))
                     if self.controlLogCheck == 0: #Not using the logged data so we need a new log
-                        self.logCSVRow('controls.csv', self.controlInitData[i], append=False)
+                        print("over writing controls logfile")
+                        self.logCSVRow('controls.csv', self.controlInitData[i], append=True)
                     #tmpList.append(self.controlInitData[i])
                         controlPath = self.dataStream.pathPreface + "/controls.csv"
                         #Check the file has been logged properly
