@@ -208,7 +208,7 @@ class UX:
             # #window['-MESSAGE-'].update(f'message')
 
     def checkControlLog(self):
-        controlPath = "data/test" + "/controls.csv"
+        controlPath = self.dataStream.pathPreface + "/controls.csv"
         newControlData = [-1]
         if os.path.exists(controlPath):
             with open(controlPath, 'r') as csvfile:
@@ -1276,14 +1276,15 @@ class UX:
                     print(f'values["-BPMSLIDE-"][0]: {values["-BPMSLIDE-"]}')
                     
                     self.writer.bpm = values["-BPMSLIDE-"]
-                    print(f'controlPath: {controlPath}')
+                    controlPath = self.dataStream.pathPreface + "/controls.csv"
+                    #print(f'controlPath: {controlPath}')
                     #Write the midiport and bpm to the file - overwrite file
-                    self.logCSVRow('controls.csv', [self.writer.midiPortOut, self.writer.bpm], append=False)
+                    self.logCSVRow('controls.csv', [self.writer.midiPortOut, self.writer.bpm], append=True)
                     print(f'Write Port and Midi out')
                     
                     #Check the file contents
-                    # with open(controlPath, 'r') as csvfile:
-                    #     print(f'{list(csv.reader(csvfile, delimiter=","))}')
+                    with open(controlPath, 'r') as csvfile:
+                        print(f'{list(csv.reader(csvfile, delimiter=","))}')
                         
                     print(f'self.writer.bpm: {self.writer.bpm}')
 
@@ -1791,7 +1792,7 @@ class UX:
                     if self.controlLogCheck == 0: #Not using the logged data so we need a new log
                         self.logCSVRow('controls.csv', self.controlInitData[i], append=False)
                     #tmpList.append(self.controlInitData[i])
-
+                        controlPath = self.dataStream.pathPreface + "/controls.csv"
                         #Check the file has been logged properly
                         with open(controlPath, 'r') as csvfile:
                             tmpList = list(csv.reader(csvfile, delimiter=","))
