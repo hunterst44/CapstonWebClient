@@ -414,9 +414,9 @@ class UX:
                     ], pad=(LEFTMARGIN,0)), shrink=True)], 
                 [sg.pin(sg.Column([
                     [sg.Btn('Ok',**self.button2_properties(), key='-USEDEFAULTDIRBTN-', visible=True),
-                    sg.Btn('Browse',**self.button1_properties(), key='-CHOOSEDIR-', enable_events=True)]], pad=(LEFTMARGIN, 0)), shrink=True)],
+                    sg.Btn('Browse',**self.button1_properties(), key='-CHOOSEDIR-', enable_events=True),
+                    sg.Btn('Ok',**self.button2_properties(), key='-USESELDIRBTN-', visible=False)]], pad=(LEFTMARGIN, 0)), shrink=True)],
                     #[sg.FolderBrowse(size=(8,1), visible=True, key='-CHOOSEDIR-', enable_events=True)]], pad=(LEFTMARGIN,0)), shrink=True),sg.Push()],
-                    sg.pin(sg.Column([[sg.Btn('Ok2',**self.button2_properties(), key='-USESELDIRBTN-', visible=False)]], pad=(LEFTMARGIN,0)), shrink=True)
                 ]
         
         window00=self.create_window(content_layout, windowtitlemsg)
@@ -568,7 +568,7 @@ class UX:
                 [sg.Btn('Continue', **self.button1_properties(), key='-CONTUBTN-', visible=False)]
                 ], key='-CNTRLOVERIDECOL-',  element_justification='c', expand_x = True, vertical_alignment='t', pad=(0,0)),
             ],
-            
+
             [sg.pin(sg.Column([
                 [sg.T("BPM", key='-BPMLABEL-', visible=False)],
                 [sg.Slider(range=(30, 300), default_value=120, expand_x=True,orientation='horizontal', key='-BPMSLIDE-', visible=False)],
