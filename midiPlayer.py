@@ -44,19 +44,26 @@ class MidiPlayer:
 
     def play_beat(self, midi_data=None, on_flag=0):
         # on_flag = 1
+        # on_flag = 1
         a = np.asarray(midi_data)
+        
         if a.size == 0 or midi_data == None:
             print("Midi array is empty")
         else:
+            
+            
             if on_flag:
                 if isinstance(midi_data[0], int):
                     self.midiOut.send_message(midi_data)
                     time.sleep(self.timeSlice / 1000)
                 else:
                     for msg in midi_data:
-                        print(f"Playing MIDI from control: {msg}")
-                        print(self.midiOut.get_ports())
-                        self.midiOut.send_message(msg)
+                        if msg[2] == -1:
+                            print("Midi array is empty")
+                        else:
+                            print(f"Playing MIDI from control: {msg}")
+                            print(self.midiOut.get_ports())
+                            self.midiOut.send_message(msg)
                         time.sleep(self.timeSlice / 1000)
 
     def play_beat_threaded(self):
