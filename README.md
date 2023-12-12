@@ -1,6 +1,39 @@
 # The Conductor
-
 ---
+
+- [The Conductor](#the-conductor)
+  - [Socket Client](#socket-client)
+  - [Neural Network](#neural-network)
+  - [MIDI Generation Software](#midi-generation-software)
+    - [MidiWriter](#midiwriter)
+    - [MidiBuilder](#midibuilder)
+  - [Metronome](#metronome)
+  - [MidiArp](#midiarp)
+- [Legal Disclamer](#legal-disclamer)
+
+
+
+## Socket Client
+
+The file socketClient.py is responsible for collecting data from The Conductor's microconroller via WiFi and formats it for the neural network. 
+
+There is one class called get data, which is instantiated on start up in uxWindowDev.py with the name dataStream.
+
+Methods
+    - processData() Takes raw bytes from WiFi and formats it into an array for the neural network
+    - receiveBytes() Prompts The Conductor's microcontroller for data and receives that data as raw bytes
+    - socketLoop() Orchestrates the process of receiving and processing data, and sends data to the neural network, and sends neural network results to the MidiWriter.
+    - prepTraining() Compiles saved accelerometer data from log files into a set of randomized samples for training the neural network.
+    - writetoCSV() A helper method that writes arbitrary data to a csv file
+    - plotAcc() Plots incoming accelerometer data (not implemented)
+    - createTrainingData() A helper method that creates a simple data set for testing the neural network.
+
+## Neural Network
+
+This file is responsible for the running the neural network. It is based on code samples from Harrison Kinsley & Daniel Kukieła’s Neural Networks From Scratch in Python. 
+
+See the book or the github repository for more information or troubleshooting.
+
 
 ## MIDI Generation Software
 
@@ -8,7 +41,7 @@ This section covers the MIDI generation files in the conductor application. This
 
 ### MidiWriter
 
-MidiWriter is instantiated in ux.py as writer where predictions from the nural network are passed to the writer called from ux.py. When the MIDI controls are configured inside the GUI the configuration file controls.csv is used to create midi controls inside the writer. 
+MidiWriter is instantiated in uxWindowDev.py as writer where predictions from the nural network are passed to the writer called from ux.py. When the MIDI controls are configured inside the GUI the configuration file controls.csv is used to create midi controls inside the writer. 
 
 writer.controlList takes the configuration of each control and initalizes the MIDI controls as writer.MidiControl(control paramiters)
 
