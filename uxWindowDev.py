@@ -416,7 +416,7 @@ class UX:
                     [sg.Btn('Ok',**self.button2_properties(), key='-USEDEFAULTDIRBTN-', visible=True),
                     sg.Btn('Browse',**self.button1_properties(), key='-CHOOSEDIR-', enable_events=True)]], pad=(LEFTMARGIN, 0)), shrink=True)],
                     #[sg.FolderBrowse(size=(8,1), visible=True, key='-CHOOSEDIR-', enable_events=True)]], pad=(LEFTMARGIN,0)), shrink=True),sg.Push()],
-                [sg.pin(sg.Column([[sg.Btn('Ok',**self.button2_properties(), key='-USESELDIRBTN-', visible=False)]], pad=(LEFTMARGIN,0)), shrink=True)]
+                    sg.pin(sg.Column([[sg.Btn('Ok2',**self.button2_properties(), key='-USESELDIRBTN-', visible=False)]], pad=(LEFTMARGIN,0)), shrink=True)
                 ]
         
         window00=self.create_window(content_layout, windowtitlemsg)
@@ -560,13 +560,15 @@ class UX:
             sg.Column([
                 [sg.Listbox(midiOutList, size=(50, 8), key="-MIDIPORTOUT-", expand_x=True, expand_y=True,enable_events=True, visible=logInvisibility)], 
                 [sg.Btn('Refresh', **self.button1_properties(), key='-MIDIOUTLISTRFH-', visible=logInvisibility)], 
-                [sg.Btn('Connect', **self.button1_properties(), key='-MIDIOUTCNTBTN-', visible=logInvisibility)],
+                [sg.Btn('Connect', **self.button1_properties(), key='-MIDIOUTCNTBTN-', visible=logInvisibility)]
+                ], key='-MIDIPORTOUTCOL-',  element_justification='c', expand_x = True, vertical_alignment='t', pad=(0,0)),
+            sg.Column([
                 [sg.Btn('OK', **self.button2_properties(), key='-USELOGBTN-', visible=logVisibility)], 
                 [sg.Btn('Overwrite', **self.button1_properties(), key='-NEWCONTROLBTN-', visible=logVisibility)],
                 [sg.Btn('Continue', **self.button1_properties(), key='-CONTUBTN-', visible=False)]
-                ], key='-MIDIPORTOUTCOL-',  element_justification='c', expand_x = True, vertical_alignment='t', pad=(0,0)),
+                ], key='-CNTRLOVERIDECOL-',  element_justification='c', expand_x = True, vertical_alignment='t', pad=(0,0)),
             ],
-
+            
             [sg.pin(sg.Column([
                 [sg.T("BPM", key='-BPMLABEL-', visible=False)],
                 [sg.Slider(range=(30, 300), default_value=120, expand_x=True,orientation='horizontal', key='-BPMSLIDE-', visible=False)],
@@ -757,7 +759,7 @@ class UX:
                     #newModelLogPath = newPathPreface + '/modelLog.csv'
 
                     if os.path.exists(newPathPreface):
-                        positionLabelMessage00 = newPathPreface + " exists.\n Click 'Ok' to use this directory, or 'Browse' for another."
+                        positionLabelMessage00 = newPathPreface + " exists.\n\nClick 'Ok' to use this directory, or 'Browse' for another.\n"
                         
                         window['-MODELMESSAGE00-'].update(positionLabelMessage00)
                         window['-USEDEFAULTDIRBTN-'].update(visible=False)
