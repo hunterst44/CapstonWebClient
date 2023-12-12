@@ -32,7 +32,7 @@ Methods
 
 This file is responsible for the running the neural network. It is based on code samples from Harrison Kinsley & Daniel Kukieła’s Neural Networks From Scratch in Python. 
 
-See the book or the github repository for more information or troubleshooting.
+See the book or the github repository (https://github.com/Sentdex/nnfs) for more information or troubleshooting.
 
 
 ## MIDI Generation Software
