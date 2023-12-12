@@ -37,7 +37,7 @@ import dill
 
 #Condition Type = Transition
 # [2] - [9] conditions data: [..., BEGIN ON POSITION, BEGIN ON THRESHOLD, END ON POSITION, END ON THRESHOLD, BEGIN OFF POSITION, BEGIN OFF THRESHOLD, END OFF POSITION, END OFF THRESHOLD, ...]
-# [10] Control Type {INT} 0 = modulate, 1 = Arpegiate, 2 = note
+# [10] Control Type {INT} 0 = modulate, 1 = Arpegiate, 2 = ToF
 # [11] Channel
 # [12] Rate [Float]
 #Control Type Modulate
@@ -198,7 +198,7 @@ class UX:
             existsVis = True #model exists
             notVis = False
         else:
-            modelMessage = 'Create a model.\nNo model available at ' + modelPath + 'Click okay to create a new one.'
+            modelMessage = 'Create a model.\nNo model available at\n' + modelPath + '\nClick okay to create a new one.'
             existsVis = False
             notVis = True
         return modelMessage, existsVis, notVis   
@@ -208,7 +208,7 @@ class UX:
             # #window['-MESSAGE-'].update(f'message')
 
     def checkControlLog(self):
-        controlPath = "data/test" + "/controls.csv"
+        controlPath = self.dataStream.pathPreface + "/controls.csv"
         newControlData = [-1]
         if os.path.exists(controlPath):
             with open(controlPath, 'r') as csvfile:
@@ -403,6 +403,8 @@ class UX:
     def makeWindow00(self):
         sg.set_options(font=self.font)       
         LEFTMARGIN = 50
+        self.windowSizeX = 750 #Width of the window
+        self.windowSizeY = 450 #Height of the window
         windowtitlemsg = 'The Conductor: STEP 00'
 
         content_layout = [[sg.Push(),sg.T('Choose a working directory', key='-OUTPUT-',font = ("Calibri", 16, "bold",), pad=((0,0),(0,25))),sg.Push()],
@@ -411,10 +413,10 @@ class UX:
                     #[sg.Btn('Ok', key='-CREATEMOEDLBTN-', visible=False)]
                     ], pad=(LEFTMARGIN,0)), shrink=True)], 
                 [sg.pin(sg.Column([
-                    [sg.Btn('Ok',**self.button2_properties(), key='-USEDEFAULTDIRBTN-', visible=True)],
-                    #sg.Btn('Browse',**self.button1_properties(), key='-CHOOSEDIR-', enable_events=True)]], pad=(LEFTMARGIN, 0)), shrink=True)],
-                    [sg.FolderBrowse(size=(8,1), visible=True, key='-CHOOSEDIR-', enable_events=True)]], pad=(LEFTMARGIN,0)), shrink=True),sg.Push()],
-                [sg.pin(sg.Column([[sg.Btn('Ok',**self.button2_properties(), key='-USESELDIRBTN-', visible=False)]], pad=(LEFTMARGIN,0)), shrink=True)]
+                    [sg.Btn('Ok',**self.button2_properties(), key='-USEDEFAULTDIRBTN-', visible=True),
+                    sg.Btn('Browse',**self.button1_properties(), key='-CHOOSEDIR-', enable_events=True),
+                    sg.Btn('Ok',**self.button2_properties(), key='-USESELDIRBTN-', visible=False)]], pad=(LEFTMARGIN, 0)), shrink=True)],
+                    #[sg.FolderBrowse(size=(8,1), visible=True, key='-CHOOSEDIR-', enable_events=True)]], pad=(LEFTMARGIN,0)), shrink=True),sg.Push()],
                 ]
         
         window00=self.create_window(content_layout, windowtitlemsg)
@@ -422,6 +424,8 @@ class UX:
 
     def makeWindow0(self, connected):
             LEFTMARGIN = 50
+            self.windowSizeX = 775 #Width of the window
+            self.windowSizeY = 670 #Height of the window
 
             if connected:
                 topMessage = 'The Conductor is connected on ' + self.dataStream.ssid + ' at ' + self.dataStream.host
@@ -470,19 +474,19 @@ class UX:
         #Window one welcome, load / create model
         windowtitlemsg = 'THE CONDUCTOR: Step 1'
         content_layout =([sg.Push(),sg.T('The Conductor: Window 1',key='-OUTPUT-',font = ("Calibri", 16, "bold",), pad=((LEFTMARGIN,0),(0,25))),sg.Push()],
-                [sg.Push(),sg.pin(sg.Column([
+                [sg.pin(sg.Column([
                     [sg.T(modelMessage, key="-MODELMESSAGE00-", visible=True)], 
                     [sg.Btn('Ok',**self.button2_properties(), key='-USEDEFAULTBTN-', visible=existsVis),
                     sg.Btn('Create New',**self.button1_properties(), key='-CREATEMOEDLBTN-', visible=True),
-                    sg.Btn('Ok',**self.button2_properties(), key='-ACCPTDEFAULT-', visible=notVis)]], pad=(LEFTMARGIN, 0)), shrink=True),sg.Push()], 
-                [sg.Push(),sg.pin(sg.Column([[sg.T(modelMessage, key="-MODELMESSAGE01-", visible=False)]], pad=(LEFTMARGIN, 0)), shrink=True),sg.Push()],
-                [sg.Push(),sg.pin(sg.Column([[sg.Input('How many hand positions will you train?', key="-NUMPOS-", visible=False, enable_events=False)]], pad=(LEFTMARGIN,0)), shrink=True),sg.Push()],
-                [sg.Push(),sg.pin(sg.Column([[sg.Input('Position 1 label', key="-POSLABEL-", visible=False)], 
-                    [sg.Btn('SUBMIT',**self.button1_properties(), key='-SUBLABELBTN-', visible=False)]], pad=(LEFTMARGIN,0)), shrink=True),sg.Push()],
-                [sg.Push(),sg.pin(sg.Column([[sg.T('Train Model', key='-TRAIN-', visible=False),sg.Btn('Train',**self.button1_properties(), key='-TRAINBTN-', visible=False)]], pad=(LEFTMARGIN, 0)), shrink=True),sg.Push()],
-                [sg.Push(),sg.pin(sg.Column([
+                    sg.Btn('Ok',**self.button2_properties(), key='-ACCPTDEFAULT-', visible=notVis)]], pad=(LEFTMARGIN, 0)), shrink=True)], 
+                [sg.pin(sg.Column([[sg.T(modelMessage, key="-MODELMESSAGE01-", visible=False)]], pad=(LEFTMARGIN, 0)), shrink=True)],
+                [sg.pin(sg.Column([[sg.Input('How many hand positions will you train?', key="-NUMPOS-", visible=False, enable_events=False)]], pad=(LEFTMARGIN,0)), shrink=True)],
+                [sg.pin(sg.Column([[sg.Input('Position 1 label', key="-POSLABEL-", visible=False)], 
+                    [sg.Btn('SUBMIT',**self.button1_properties(), key='-SUBLABELBTN-', visible=False)]], pad=(LEFTMARGIN,0)), shrink=True)],
+                [sg.pin(sg.Column([[sg.T('Train Model', key='-TRAIN-', visible=False),sg.Btn('Train',**self.button1_properties(), key='-TRAINBTN-', visible=False)]], pad=(LEFTMARGIN, 0)), shrink=True)],
+                [sg.pin(sg.Column([
                     [sg.T('Predict hand positions', key='-PREDICT-', visible=False),
-                    sg.Btn('Predict',**self.button1_properties(), key='-PREDICTBTN-',visible=False)]], pad=(LEFTMARGIN, 0)), shrink=True),sg.Push()]
+                    sg.Btn('Predict',**self.button1_properties(), key='-PREDICTBTN-',visible=False)]], pad=(LEFTMARGIN, 0)), shrink=True)]
         )
         
         window1=self.create_window(content_layout,windowtitlemsg)
@@ -511,9 +515,9 @@ class UX:
         for i in range(numOutPorts):
             midiOutList.append(self.writer.available_MiDiPortsOut[i])
 
-        controlList = ['Modulate', 'Arpeggiate']
+        controlList = ['Modulate', 'Arrpegiate', 'ToF Control']
         waveList = ['sine', 'square', 'saw']
-        conditionTypeList = ['Hold', 'Transition']
+        conditionTypeList = ['Hold', 'Transition', 'No Action']
         currentPositionList = []
         arpegDirList = ['Up', 'Down', 'Random']
 
@@ -549,85 +553,86 @@ class UX:
             [sg.Push(),sg.T('The Conductor: Window 2', key='-OUTPUT-',font = ("Calibri", 16, "bold",), pad=((LEFTMARGIN,0),(0,25))),sg.Push()
                 #[sg.Input('How many hand positions will you train?', key="-NUMPOS-", visible=False, enable_events=True)]
             ],
-            [sg.Push(),sg.Column([
+            [sg.Column([
                 [sg.T(Message00Text, key='-TOPMESSAGE00-', visible=True)], 
                 [sg.T(controlListStr, key='-TOPMESSAGE01-', visible=True)]
-                ], key='-TOPMESSAGE00COL-', element_justification='left', expand_x = True, vertical_alignment='t', pad=(LEFTMARGIN,0)), sg.Push(),
-            sg.Column([
-                [sg.Btn('OK', **self.button2_properties(), key='-USELOGBTN-', visible=logVisibility)], 
-                [sg.Btn('Overwrite', **self.button1_properties(), key='-NEWCONTROLBTN-', visible=logVisibility)],
-                [sg.Btn('Continue', **self.button1_properties(), key='-CONTUBTN-', visible=False)] 
-                ], key='-CNTRLOVERIDECOL-', element_justification='left', expand_x = True, vertical_alignment='t', pad=(LEFTMARGIN,0), visible=logVisibility),
+                ], key='-TOPMESSAGE00COL-', element_justification='left', expand_x = False, vertical_alignment='t', pad=(LEFTMARGIN,0)),
             sg.Column([
                 [sg.Listbox(midiOutList, size=(50, 8), key="-MIDIPORTOUT-", expand_x=True, expand_y=True,enable_events=True, visible=logInvisibility)], 
                 [sg.Btn('Refresh', **self.button1_properties(), key='-MIDIOUTLISTRFH-', visible=logInvisibility)], 
                 [sg.Btn('Connect', **self.button1_properties(), key='-MIDIOUTCNTBTN-', visible=logInvisibility)]
-                ], key='-MIDIPORTOUTCOL-',  element_justification='c', expand_x = True, vertical_alignment='t', pad=(LEFTMARGIN,0)),
+                ], key='-MIDIPORTOUTCOL-',  element_justification='c', expand_x = True, vertical_alignment='t', pad=(0,0)),
+            sg.Column([
+                [sg.Btn('OK', **self.button2_properties(), key='-USELOGBTN-', visible=logVisibility)], 
+                [sg.Btn('Overwrite', **self.button1_properties(), key='-NEWCONTROLBTN-', visible=logVisibility)],
+                [sg.Btn('Continue', **self.button1_properties(), key='-CONTUBTN-', visible=False)]
+                ], key='-CNTRLOVERIDECOL-',  element_justification='c', expand_x = True, vertical_alignment='t', pad=(0,0)),
             ],
-            [sg.Push(), sg.pin(sg.Column([
+
+            [sg.pin(sg.Column([
                 [sg.T("BPM", key='-BPMLABEL-', visible=False)],
                 [sg.Slider(range=(30, 300), default_value=120, expand_x=True,orientation='horizontal', key='-BPMSLIDE-', visible=False)],
                 [sg.Btn('Ok', **self.button2_properties(), key='-BPMBTN-', visible=False)]
-                ], key='-BPMCOL-',  vertical_alignment='t', pad=(LEFTMARGIN,0)), shrink=True), sg.Push(),
-            sg.Push(), sg.Column([
+                ], key='-BPMCOL-',  vertical_alignment='t', pad=(LEFTMARGIN,0)), shrink=True),
+            sg.Column([
                 [sg.Input('Control Name', size=(15,10), key="-CTRLNAME-", visible=False)],
                 [sg.Btn('Ok', **self.button2_properties(), key='-CTRLNAMEBTN-', visible=False)]
-                ], key='-CTRLNAMECOL-',  vertical_alignment='t', visible=False, pad=(LEFTMARGIN,0)), sg.Push(),
-            sg.Push(), sg.Column([
+                ], key='-CTRLNAMECOL-',  vertical_alignment='t', visible=False, pad=(LEFTMARGIN,0)),
+            sg.Column([
                 [sg.Listbox(conditionTypeList, size=(10, 3), key="-CONDTYPE-", expand_y=True, enable_events=True, visible=False)]
-                ], key='-CONDTYPECOL-',  vertical_alignment='t', pad=(LEFTMARGIN,0), visible=False), sg.Push(),
-            sg.Push(), sg.Column([
+                ], key='-CONDTYPECOL-',  vertical_alignment='t', pad=(LEFTMARGIN,0), visible=False),
+            sg.Column([
                 [sg.T(f"Position, threshold Control ON.", key='-CURRPOSONLABEL-', size=(15,2), visible=False)],
                 [sg.Listbox(currentPositionList, size=(10, 3), key="-CURRPOSLISTON-", expand_y=True, enable_events=True, visible=False)],
                 [sg.Slider(range=(1, 25), default_value=3, expand_x=True,orientation='horizontal', key='-CURRPOSONSLIDE-', visible=False)]
-                ], key='-CURRPOSLISTONCOL-',  vertical_alignment='t', pad=(LEFTMARGIN,0), visible=False), sg.Push(),
-            sg.Push(), sg.Column([
+                ], key='-CURRPOSLISTONCOL-',  vertical_alignment='t', pad=(LEFTMARGIN,0), visible=False),
+            sg.Column([
                 [sg.T(f"Position, threshold at END ON.", key='-CURRPOSTRANSONLABEL-', size=(15,2), visible=False)],
                 [sg.Listbox(currentPositionList, size=(10, 3), key="-CURRPOSLISTTRANSON-", expand_y=True, enable_events=True, visible=False)],
                 [sg.Slider(range=(1, 25), default_value=3, expand_x=True,orientation='horizontal', key='-CURRPOSTRANSONSLIDE-', visible=False)]
-                ], key='-CURRPOSLISTTRANSONCOL-',  vertical_alignment='t', pad=(LEFTMARGIN,0), visible=False), sg.Push(),
-            sg.Push(), sg.Column([
+                ], key='-CURRPOSLISTTRANSONCOL-',  vertical_alignment='t', pad=(LEFTMARGIN,0), visible=False),
+            sg.Column([
                 [sg.T(f"Position, threshold control OFF.", key='-CURRPOSOFFLABEL-', size=(15,2), visible=False)],
                 [sg.Listbox(currentPositionList, size=(10, 3), key="-CURRPOSLISTOFF-", expand_y=True, enable_events=True, visible=False)],
                 [sg.Slider(range=(1, 25), default_value=3, expand_x=True,orientation='horizontal', key='-CURRPOSOFFSLIDE-', visible=False)],
                 [sg.Btn('Ok', **self.button2_properties(), key='-CONDBTN-', visible=False)]
-                ], key='-CURRPOSLISTOFFCOL-', vertical_alignment='t', pad=(LEFTMARGIN,0), visible=False), sg.Push(),
-            sg.Push(), sg.Column([
+                ], key='-CURRPOSLISTOFFCOL-', vertical_alignment='t', pad=(LEFTMARGIN,0), visible=False),
+            sg.Column([
                 [sg.T(f"Position, threshold at END OFF.", key='-CURRPOSOFFTRANSLABEL-', size=(15,2), visible=False)],
                 [sg.Listbox(currentPositionList, size=(10, 3), key="-CURRPOSLISTTRANSOFF-", expand_y=True, enable_events=True, visible=False)],
                 [sg.Slider(range=(1, 25), default_value=3, expand_x=True,orientation='horizontal', key='-CURRPOSOFFTRANSSLIDE-', visible=False)],
                 [sg.Btn('Ok', key='-CONDTRANSBTN-', visible=False)]
-                ], key='-CURRPOSLISTTRANSOFFCOL-',  vertical_alignment='t', pad=(LEFTMARGIN,0), visible=False), sg.Push(),
-            sg.Push(), sg.Column([
+                ], key='-CURRPOSLISTTRANSOFFCOL-',  vertical_alignment='t', pad=(LEFTMARGIN,0), visible=False),
+            sg.Column([
                 [sg.Listbox(arpegDirList, size=(10, 3), key="-ARPEGDIR-", expand_y=True, enable_events=True, visible=False)],
                 [sg.Btn('Ok', **self.button2_properties(), key='-ARPEGBTN-', visible=False)]
-                ], key='-ARPEGDIRCOL-',  vertical_alignment='t', pad=(LEFTMARGIN,0), visible=False), sg.Push(),
-            sg.Push(), sg.Column([
+                ], key='-ARPEGDIRCOL-',  vertical_alignment='t', pad=(LEFTMARGIN,0), visible=False),
+            sg.Column([
                 [sg.Listbox(controlList, size=(10, 3), key="-CTRLLIST-", expand_y=True, enable_events=True, visible=False)],
                 [sg.Btn('Select', **self.button1_properties(), key='-SELCNTRLTYPEBTN-', visible=False)]
-                ], key='-CTRLLISTCOL-',  vertical_alignment='t', pad=(LEFTMARGIN,0)), sg.Push(),
-            sg.Push(), sg.Column([
+                ], key='-CTRLLISTCOL-',  vertical_alignment='t', pad=(LEFTMARGIN,0)),
+            sg.Column([
                 [sg.T(f"Rate", key='-RATELABEL-', size=(15,2), visible=False)],
                 [sg.Slider(range=(0, 127), default_value=30, expand_x=True,orientation='horizontal',key='-RATESLIDE-', visible=False)]
-                ], key='-RATECOL-', vertical_alignment='t', pad=(LEFTMARGIN,0)), sg.Push(),
-            sg.Push(), sg.Column([
+                ], key='-RATECOL-', vertical_alignment='t', pad=(LEFTMARGIN,0)),
+            sg.Column([
                 [sg.T(f"Waveform", key='-WAVELABEL-', size=(15,2), visible=False)],
                 [sg.Listbox(waveList, size=(50, 3), key="-WAVELIST-", enable_events=True, visible=False)]
-                ], key='-WAVECOL-',  vertical_alignment='t', pad=(LEFTMARGIN,0)), sg.Push(),
-            sg.Push(), sg.Column([
+                ], key='-WAVECOL-',  vertical_alignment='t', pad=(LEFTMARGIN,0)),
+            sg.Column([
                 [sg.T(f"Minimum", key='-MINLABEL-', size=(15,2), visible=False)],
                 [sg.Slider(range=(0, 127), default_value=30, expand_x=True,orientation='horizontal', key='-MINSLIDE-', visible=False)]
-                ], key='-MINCOL-',  vertical_alignment='t', pad=(LEFTMARGIN,0)), sg.Push(),
-            sg.Push(), sg.Column([
+                ], key='-MINCOL-',  vertical_alignment='t', pad=(LEFTMARGIN,0)),
+            sg.Column([
                 [sg.T(f"Maximum", key='-MAXLABEL-', size=(15,2), visible=False)],
                 [sg.Slider(range=(0, 127), default_value=30, expand_x=True,orientation='horizontal', key='-MAXSLIDE-', visible=False)],
                 [sg.Btn('Ok', **self.button2_properties(), key='-MODDATABTN-', visible=False)]
-                ], key='-MAXCOL-',  vertical_alignment='t', pad=(LEFTMARGIN,0)), sg.Push(),
-            sg.Push(), sg.Column([
+                ], key='-MAXCOL-',  vertical_alignment='t', pad=(LEFTMARGIN,0)),
+            sg.Column([
                 [sg.T(f"Click 'Another' to setup another control, or click 'Done' to continue.", key='-DONELABEL-', size=(15,2), visible=False)],
                 [sg.Btn('Another', **self.button1_properties(), key='-ANOTHERBTN-', visible=False)],
                 [sg.Btn('Done', **self.button1_properties(), key='-MAPPINGDONEBTN-', visible=False)]
-                ], key='-DONECOL-',  vertical_alignment='t', pad=(0,0), visible=False), sg.Push(),
+                ], key='-DONECOL-',  vertical_alignment='t', pad=(0,0), visible=False),
             #sg.Column([[sg.T(f"Min / Max", key='-MINMAXLABEL-', size=(15,2), visible=False)], [sg.Listbox(waveList, size=(50, 15), key="-WAVELIST-", expand_y=True, enable_events=True, visible=False)]], key='-MINCOL-',  vertical_alignment='t', pad=(0,0))
             ]
         ]
@@ -747,13 +752,14 @@ class UX:
                 if event == '-CHOOSEDIR-':
                     print()
                     print(f'Window 00 -CHOOSEDIR-')
+                    newPathPreface = sg.popup_get_folder('Select a folder', no_window=True, initial_folder=os.getcwd())
                     #Use the directory provided by the user, if it exists
-                    newPathPreface = values["-CHOOSEDIR-"]
+                    #newPathPreface = values["-CHOOSEDIR-"]
                     #newModelPath = newPathPreface + '/model.model'
                     #newModelLogPath = newPathPreface + '/modelLog.csv'
 
                     if os.path.exists(newPathPreface):
-                        positionLabelMessage00 = newPathPreface + " exists.\n Click 'Ok' to use this directory, or 'Browse' for another."
+                        positionLabelMessage00 = newPathPreface + " exists.\n\nClick 'Ok' to use this directory, or 'Browse' for another.\n"
                         
                         window['-MODELMESSAGE00-'].update(positionLabelMessage00)
                         window['-USEDEFAULTDIRBTN-'].update(visible=False)
@@ -769,7 +775,6 @@ class UX:
 
                     window00.hide()
                     window0 = self.makeWindow0(self.dataStream.sockConnection)
-                
 
 
 ##############     Window0          #################
@@ -1273,14 +1278,15 @@ class UX:
                     print(f'values["-BPMSLIDE-"][0]: {values["-BPMSLIDE-"]}')
                     
                     self.writer.bpm = values["-BPMSLIDE-"]
+                    #controlPath = self.dataStream.pathPreface + "/controls.csv"
                     print(f'controlPath: {controlPath}')
                     #Write the midiport and bpm to the file - overwrite file
                     self.logCSVRow('controls.csv', [self.writer.midiPortOut, self.writer.bpm], append=False)
                     print(f'Write Port and Midi out')
                     
                     #Check the file contents
-                    # with open(controlPath, 'r') as csvfile:
-                    #     print(f'{list(csv.reader(csvfile, delimiter=","))}')
+                    #with open(controlPath, 'r') as csvfile:
+                    #    print(f'{list(csv.reader(csvfile, delimiter=","))}')
                         
                     print(f'self.writer.bpm: {self.writer.bpm}')
 
@@ -1786,9 +1792,10 @@ class UX:
                     
                     # print(isinstance(self.controlInitData[i][1], int))
                     if self.controlLogCheck == 0: #Not using the logged data so we need a new log
+                        print("over writing controls logfile")
                         self.logCSVRow('controls.csv', self.controlInitData[i], append=True)
                     #tmpList.append(self.controlInitData[i])
-
+                        controlPath = self.dataStream.pathPreface + "/controls.csv"
                         #Check the file has been logged properly
                         with open(controlPath, 'r') as csvfile:
                             tmpList = list(csv.reader(csvfile, delimiter=","))
@@ -2017,14 +2024,14 @@ class UX:
                     print(f'prediction: {prediction}')
                     if self.writer.ToFEnable == 1 and self.dataStream.ToFByte > 0 and self.dataStream.ToFByte < 128:   #TOF enabled and Valid ToFData
                         self.writer.ToFByte = self.dataStream.ToFByte     #Pass ToF data to midiWriter
-                        PredictMessage = "ToF enabled. Detected Gesture " + str(prediction)
+                        PredictMessage = "ToF Data: " + str(self.writer.ToFByte) + ". Detected Gesture " + str(prediction)
                         
                         #self.writer.getPredictions(prediction)
                     elif self.writer.ToFEnable == 1 and self.dataStream.ToFByte == -1:      #TOF enabled and not valid ToF data
                         print(f"TOFByte not set: {self.writer.ToFByte}")
-                        PredictMessage = "ToF enabled, but no data available. Detected Gesture " + str(prediction)
+                        PredictMessage = "ToF Data: " + str(self.writer.ToFByte) +  ". Detected Gesture " + str(prediction)
                     else:                                                                   #ToF not enabled
-                        PredictMessage = "ToF disabled. Detected Gesture " + str(prediction)
+                        PredictMessage = "ToF Data: " + str(self.writer.ToFByte) + ". Detected Gesture " + str(prediction)
                     
                     #self.writer.getPredictions(prediction)
 
