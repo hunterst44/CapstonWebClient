@@ -29,7 +29,7 @@ Functionality:
 - It utilizes multiple methods and control attributes to interpret and convert predicted gestures into MIDI data.
 - The script incorporates methods for updating control parameters, managing MIDI data generation based on predictions, and orchestrating MIDI playback according to specified conditions.
 - Inner class MidiControl encapsulates individual MIDI control attributes and methods for handling MIDI-related operations based on gesture predictions and control parameters.
-- The script demonstrates a complex interaction between neural network predictions, MIDI generation, control parameters, and a continuous loop for real-time MIDI playback.
+
 
 """
 
