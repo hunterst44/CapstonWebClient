@@ -560,7 +560,7 @@ class UX:
             [sg.Column([
                 [sg.T(Message00Text, key='-TOPMESSAGE00-', visible=True)], 
                 #[sg.T(controlListStr, key='-TOPMESSAGE01-', visible=False)],
-                [sg.Multiline(size=(60, 12), key='-TOPMESSAGE01-', visible=True, autoscroll=False, disabled=True)]
+                [sg.Multiline(controlListStr,size=(50, 12), key='-TOPMESSAGE01-', visible=True, autoscroll=False, disabled=True)]
                 ], key='-TOPMESSAGE00COL-', element_justification='left', expand_x = False, vertical_alignment='t', pad=(LEFTMARGIN,0)),
             sg.Column([
                 [sg.Listbox(midiOutList, size=(60, 8), key="-MIDIPORTOUT-", expand_x=True, expand_y=True,enable_events=True, visible=logInvisibility)], 
@@ -1736,7 +1736,7 @@ class UX:
                 print(controlListStr)
                 #print(f'textHeight: {textHeight}')
                 window['-TOPMESSAGE00-'].update(f'Controls Created! Click Continue to train or use the neural network.')
-                window['-TOPMESSAGE01-'].set_size(size=(50,textHeight))
+                window['-TOPMESSAGE01-'].set_size(size=(50,12))
                 window['-TOPMESSAGE01-'].update(controlListStr)
                 window['-TOPMESSAGE01-'].update(visible=True)
                 window['-TOPMESSAGE01-'].Widget.see('1.0')
