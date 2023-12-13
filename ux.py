@@ -57,7 +57,7 @@ class UX:
     def __init__(self, *, theme='BluePurple'):
         self.theme = theme
         self.writer = midiWriter.MiDiWriter()
-        self.packetLimit = 30
+        self.packetLimit = 60
         #self.packetSize = 1
         #self.numSensors = 4
         self.numHandPositions = 3   #How many handPositions trained by the model
